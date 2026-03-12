@@ -170,7 +170,7 @@ std::shared_ptr<ChVisualSystem> CreateVisSystem(std::shared_ptr<ChSystem> sys) {
             vis_vsg->SetCameraAngleDeg(40.0);
             vis_vsg->SetLightIntensity(1.0f);
             vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
-            vis_vsg->EnableShadows();
+            //vis_vsg->EnableShadows();
             vis_vsg->AddGrid(0.2, 0.2, 20, 20, ChCoordsys<>(ChVector3d(0, 0.105, 0), QuatFromAngleX(CH_PI_2)),
                              ChColor(0.1f, 0.1f, 0.1f));
             vis_vsg->Initialize();
@@ -254,7 +254,6 @@ int main(int argc, char* argv[]) {
     object_type = (object_type % 2) + 1;
     PopulateSystem(sys, object_type);
     sys->GetCollisionSystem()->BindAll();
-    sys->GetVisualSystem()->BindAll();
     sys->GetVisualSystem()->Restart();
 
     time = 0.0;

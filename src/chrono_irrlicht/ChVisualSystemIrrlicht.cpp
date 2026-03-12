@@ -262,6 +262,7 @@ bool ChVisualSystemIrrlicht::Run() {
 
 bool ChVisualSystemIrrlicht::Restart() {
     if (m_device->run()) {
+        BindAll();
         m_running = true;
         return true;
     }

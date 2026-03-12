@@ -450,6 +450,7 @@ class CH_VSG_API ChVisualSystemVSG : virtual public ChVisualSystem {
     virtual void OnClear(ChSystem* sys) override;
     int m_wait_frames = 0;
 
+    /// Get the visibility flag of the particle cloud with specified tag.
     bool GetDesiredCloudVisibility(int tag) const;
 
     int m_screen_num = -1;
@@ -461,6 +462,8 @@ class CH_VSG_API ChVisualSystemVSG : virtual public ChVisualSystem {
     vsg::ref_ptr<vsg::RenderGraph> m_renderGraph;
     vsg::ref_ptr<vsg::CommandGraph> m_renderCommandGraph;   ///< graphics submit path
     vsg::ref_ptr<vsg::CommandGraph> m_computeCommandGraph;  ///< compute submit path (particle colouring)
+
+    bool m_update_viewer;
 
     bool m_show_logo;
     float m_logo_height;
@@ -496,7 +499,7 @@ class CH_VSG_API ChVisualSystemVSG : virtual public ChVisualSystem {
     vsg::ref_ptr<vsg::Switch> m_comSymbolScene;
     vsg::ref_ptr<vsg::Switch> m_bodyLabelScene;
     vsg::ref_ptr<vsg::Switch> m_linkLabelScene;
-    vsg::ref_ptr<vsg::Group> m_decoScene;
+    vsg::ref_ptr<vsg::Switch> m_decoScene;
 
     vsg::ref_ptr<vsg::Options> m_options;  ///< I/O related options for vsg::read/write calls
     vsg::ref_ptr<vsg::Builder> m_vsgBuilder;
@@ -661,6 +664,12 @@ class CH_VSG_API ChVisualSystemVSG : virtual public ChVisualSystem {
     /// Export screen image as file (png, bmp, tga, jpg).
     void ExportScreenImage();
 
+    /// Hide objects in all nodes (initiate deletion phase).
+    void HideObjects();
+
+    /// Delete objects in all nodes (end deletion phase). 
+    void DeleteObjects();
+
     std::map<std::size_t, vsg::ref_ptr<vsg::Node>> m_objCache;
     std::hash<std::string> m_stringHash;
     int m_windows_width = 800;
@@ -683,8 +692,8 @@ class CH_VSG_API ChVisualSystemVSG : virtual public ChVisualSystem {
     double m_camera_angle_deg;
 
     double m_light_intensity;  ///< directional light intensity
-    double m_elevation;        ///< directional light elevation (measured from
-    double m_azimuth;          ///< directional light azimuth (measured from
+    double m_elevation;        ///< directional light elevation (measured from horizontal plane)
+    double m_azimuth;          ///< directional light azimuth (measured from positive X axis)
 
     float m_gui_font_size = 20.0f;
 
@@ -768,6 +777,8 @@ class CH_VSG_API ChVisualSystemVSG : virtual public ChVisualSystem {
     // ImGui textures
     vsg::ref_ptr<vsgImGui::Texture> m_logo_texture;
     std::unordered_map<ChColormap::Type, vsg::ref_ptr<vsgImGui::Texture>> m_colormap_textures;
+
+    ImGuiContext* m_imgui_context;
 
     friend class ChMainGuiVSG;
     friend class ChBaseGuiComponentVSG;

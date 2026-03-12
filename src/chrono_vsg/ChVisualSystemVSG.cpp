@@ -371,7 +371,7 @@ ChVisualSystemVSG::ChVisualSystemVSG(int num_divs)
     m_bodyLabelScene = vsg::Switch::create();
     m_linkLabelScene = vsg::Switch::create();
     m_linkFrameScene = vsg::Switch::create();
-    m_decoScene = vsg::Group::create();
+    m_decoScene = vsg::Switch::create();
 
     // set up defaults and read command line arguments to override them
     m_options = vsg::Options::create();
@@ -870,12 +870,13 @@ void ChVisualSystemVSG::Initialize() {
     // switches off automatic directional light setting
 
     m_renderGraph = vsg::createRenderGraphForView(m_window, m_vsg_camera, m_scene, VK_SUBPASS_CONTENTS_INLINE, false);
-    // extend for seperate render and compute graphs
+
+    // extend for separate render and compute graphs
     m_renderCommandGraph = vsg::CommandGraph::create(m_window, m_renderGraph);
     m_computeCommandGraph = vsg::CommandGraph::create(m_window);
 
     // initialize ImGui
-    ImGui::CreateContext();
+    m_imgui_context = ImGui::CreateContext();
     ImGui::GetIO().IniFilename = "../data/vsg/imgui.ini";
 
 #ifdef __APPLE__
@@ -988,11 +989,19 @@ void ChVisualSystemVSG::Initialize() {
         gui->Initialize();
 
     m_initialized = true;
+    m_update_viewer = true;
     m_running = true;
 }
 
 bool ChVisualSystemVSG::Restart() {
     if (m_viewer->active()) {
+        BindAll();
+        CreateContacts();
+        ImGui::SetCurrentContext(m_imgui_context);
+        m_renderCommandGraph->reset();
+        m_computeCommandGraph->reset();
+        m_frame_number = 0;
+        m_update_viewer = true;
         m_running = true;
         return true;
     }
@@ -1037,9 +1046,10 @@ void ChVisualSystemVSG::Render() {
     }
 
     // Let the viewer handle any events
-    m_viewer->handleEvents();
-
-    m_viewer->update();
+    if (m_update_viewer) {
+        m_viewer->handleEvents();
+        m_viewer->update();
+    }
 
     // Dynamic data transfer CPU->GPU for COM symbol size and body labels
     // Only update if COM symbols are actually visible to avoid unecessary cpu to gpu data transfers
@@ -1223,91 +1233,7 @@ void ChVisualSystemVSG::Render() {
         }
     }
 
-    //----------------------------------- Start delete sequence when demanded -------------------------------------
-    if (m_wait_frames >= 0) {
-        std::cout << "Wait sequence frames = " << m_wait_frames << std::endl;
-        if (m_wait_frames == 4) {
-            // Hide grahics objects
-            m_pointpointScene->setAllChildren(false);
-            m_particleScene->setAllChildren(false);
-            m_visFixedScene->setAllChildren(false);
-            m_visMutableScene->setAllChildren(false);
-            m_collFixedScene->setAllChildren(false);
-            m_collMutableScene->setAllChildren(false);
-            m_absFrameScene->setAllChildren(false);
-            m_refFrameScene->setAllChildren(false);
-            m_linkFrameScene->setAllChildren(false);
-            m_comFrameScene->setAllChildren(false);
-            m_comSymbolScene->setAllChildren(false);
-            m_bodyLabelScene->setAllChildren(false);
-            m_linkLabelScene->setAllChildren(false);
-            {
-                //                auto& children = m_decoScene->children;
-                //                ???
-            }
-        }
-        if (m_wait_frames == 0) {
-            {
-                auto& children = m_pointpointScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_particleScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_visFixedScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_visMutableScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_collFixedScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_collMutableScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_absFrameScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_refFrameScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_linkFrameScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_comFrameScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_comSymbolScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_bodyLabelScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_linkLabelScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            {
-                auto& children = m_decoScene->children;
-                children.erase(children.begin(), children.end());
-            }
-            m_body_labels.clear();
-            m_link_labels.clear();
-        }
-        m_wait_frames--;
-    }
+    // Present scene
     m_viewer->recordAndSubmit();
 
     if (m_capture_image) {
@@ -1316,6 +1242,8 @@ void ChVisualSystemVSG::Render() {
     }
 
     m_viewer->present();
+
+    // Calculate current rendering FPS
     m_frame_number++;
 
     if (m_frame_number > 1) {
@@ -1813,66 +1741,113 @@ void ChVisualSystemVSG::BindAll() {
     BindLabels();
 }
 
+void ChVisualSystemVSG::HideObjects() {
+    m_pointpointScene->setAllChildren(false);
+    m_particleScene->setAllChildren(false);
+    m_visFixedScene->setAllChildren(false);
+    m_visMutableScene->setAllChildren(false);
+    m_collFixedScene->setAllChildren(false);
+    m_collMutableScene->setAllChildren(false);
+    m_absFrameScene->setAllChildren(false);
+    m_refFrameScene->setAllChildren(false);
+    m_linkFrameScene->setAllChildren(false);
+    m_comFrameScene->setAllChildren(false);
+    m_comSymbolScene->setAllChildren(false);
+    m_bodyLabelScene->setAllChildren(false);
+    m_linkLabelScene->setAllChildren(false);
+    m_decoScene->setAllChildren(false);
+
+    //// TODO - Sky and lights
+
+    delete m_renderGraph;
+}
+
+void ChVisualSystemVSG::DeleteObjects() {
+    {
+        auto& children = m_pointpointScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_particleScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_visFixedScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_visMutableScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_collFixedScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_collMutableScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_contactNormalsScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_contactForcesScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_absFrameScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_refFrameScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_linkFrameScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_comFrameScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_comSymbolScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_bodyLabelScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_linkLabelScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    {
+        auto& children = m_decoScene->children;
+        children.erase(children.begin(), children.end());
+    }
+    m_body_labels.clear();
+    m_link_labels.clear();
+
+    //// TODO - Sky and lights
+}
+
 void ChVisualSystemVSG::OnClear(ChSystem* sys) {
-    m_wait_frames = 4;
-    //    {
-    //        auto& children = m_pointpointScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_particleScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_visFixedScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_visMutableScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_collFixedScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_collMutableScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_absFrameScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_refFrameScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_linkFrameScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_comFrameScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_comSymbolScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_bodyLabelScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_linkLabelScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    {
-    //        auto& children = m_decoScene->children;
-    //        children.erase(children.begin(), children.end());
-    //    }
-    //    m_body_labels.clear();
-    //    m_link_labels.clear();
+    // Hide all objects
+    HideObjects();
+
+    // Call the Render function a pre-set number of times before actually deleting the objects
+    m_update_viewer = false;
+    for (int i = 0; i < 4; i++)
+        Render();
+    //m_update_viewer = true;
+
+    // Now delete the objects
+    DeleteObjects();
+
+    // Initiate object deletion
+    ////m_wait_frames = 4;
 }
 
 // -----------------------------------------------------------------------------
@@ -3059,9 +3034,9 @@ int ChVisualSystemVSG::AddVisualModel(std::shared_ptr<ChVisualModel> model, cons
     vis_model_group->setValue("Transform", vis_model_transform);
 
     // Add the group to the global holder
-    m_decoScene->addChild(vis_model_group);
+    m_decoScene->addChild(true, vis_model_group);
 
-    return m_decoScene->children.size() - 1;
+    return (int)m_decoScene->children.size() - 1;
 }
 
 int ChVisualSystemVSG::AddVisualModel(std::shared_ptr<ChVisualShape> shape, const ChFrame<>& frame) {
@@ -3077,7 +3052,7 @@ void ChVisualSystemVSG::UpdateVisualModel(int id, const ChFrame<>& frame) {
 
     auto model_group = m_decoScene->children[id];
     vsg::ref_ptr<vsg::MatrixTransform> transform;
-    if (!model_group->getValue("Transform", transform))
+    if (!model_group.node->getValue("Transform", transform))
         return;
 
     transform->matrix = vsg::dmat4CH(frame, 1.0);
@@ -3086,7 +3061,7 @@ void ChVisualSystemVSG::UpdateVisualModel(int id, const ChFrame<>& frame) {
 // -----------------------------------------------------------------------------
 
 void ChVisualSystemVSG::AddGrid(double x_step, double y_step, int nx, int ny, ChCoordsys<> pos, ChColor col) {
-    m_decoScene->addChild(m_shapeBuilder->CreateGrid(x_step, y_step, nx, ny, pos, col));
+    m_decoScene->addChild(true, m_shapeBuilder->CreateGrid(x_step, y_step, nx, ny, pos, col));
 }
 
 void ChVisualSystemVSG::ExportScreenImage() {
