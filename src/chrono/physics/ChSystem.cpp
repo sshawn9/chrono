@@ -740,7 +740,7 @@ void ChSystem::Update(UpdateFlags update_flags) {
     contact_container->Update(ch_time, update_flags);
 
     // Update any attached visualization system only when also updating assets
-    if (visual_system && has_flag(update_flags,UpdateFlags::VISUAL_ASSETS))
+    if (visual_system && has_flag(update_flags, UpdateFlags::VISUAL_ASSETS))
         visual_system->OnUpdate(this);
 
     timer_update.stop();
@@ -1042,21 +1042,20 @@ void ChSystem::StateIncrementX(ChState& x_new, const ChState& x, const ChStateDe
 //  |-Dl|   [ Cq  0   ]      |-Qc|
 // for given residuals R and -Qc, and  H = [ c_a*M + c_v*dF/dv + c_x*dF/dx ]
 // This function returns true if successful and false otherwise.
-bool ChSystem::StateSolveCorrection(
-    ChStateDelta& Dv,             // result: computed Dv
-    ChVectorDynamic<>& Dl,        // result: computed Dl Lagrange multipliers
-    const ChVectorDynamic<>& R,   // the R residual
-    const ChVectorDynamic<>& Qc,  // the Qc residual
-    const double c_a,             // the factor in c_a*M
-    const double c_v,             // the factor in c_v*dF/dv
-    const double c_x,             // the factor in c_x*dF/dx
-    const ChState& x,             // current state, x part
-    const ChStateDelta& v,        // current state, v part
-    const double T,               // current time T
-    bool force_state_scatter,     // if false, x,v and T are not scattered to the system
-    UpdateFlags update_flags,      // if true, perform a full update during scatter
-    bool call_setup,              // if true, call the solver's Setup() function
-    bool call_analyze             // if true, call the solver's Setup analyze phase
+bool ChSystem::StateSolveCorrection(ChStateDelta& Dv,             // result: computed Dv
+                                    ChVectorDynamic<>& Dl,        // result: computed Dl Lagrange multipliers
+                                    const ChVectorDynamic<>& R,   // the R residual
+                                    const ChVectorDynamic<>& Qc,  // the Qc residual
+                                    const double c_a,             // the factor in c_a*M
+                                    const double c_v,             // the factor in c_v*dF/dv
+                                    const double c_x,             // the factor in c_x*dF/dx
+                                    const ChState& x,             // current state, x part
+                                    const ChStateDelta& v,        // current state, v part
+                                    const double T,               // current time T
+                                    bool force_state_scatter,     // if false, x,v and T are not scattered to the system
+                                    UpdateFlags update_flags,     // if true, perform a full update during scatter
+                                    bool call_setup,              // if true, call the solver's Setup() function
+                                    bool call_analyze             // if true, call the solver's Setup analyze phase
 ) {
     CH_PROFILE("StateSolveCorrection");
 
@@ -1461,7 +1460,7 @@ unsigned int ChSystem::RemoveRedundantConstraints(bool remove_links, double qr_t
     ChSparseMatrix CqT = Cq.transpose();
     CqT.makeCompressed();
 
-    // Perform QR decomposition on Cq to identify linearly-dependant rows (ie. redundant scalar constraint equations)
+    // Perform QR decomposition on Cq to identify linearly-dependent rows (ie. redundant scalar constraint equations)
     Eigen::SparseQR<ChSparseMatrix, Eigen::COLAMDOrdering<int>> QR_dec;
     QR_dec.compute(CqT);
 
@@ -1549,7 +1548,7 @@ unsigned int ChSystem::RemoveRedundantConstraints(bool remove_links, double qr_t
         }
     }
 
-    // Modify ChLinkMate constaints based on new mask
+    // Modify ChLinkMate constraints based on new mask
     for (auto constrnewmask_it = constrnewmask_map.begin(); constrnewmask_it != constrnewmask_map.end();
          ++constrnewmask_it) {
         std::dynamic_pointer_cast<ChLinkMateGeneric>(constr_map[constrnewmask_it->first])
@@ -1561,7 +1560,7 @@ unsigned int ChSystem::RemoveRedundantConstraints(bool remove_links, double qr_t
     // IMPORTANT: by modifying the mask of ChLinkMate, the underlying ChConstraints get deleted and offsets get
     // scrambled. Therefore, repopulate ChSystemDescriptor with updated scenario
     Setup();
-    Update(UpdateFlags::UPDATE_ALL &~UpdateFlags::VISUAL_ASSETS);
+    Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
     DescriptorPrepareInject();
 
     if (verbose) {
@@ -2085,7 +2084,7 @@ void ChSystem::ArchiveIn(ChArchiveIn& archive_in) {
     // version number
     /*int version =*/archive_in.VersionRead<ChSystem>();
 
-    // deserialize unerlying assembly
+    // deserialize underlying assembly
     archive_in >> CHNVP(assembly);
 
     // stream in all member data:

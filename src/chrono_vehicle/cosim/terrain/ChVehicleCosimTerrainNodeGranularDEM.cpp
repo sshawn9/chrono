@@ -228,7 +228,7 @@ void ChVehicleCosimTerrainNodeGranularDEM::Construct() {
 #endif
 
     // Calculate domain size
-    //// TODO: For now, we need to hack in a larger dimZ to accomodate any wheels that will only show up later.
+    //// TODO: For now, we need to hack in a larger dimZ to accommodate any wheels that will only show up later.
     ////       This limitations needs to be removed in Chrono::Dem!
     ////       Second, we are limited to creating this domain centered at the origin!?!
     float r = m_separation_factor * (float)m_radius_g;
@@ -676,7 +676,6 @@ void ChVehicleCosimTerrainNodeGranularDEM::OnInitialize(unsigned int num_objects
         vsys_vsg->SetWindowTitle("Terrain Node (GranularDEM)");
         vsys_vsg->SetWindowSize(ChVector2i(1280, 720));
         vsys_vsg->SetWindowPosition(ChVector2i(100, 100));
-        vsys_vsg->EnableSkyBox(false);
         vsys_vsg->SetBackgroundColor(ChColor(0.455f, 0.525f, 0.640f));
         vsys_vsg->AddCamera(m_cam_pos, ChVector3d(0, 0, 0));
         vsys_vsg->SetCameraAngleDeg(40);

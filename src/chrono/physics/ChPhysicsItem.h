@@ -64,7 +64,7 @@ class ChApi ChPhysicsItem : public ChObj {
     virtual bool IsCollisionEnabled() const { return false; }
 
     /// Add to the provided collision system any collision models managed by this physics item.
-    /// A derived calss should invoke ChCollisionSystem::Add for each of its collision models.
+    /// A derived class should invoke ChCollisionSystem::Add for each of its collision models.
     virtual void AddCollisionModelsToSystem(ChCollisionSystem* coll_sys) const {}
 
     /// Remove from the provided collision system any collision models managed by this physics item.
@@ -150,7 +150,7 @@ class ChApi ChPhysicsItem : public ChObj {
                                  const unsigned int off_v,  ///< offset in v state vector
                                  const ChStateDelta& v,     ///< state vector, speed part
                                  const double T,            ///< time
-                                 UpdateFlags update_flags    ///< perform complete update, or exclude visual assets, etc.
+                                 UpdateFlags update_flags   ///< flags controlling update operation
     ) {
         // Default behavior: even if no state is used, at least call Update()
         Update(T, update_flags);

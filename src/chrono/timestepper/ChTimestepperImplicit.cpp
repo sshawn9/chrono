@@ -100,9 +100,9 @@ void ChTimestepperImplicit::OnAdvance(double dt) {
     // On entry, call_setup is true only:
     // - at the first iteration on the first step
     // - after a call to SetJacobianUpdateMethod(JacobianUpdate::NEVER)
-  
+
     // If the integrable object was modified, force a call to setup (including the analyze phase).
-    // Otherwise, a potantial call to setup need not include the analyze phase.
+    // Otherwise, a potential call to setup need not include the analyze phase.
     if (GetIntegrable()->StateModified()) {
         call_setup = true;
         call_analyze = true;
@@ -112,7 +112,7 @@ void ChTimestepperImplicit::OnAdvance(double dt) {
         call_analyze = false;
     }
 
-    // Let the concrete integrator initialze step
+    // Let the concrete integrator initialize step
     InitializeStep();
 
     // Set time at step end
@@ -248,7 +248,8 @@ void ChTimestepperImplicit::OnAdvance(double dt) {
             //        Jacobian is current or we are not allowed to update it, and we do not control stepsize
 
             if (!accept_terminated) {
-                cerr << "  [ERROR] Newton did not converge with up-to-date or non-modifiable Jacobian. Exiting." << endl;
+                cerr << "  [ERROR] Newton did not converge with up-to-date or non-modifiable Jacobian. Exiting."
+                     << endl;
                 throw std::runtime_error("Newton did not converge with up-to-date Jacobian.");
             }
 
@@ -396,21 +397,21 @@ void ChTimestepperEulerImplicit::OnAdvance(double dt) {
 
         if (verbose)
             cout << " Euler iteration=" << iteration << "  |R|=" << R.lpNorm<Eigen::Infinity>()
-                      << "  |Qc|=" << Qc.lpNorm<Eigen::Infinity>() << endl;
+                 << "  |Qc|=" << Qc.lpNorm<Eigen::Infinity>() << endl;
 
         if ((R.lpNorm<Eigen::Infinity>() < abstolS) && (Qc.lpNorm<Eigen::Infinity>() < abstolL))
             break;
 
-        integrable->StateSolveCorrection(  //
-            Ds, Dl, R, Qc,                 //
-            1.0,                           // factor for M
-            -dt,                           // factor for dF/dv
-            -dt * dt,                      // factor for dF/dx
-            Xnew, Vnew, T + dt,            // not used here (scatter = false)
-            false,                         // do not scatter update to Xnew Vnew T+dt before computing correction
+        integrable->StateSolveCorrection(       //
+            Ds, Dl, R, Qc,                      //
+            1.0,                                // factor for M
+            -dt,                                // factor for dF/dv
+            -dt * dt,                           // factor for dF/dx
+            Xnew, Vnew, T + dt,                 // not used here (scatter = false)
+            false,                              // do not scatter update to Xnew Vnew T+dt before computing correction
             UpdateFlags::UPDATE_ALL_NO_VISUAL,  // no need for full update, since no scatter
-            true,                          // always call the solver's Setup
-            true                           // always call the solver's Setup analyze phase
+            true,                               // always call the solver's Setup
+            true                                // always call the solver's Setup analyze phase
         );
 
         num_step_iters++;
@@ -433,8 +434,8 @@ void ChTimestepperEulerImplicit::OnAdvance(double dt) {
     T += dt;
 
     integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
-    integrable->StateScatterReactions(L);     // -> system auxiliary data
-    integrable->StateOnEndStep(T);            // finalize step, ex. for plasticity etc.
+    integrable->StateScatterReactions(L);                        // -> system auxiliary data
+    integrable->StateOnEndStep(T);                               // finalize step, ex. for plasticity etc.
 }
 
 void ChTimestepperEulerImplicit::ArchiveOut(ChArchiveOut& archive) {
@@ -497,30 +498,28 @@ void ChTimestepperEulerImplicitLinearized::OnAdvance(double dt) {
                                  Qc_clamping);  // Qc = C/dt  (sign will be flipped later in StateSolveCorrection)
     integrable->LoadConstraint_Ct(Qc, 1.0);     // Qc += Ct  (sign will be flipped later in StateSolveCorrection)
 
-    integrable->StateSolveCorrection(  //
-        V, L, R, Qc,                   //
-        1.0,                           // factor for  M
-        -dt,                           // factor for  dF/dv
-        -dt * dt,                      // factor for  dF/dx
-        X, V, T + dt,                  // not needed
-        false,                         // do not scatter update to Xnew Vnew T+dt before computing correction
-        UpdateFlags::UPDATE_ALL_NO_VISUAL, // no need for full update, since no scatter
-        true,                          // always call the solver's Setup
-        true                           // always call the solver's Setup analyze phase
+    integrable->StateSolveCorrection(       //
+        V, L, R, Qc,                        //
+        1.0,                                // factor for  M
+        -dt,                                // factor for  dF/dv
+        -dt * dt,                           // factor for  dF/dx
+        X, V, T + dt,                       // not needed
+        false,                              // do not scatter update to Xnew Vnew T+dt before computing correction
+        UpdateFlags::UPDATE_ALL_NO_VISUAL,  // no need for full update, since no scatter
+        true,                               // always call the solver's Setup
+        true                                // always call the solver's Setup analyze phase
     );
 
     L *= (1.0 / dt);  // Note it is not -(1.0/dt) because we assume StateSolveCorrection already flips sign of Dl
-
-    integrable->StateScatterAcceleration(
-        (V - Vold) * (1 / dt));  // -> system auxiliary data (i.e acceleration as measure, fits DVI/MDI)
 
     X += V * dt;
 
     T += dt;
 
-    integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
-    integrable->StateScatterReactions(L);     // -> system auxiliary data
-    integrable->StateOnEndStep(T);            // finalize step, ex. for plasticity etc.
+    integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);   // state -> system
+    integrable->StateScatterAcceleration((V - Vold) * (1 / dt));  // state -> system auxiliary data
+    integrable->StateScatterReactions(L);                         // state -> system auxiliary data
+    integrable->StateOnEndStep(T);                                // finalize step, ex. for plasticity etc.
 }
 
 void ChTimestepperEulerImplicitLinearized::ArchiveOut(ChArchiveOut& archive) {
@@ -565,8 +564,7 @@ void ChTimestepperEulerImplicitProjected::OnAdvance(double dt) {
 
     Vold = V;
 
-    // 1
-    // Do a  Anitescu/Trinkle timestepper (it could be without the C/dt correction):
+    // 1. Anitescu/Trinkle timestepper (it could be without the C/dt correction):
     //
     // [ M - dt*dF/dv - dt^2*dF/dx    Cq' ] [ v_new  ] = [ M*(v_old) + dt*f]
     // [ Cq                           0   ] [ -dt*l  ] = [ -Ct ]
@@ -576,32 +574,30 @@ void ChTimestepperEulerImplicitProjected::OnAdvance(double dt) {
     integrable->LoadConstraint_C(Qc, 1.0 / dt, Qc_do_clamp, 0);  // Qc = C/dt  ...may be avoided...
     integrable->LoadConstraint_Ct(Qc, 1.0);  // Qc += Ct    (sign will be flipped later by StateSolveCorrection)
 
-    integrable->StateSolveCorrection(  //
-        V, L, R, Qc,                   //
-        1.0,                           // factor for M
-        -dt,                           // factor for dF/dv
-        -dt * dt,                      // factor for dF/dx
-        X, V, T + dt,                  // not needed
-        false,                         // do not scatter update to Xnew Vnew T+dt before computing correction
-        UpdateFlags::UPDATE_ALL_NO_VISUAL, // no need for full update, since no scatter
-        true,                          // always call the solver's Setup
-        true                           // always call the solver's Setup analyze phase
+    integrable->StateSolveCorrection(       //
+        V, L, R, Qc,                        //
+        1.0,                                // factor for M
+        -dt,                                // factor for dF/dv
+        -dt * dt,                           // factor for dF/dx
+        X, V, T + dt,                       // not needed
+        false,                              // do not scatter update to Xnew Vnew T+dt before computing correction
+        UpdateFlags::UPDATE_ALL_NO_VISUAL,  // no need for full update, since no scatter
+        true,                               // always call the solver's Setup
+        true                                // always call the solver's Setup analyze phase
     );
 
     L *= (1.0 / dt);  // Note it is not -(1.0/dt) because we assume StateSolveCorrection already flips sign of Dl
-
-    integrable->StateScatterAcceleration(
-        (V - Vold) * (1 / dt));  // -> system auxiliary data (i.e acceleration as measure, fits DVI/MDI)
 
     X += V * dt;
 
     T += dt;
 
-    integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
-    integrable->StateScatterReactions(L);      // -> system auxiliary data
+    // 2. Position stabilization (single Newton step on constraints, with mass matrix as metric)
 
-    // 2
-    // Do the position stabilization (single Newton step on constraints, with mass matrix as metric)
+    // Note: scatter accelerations here because we reuse and overwrite Vold for the stabilization step
+    integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);   // state -> system
+    integrable->StateScatterAcceleration((V - Vold) * (1 / dt));  // state -> system auxiliary data
+    integrable->StateScatterReactions(L);                         // state -> system auxiliary data
 
     Dl.setZero(integrable->GetNumConstraints());
     R.setZero(integrable->GetNumCoordsVelLevel());
@@ -615,22 +611,26 @@ void ChTimestepperEulerImplicitProjected::OnAdvance(double dt) {
 
     integrable->LoadConstraint_C(Qc, 1.0, false, 0);
 
-    integrable->StateSolveCorrection(  //
-        Vold, L, R, Qc,                //
-        1.0,                           // factor for M
-        0,                             // factor for dF/dv
-        0,                             // factor for dF/dx
-        X, V, T,                       // not needed
-        false,                         // do not scatter update to Xnew Vnew T+dt before computing correction
-        UpdateFlags::UPDATE_ALL_NO_VISUAL, // no need for full update, since no scatter
-        true,                          // always call the solver's Setup
-        true                           // always call the solver's Setup analyze phase
+    integrable->StateSolveCorrection(       //
+        Vold, L, R, Qc,                     //
+        1.0,                                // factor for M
+        0,                                  // factor for dF/dv
+        0,                                  // factor for dF/dx
+        X, V, T,                            // not needed
+        false,                              // do not scatter update to Xnew Vnew T+dt before computing correction
+        UpdateFlags::UPDATE_ALL_NO_VISUAL,  // no need for full update, since no scatter
+        true,                               // always call the solver's Setup
+        true                                // always call the solver's Setup analyze phase
     );
 
     X += Vold;  // here we used 'Vold' as 'dpos' to recycle Vold and avoid allocating a new vector dpos
 
-    integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
-    integrable->StateOnEndStep(T);                               // finalize step, ex. for plasticity etc.
+    // -------
+
+    // Scatter states and state derivatives to the system
+    // Note: accelerations need not be scattered as they were unchanged by the stabiliation step
+    integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);   // state -> system
+    integrable->StateOnEndStep(T);                                // finalize step, ex. for plasticity etc.
 }
 
 void ChTimestepperEulerImplicitProjected::ArchiveOut(ChArchiveOut& archive) {
@@ -702,24 +702,23 @@ void ChTimestepperTrapezoidal::OnAdvance(double dt) {
         integrable->LoadResidual_CqL(R, L, dt * 0.5);  // + dt/2*Cq*l_new
         integrable->LoadConstraint_C(Qc, 1.0 / dt, Qc_do_clamp,
                                      Qc_clamping);  // Qc= C/dt  (sign will be flipped later in StateSolveCorrection)
-
         if (verbose)
             cout << " Trapezoidal iteration=" << iteration << "  |R|=" << R.lpNorm<Eigen::Infinity>()
-                      << "  |Qc|=" << Qc.lpNorm<Eigen::Infinity>() << endl;
+                 << "  |Qc|=" << Qc.lpNorm<Eigen::Infinity>() << endl;
 
         if ((R.lpNorm<Eigen::Infinity>() < abstolS) && (Qc.lpNorm<Eigen::Infinity>() < abstolL))
             break;
 
-        integrable->StateSolveCorrection(  //
-            Ds, Dl, R, Qc,                 //
-            1.0,                           // factor for M
-            -dt * 0.5,                     // factor for dF/dv
-            -dt * dt * 0.25,               // factor for dF/dx
-            Xnew, Vnew, T + dt,            // not used here (scatter = false)
-            false,                         // do not scatter update to Xnew Vnew T+dt before computing correction
+        integrable->StateSolveCorrection(       //
+            Ds, Dl, R, Qc,                      //
+            1.0,                                // factor for M
+            -dt * 0.5,                          // factor for dF/dv
+            -dt * dt * 0.25,                    // factor for dF/dx
+            Xnew, Vnew, T + dt,                 // not used here (scatter = false)
+            false,                              // do not scatter update to Xnew Vnew T+dt before computing correction
             UpdateFlags::UPDATE_ALL_NO_VISUAL,  // no need for full update, since no scatter
-            true,                          // always call the solver's Setup
-            true                           // always call the solver's Setup analyze phase
+            true,                               // always call the solver's Setup
+            true                                // always call the solver's Setup analyze phase
         );
 
         num_step_iters++;
@@ -811,16 +810,16 @@ void ChTimestepperTrapezoidalLinearized::OnAdvance(double dt) {
     integrable->LoadConstraint_C(Qc, 1.0 / dt, Qc_do_clamp,
                                  Qc_clamping);  // Qc= C/dt  (sign will be flipped later in StateSolveCorrection)
 
-    integrable->StateSolveCorrection(  //
-        Ds, Dl, R, Qc,                 //
-        1.0,                           // factor for M
-        -dt * 0.5,                     // factor for dF/dv
-        -dt * dt * 0.25,               // factor for dF/dx
-        Xnew, Vnew, T + dt,            // not used here (scatter = false)
-        false,                         // do not scatter update to Xnew Vnew T+dt before computing correction
+    integrable->StateSolveCorrection(       //
+        Ds, Dl, R, Qc,                      //
+        1.0,                                // factor for M
+        -dt * 0.5,                          // factor for dF/dv
+        -dt * dt * 0.25,                    // factor for dF/dx
+        Xnew, Vnew, T + dt,                 // not used here (scatter = false)
+        false,                              // do not scatter update to Xnew Vnew T+dt before computing correction
         UpdateFlags::UPDATE_ALL_NO_VISUAL,  // no need for full update, since no scatter
-        true,                          // always call the solver's Setup
-        true                           // always call the solver's Setup analyze phase
+        true,                               // always call the solver's Setup
+        true                                // always call the solver's Setup analyze phase
     );
 
     num_step_iters = 1;
@@ -842,8 +841,8 @@ void ChTimestepperTrapezoidalLinearized::OnAdvance(double dt) {
     T += dt;
 
     integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
-    integrable->StateScatterAcceleration(Ds);  // -> system auxiliary data (accelerations)
-    integrable->StateScatterReactions(L);      // -> system auxiliary data (Lagrange multipliers)
+    integrable->StateScatterAcceleration(Ds);                    // -> system auxiliary data (accelerations)
+    integrable->StateScatterReactions(L);                        // -> system auxiliary data (Lagrange multipliers)
     integrable->StateOnEndStep(T);             // finalize step, ex. for plasticity etc.
 }
 
@@ -933,12 +932,12 @@ void ChTimestepperNewmark::OnAdvance(double dt) {
 
         if (verbose)
             cout << " Newmark iteration=" << iteration << "  |R|=" << R.lpNorm<Eigen::Infinity>()
-                      << "  |Qc|=" << Qc.lpNorm<Eigen::Infinity>() << endl;
+                 << "  |Qc|=" << Qc.lpNorm<Eigen::Infinity>() << endl;
 
         if ((R.lpNorm<Eigen::Infinity>() < abstolS) && (Qc.lpNorm<Eigen::Infinity>() < abstolL)) {
             if (verbose) {
                 cout << " Newmark NR converged (" << iteration << ")."
-                          << "  T = " << T + dt << "  h = " << dt << endl;
+                     << "  T = " << T + dt << "  h = " << dt << endl;
             }
             break;
         }
@@ -946,16 +945,16 @@ void ChTimestepperNewmark::OnAdvance(double dt) {
         if (verbose && jacobian_update_method != JacobianUpdate::EVERY_ITERATION && call_setup)
             cout << " Newmark call Setup." << endl;
 
-        integrable->StateSolveCorrection(  //
-            Ds, Dl, R, Qc,                 //
-            1.0,                           // factor for M
-            -dt * gamma,                   // factor for dF/dv
-            -dt * dt * beta,               // factor for dF/dx
-            Xnew, Vnew, T + dt,            // not used here (scatter = false)
-            false,                         // do not scatter update to Xnew Vnew T+dt before computing correction
+        integrable->StateSolveCorrection(       //
+            Ds, Dl, R, Qc,                      //
+            1.0,                                // factor for M
+            -dt * gamma,                        // factor for dF/dv
+            -dt * dt * beta,                    // factor for dF/dx
+            Xnew, Vnew, T + dt,                 // not used here (scatter = false)
+            false,                              // do not scatter update to Xnew Vnew T+dt before computing correction
             UpdateFlags::UPDATE_ALL_NO_VISUAL,  // no need for full update, since no scatter
-            call_setup,                    // if true, call the solver's Setup function
-            call_analyze                   // if true, call the solver's Setup analyze phase
+            call_setup,                         // if true, call the solver's Setup function
+            call_analyze                        // if true, call the solver's Setup analyze phase
         );
 
         num_step_iters++;
@@ -980,9 +979,9 @@ void ChTimestepperNewmark::OnAdvance(double dt) {
     T += dt;
 
     integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
-    integrable->StateScatterAcceleration(A);  // -> system auxiliary data
-    integrable->StateScatterReactions(L);     // -> system auxiliary data
-    integrable->StateOnEndStep(T);            // finalize step, ex. for plasticity etc.
+    integrable->StateScatterAcceleration(A);                     // -> system auxiliary data
+    integrable->StateScatterReactions(L);                        // -> system auxiliary data
+    integrable->StateOnEndStep(T);                               // finalize step, ex. for plasticity etc.
 }
 
 void ChTimestepperNewmark::ArchiveOut(ChArchiveOut& archive) {

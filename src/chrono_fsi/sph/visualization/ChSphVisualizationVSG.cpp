@@ -211,10 +211,12 @@ ChSphVisualizationVSG::ChSphVisualizationVSG(ChFsiFluidSystemSPH* sysSPH)
 }
 
 ChSphVisualizationVSG::~ChSphVisualizationVSG() {
-    auto& systems = m_vsys->GetSystems();
-    auto index = std::find(systems.begin(), systems.end(), m_sysMBS);
-    if (index != systems.end())
-        systems.erase(index);
+    if (m_vsys) {
+        auto& systems = m_vsys->GetSystems();
+        auto index = std::find(systems.begin(), systems.end(), m_sysMBS);
+        if (index != systems.end())
+            systems.erase(index);
+    }
 
     delete m_sysMBS;
 }
@@ -337,7 +339,7 @@ void ChSphVisualizationVSG::OnInitialize() {
     m_vsys->SetImageOutputDirectory(m_image_dir);
 
     // Issue performance warning if shadows are enabled for the containing visualization system
-    if (m_vsys->AreShadowsEnabled()) {
+    if (m_vsys->ShadowsEnabled()) {
         std::cerr << "WARNING:  Shadow rendering is enabled for the associated VSG visualization system.\n";
         std::cerr << "          This negatively affects rendering performance, especially for large particle systems."
                   << std::endl;
@@ -468,17 +470,17 @@ ChSphVisualizationVSG::ColorMode ChSphVisualizationVSG::DetermineColorMode() con
 }
 
 bool ChSphVisualizationVSG::ShouldUseGpuColoring(size_t num_particles) const {
-    // Only enable the compute path when we have data and a supported colouring callback, else dont
+    // Only enable the compute path when we have data and a supported coloring callback, else dont
     if (!m_color_fun) {
-        // GPU colouring disabled: no colour callback function set
+        // GPU coloring disabled: no color callback function set
         return false;
     }
     if (num_particles == 0) {
-        // GPU colouring disabled: no particles to render
+        // GPU coloring disabled: no particles to render
         return false;
     }
     if (DetermineColorMode() == ColorMode::NONE) {
-        // GPU colouring disabled: unsupported colour mode
+        // GPU coloring disabled: unsupported color mode
         return false;
     }
     return true;
@@ -610,7 +612,7 @@ void ChSphVisualizationVSG::EnsureGpuColoringReady(size_t num_particles) {
 
     const bool enable = ShouldUseGpuColoring(num_particles);
     if (!enable) {
-        // Fall back to the old CPU path when the colour callback is disabled or unsupported
+        // Fall back to the old CPU path when the color callback is disabled or unsupported
         // .. could probably delete this handling and associated once confident the gpu path is good
         ConfigureGpuCommands(false);
         cloud->use_compute_colors = false;
