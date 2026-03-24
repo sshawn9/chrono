@@ -157,18 +157,7 @@ public:
     /// It should be GetSpatialDimensions() x 1 = 3x1, but return as 3x3 by
     /// padding 2nd and 3rd columns with auxiliary orthogonal columns.
     /// FALLBACK default implementation; but if possible implement a faster ad hoc computation.
-    virtual double ComputeJ(const ChVector3d eta, ChMatrix33d& J) override {
-        ChMatrixDynamic<double> Xhat(3, this->GetNumNodes());
-        for (int i = 0; i < this->GetNumNodes(); ++i)
-            Xhat.block<3, 1>(0, i) = std::static_pointer_cast<ChNodeFEAfieldXYZ>(this->GetNode(i))->eigen();
-        // J = Xhat * dNde^T
-        ChMatrixDynamic<double> dNde(1, this->GetNumNodes());
-        ComputedNde(eta, dNde);
-        J.col(0) = Xhat * dNde.transpose();
-        J.col(1) = Vcross(ChVector3d((Xhat * dNde.transpose()).col(0)), VECT_X).eigen();
-        J.col(2) = Vcross(ChVector3d(J.col(0)), ChVector3d(J.col(1))).eigen();
-        return J.col(0).norm();
-    }
+    virtual double ComputeJ(const ChVector3d eta, ChMatrix33d& J) override;
 
 };
 
@@ -186,18 +175,7 @@ public:
     /// It should be GetSpatialDimensions() x 2 = 3x2, but return as 3x3 by 
     /// padding 3rd columns with auxiliary orthogonal column.
     /// FALLBACK default implementation; but if possible implement a faster ad hoc computation.
-    virtual double ComputeJ(const ChVector3d eta, ChMatrix33d& J) override {
-        ChMatrixDynamic<double> Xhat(3, this->GetNumNodes());
-        for (int i = 0; i < this->GetNumNodes(); ++i)
-            Xhat.block<3, 1>(0, i) = std::static_pointer_cast<ChNodeFEAfieldXYZ>(this->GetNode(i))->eigen();
-        // J = Xhat * dNde^T
-        ChMatrixDynamic<double> dNde(1, this->GetNumNodes());
-        ComputedNde(eta, dNde);
-        J.col(0) = Xhat * dNde.row(0).transpose();
-        J.col(1) = Xhat * dNde.row(1).transpose();
-        J.col(2) = Vcross(ChVector3d(J.col(0)), ChVector3d(J.col(1))).eigen();  
-        return J.col(0).norm();
-    }
+    virtual double ComputeJ(const ChVector3d eta, ChMatrix33d& J) override;
 
     // The following needed only if element is wrapped as a component of a ChLoaderUV.
     virtual bool IsTriangleIntegrationCompatible() const = 0;
@@ -219,16 +197,7 @@ public:
 
     /// Compute Jacobian J = dX/dη, and returns its determinant.
     /// FALLBACK default implementation; but if possible implement a faster ad hoc computation.
-    virtual double ComputeJ(const ChVector3d eta, ChMatrix33d& J) override {
-        ChMatrixDynamic<double> Xhat(3, this->GetNumNodes());
-        for (int i = 0; i < this->GetNumNodes(); ++i)
-            Xhat.block<3, 1>(0, i) = std::static_pointer_cast<ChNodeFEAfieldXYZ>(this->GetNode(i))->eigen();
-        // J = Xhat * dNde^T
-        ChMatrixDynamic<double> dNde(3, this->GetNumNodes());
-        ComputedNde(eta, dNde);
-        J = Xhat * dNde.transpose();
-        return J.determinant();
-    }
+    virtual double ComputeJ(const ChVector3d eta, ChMatrix33d& J) override;
 
     virtual int GetNumFaces() { return 0; }
     virtual std::shared_ptr<ChFieldElementSurface> BuildFace(int i_face, std::shared_ptr<ChFieldElementVolume> shared_this) { return nullptr; }
