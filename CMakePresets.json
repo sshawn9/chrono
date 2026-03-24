@@ -119,6 +119,7 @@
 			"cacheVariables": {
 				"BUILD_BENCHMARKING": "ON",
 				"BUILD_TESTING": "ON",
+				"CMAKE_PREFIX_PATH": "$env{CI_PROJECT_DIR}/contrib/build-scripts/vsg_build/lib/cmake",
 				"CH_ENABLE_MODULE_PARSERS": "ON",	
 				"CH_ENABLE_MODULE_PERIDYNAMICS": "ON",
 				"CH_ENABLE_MODULE_POSTPROCESS": "ON",
