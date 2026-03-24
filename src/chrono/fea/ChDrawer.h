@@ -797,7 +797,7 @@ public:
                             mfetch_s.second->data[offset_vert + inode] = fetched_s.value();
                         }
                     }
-                    // TEST: EXTRAPOLATE FROM GAUSSPOINTS - fast method
+                    // EXTRAPOLATE FROM GAUSSPOINTS - fast method
                     if (mfetch_s.first->Extract(ele_iter->get_data_per_matpoint_aux(0))) { // bypass if type of extractor & domain not matching
                         ChRowVectorDynamic<> V_num(ele_iter->get_element()->GetNumNodes()); V_num.setZero();
                         ChRowVectorDynamic<> V_den(ele_iter->get_element()->GetNumNodes()); V_den.setZero();
@@ -813,6 +813,36 @@ public:
                                 V_den += weight * N;
                             }
                             else {
+                                extrapolate_gp = false;
+                                break;
+                            }
+                        }
+                        if (extrapolate_gp) {
+                            for (unsigned int inode = 0; inode < ele_num_nodes; ++inode) {
+                                mfetch_s.second->data[offset_vert + inode] = V_num(inode) / V_den(inode);
+                            }
+                        }
+                    }
+                    if (mfetch_s.first->Extract(ele_iter->get_data_per_matpoint(
+                            0))) {  // bypass if type of extractor & domain not matching
+                        ChRowVectorDynamic<> V_num(ele_iter->get_element()->GetNumNodes());
+                        V_num.setZero();
+                        ChRowVectorDynamic<> V_den(ele_iter->get_element()->GetNumNodes());
+                        V_den.setZero();
+                        bool extrapolate_gp = true;
+                        for (int imatpoint = 0; imatpoint < ele_iter->get_element()->GetNumMaterialPoints();
+                             ++imatpoint) {
+                            ChVector3d eta;
+                            double weight;
+                            ele_iter->get_element()->GetMaterialPointWeight(
+                                ele_iter->get_element()->GetQuadratureOrder(), imatpoint, weight, eta);
+                            ChRowVectorDynamic<> N;
+                            ele_iter->get_element()->ComputeN(eta, N);
+                            if (auto fetched_s =
+                                    mfetch_s.first->Extract(ele_iter->get_data_per_matpoint(imatpoint))) {
+                                V_num += weight * N * fetched_s.value();
+                                V_den += weight * N;
+                            } else {
                                 extrapolate_gp = false;
                                 break;
                             }
