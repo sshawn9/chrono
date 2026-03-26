@@ -12,7 +12,7 @@
 // Authors: Alessandro Tasora
 // =============================================================================
 
-#include "chrono/fea/ChDomainSurface.h"
+#include "chrono/fea/ChSurfaceOfDomain.h"
 #include "chrono/fea/ChDomain.h"
 #include "chrono/fea/ChFieldElement.h"
 //#include "chrono/fea/ChTetrahedronFace.h"
@@ -28,9 +28,9 @@ namespace fea {
 
 // Register into the object factory, to enable run-time
 // dynamic creation and persistence
-CH_FACTORY_REGISTER(ChDomainSurface)
+CH_FACTORY_REGISTER(ChSurfaceOfDomain)
 
-void ChDomainSurface::AddFacesFromNodeSet(std::vector<std::shared_ptr<ChNodeFEAbase> >& node_set) {
+void ChSurfaceOfDomain::AddFacesFromNodeSet(std::vector<std::shared_ptr<ChNodeFEAbase>>& node_set) {
 
     std::unordered_set<size_t> node_set_map;
     for (int i = 0; i < node_set.size(); ++i)
@@ -69,7 +69,7 @@ void ChDomainSurface::AddFacesFromNodeSet(std::vector<std::shared_ptr<ChNodeFEAb
     }
 }
 
-void ChDomainSurface::AddFacesFromBoundary() {
+void ChSurfaceOfDomain::AddFacesFromBoundary() {
 
     // Boundary faces 
     std::multimap<std::array<ChNodeFEAbase*, 8>, std::shared_ptr<ChFieldElementSurface>> face_map_el;

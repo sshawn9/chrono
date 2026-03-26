@@ -33,10 +33,10 @@ class ChDomain;
 /// to faces of solid elements (such as ChFieldElementTetrahedron4Face or ChFieldElementHexahedron8Face).
 /// Those faces can be wrapped into ChFieldElementLoadableSurface if one aims at loading them via pressure or other loads. 
 
-class ChApi ChDomainSurface {
+class ChApi ChSurfaceOfDomain {
   public:
-    ChDomainSurface(ChDomain* parentdomain = nullptr) : mdomain(parentdomain) {}
-    virtual ~ChDomainSurface() {}
+    ChSurfaceOfDomain(ChDomain* parentdomain = nullptr) : mdomain(parentdomain) {}
+    virtual ~ChSurfaceOfDomain() {}
 
     /// Get owner domain.
     ChDomain* GetDomain() { return mdomain; }

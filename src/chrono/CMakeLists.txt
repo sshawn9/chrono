@@ -509,7 +509,7 @@ set(Chrono_fea_multiphysics_SOURCES
     fea/ChLoaderHeatVolumetricSource.cpp
     fea/ChBuilderVolume.cpp
     fea/ChLinkFieldNode.cpp
-    fea/ChDomainSurface.cpp
+    fea/ChSurfaceOfDomain.cpp
     )
 set(Chrono_fea_multiphysics_HEADERS
     fea/ChNodeFEAfieldXYZ.h
@@ -548,7 +548,7 @@ set(Chrono_fea_multiphysics_HEADERS
     fea/ChLoaderHeatVolumetricSource.h
     fea/ChBuilderVolume.h
     fea/ChLinkFieldNode.h
-    fea/ChDomainSurface.h
+    fea/ChSurfaceOfDomain.h
     )
 source_group(fea\\multiphysics FILES ${Chrono_fea_multiphysics_SOURCES} ${Chrono_fea_multiphysics_HEADERS})
 

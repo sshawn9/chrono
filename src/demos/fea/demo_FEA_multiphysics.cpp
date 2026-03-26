@@ -38,7 +38,7 @@
 #include "chrono/fea/ChDomainThermoDeformation.h"
 #include "chrono/fea/ChMaterial3DThermalNonlinear.h"
 #include "chrono/fea/ChDrawer.h"
-#include "chrono/fea/ChDomainSurface.h"
+#include "chrono/fea/ChSurfaceOfDomain.h"
 #include "chrono/fea/ChFieldElementHexahedron8.h"
 #include "chrono/fea/ChFieldElementHexahedron8Face.h"
 #include "chrono/fea/ChFieldElementTetrahedron4.h"
@@ -505,9 +505,9 @@ int main(int argc, char* argv[]) {
         load_container->Add(heat_flux);
 
         // - IMPOSED CONVECTION ON THE ENTIRE BOUNDARY OF VOLUME
-        // Weìll use the ChDomainSurface to generate all faces of the moundary. Then, for all faces
+        // Weìll use the ChSurfaceOfDomain to generate all faces of the moundary. Then, for all faces
         // create ChFieldElementLoadableSurface face wrappers to whom we can apply the convection load:
-        auto outer_surface = chrono_types::make_shared<ChDomainSurface>(domain.get());
+        auto outer_surface = chrono_types::make_shared<ChSurfaceOfDomain>(domain.get());
         outer_surface->AddFacesFromBoundary();
         for (auto msurf : outer_surface->GetFaces()) {
             auto exa_iface_loadable = chrono_types::make_shared <ChFieldElementLoadableSurface>(msurf, temperature_field);
