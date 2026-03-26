@@ -4,7 +4,8 @@
 Change Log
 ==========
 
-- [Unreleased (development branch)](#unreleased-development-branch)
+- [Release 10.0.0 (2026-03-27)](#release-1000-2026-03-27)
+  - [\[Changed\] Python support in conda packages](#changed-python-support-in-conda-packages)
   - [\[Added\] PyChrono-NumPy integration](#added-pychrono-numpy-integration)
   - [\[Added\] Chrono::Sensor features and updates](#added-chronosensor-features-and-updates)
   - [\[Added\] Support for output and checkpointing](#added-support-for-output-and-checkpointing)
@@ -125,7 +126,15 @@ Change Log
   - [\[Changed\] Eigen sparse matrices and updates to direct sparse linear solvers](#changed-eigen-sparse-matrices-and-updates-to-direct-sparse-linear-solvers)
 - [Release 4.0.0 (2019-02-22)](#release-400-2019-02-22)
 
-# Unreleased (development branch)
+# Release 10.0.0 (2026-03-27)
+
+## [Changed] Python support in conda packages
+
+Conda packages (see the [anaconda project page](https://anaconda.org/channels/projectchrono/packages/pychrono/overview)) are provided for Python versions 3.12 and 3.13 for all supported platforms (Linux, Windows, and MacOS).
+
+Note that, because of incompatibilities between SWIG versions used in Chrono and the `pythonocc-core` dependency currently available on `conda-forge`, support for the Chrono::Cascade module is not included in PyChrono 10.0 conda packages.
+
+User who want to target a different Python version or use Chrono::Cascade support through PyChrono need to build PyChrono from the Chrono sources (see the [documentation](https://api.projectchrono.org/module_python_installation.html)).
 
 ## [Added] PyChrono-NumPy integration
 
