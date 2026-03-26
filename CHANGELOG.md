@@ -4,6 +4,7 @@
 Change Log
 ==========
 
+- [Unreleased (development branch)](#unreleased-development-branch)
 - [Release 10.0.0 (2026-03-27)](#release-1000-2026-03-27)
   - [\[Changed\] Python support in conda packages](#changed-python-support-in-conda-packages)
   - [\[Added\] PyChrono-NumPy integration](#added-pychrono-numpy-integration)
@@ -125,6 +126,8 @@ Change Log
   - [\[Changed\] Refactoring of dense linear algebra](#changed-refactoring-of-dense-linear-algebra)
   - [\[Changed\] Eigen sparse matrices and updates to direct sparse linear solvers](#changed-eigen-sparse-matrices-and-updates-to-direct-sparse-linear-solvers)
 - [Release 4.0.0 (2019-02-22)](#release-400-2019-02-22)
+
+# Unreleased (development branch) 
 
 # Release 10.0.0 (2026-03-27)
 
