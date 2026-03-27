@@ -39,6 +39,7 @@ ChModalAssembly::ChModalAssembly()
       m_internal_nodes_update(true),
       m_modal_automatic_gravity(true) {
     m_solver_invKIIc = chrono_types::make_shared<ChSolverSparseQR>();
+    m_solver_invKIIc->LockSparsityPattern(false);
 }
 
 ChModalAssembly::ChModalAssembly(const ChModalAssembly& other) : ChAssembly(other) {
@@ -82,6 +83,7 @@ void ChModalAssembly::FlagModelAsReduced() {
 
 void ChModalAssembly::SetModalSolver(std::shared_ptr<ChDirectSolverLS> newsolver) {
     m_solver_invKIIc = newsolver;
+    m_solver_invKIIc->LockSparsityPattern(false);
 }
 
 std::shared_ptr<ChDirectSolverLS> ChModalAssembly::GetModalSolver() const {
@@ -2518,7 +2520,7 @@ void ChModalAssembly::IntLoadResidual_F(const unsigned int off,  // offset in R 
 
         // 4-
         // Update the gravitational force on the internal bodies and nodes
-        if (m_modal_automatic_gravity && GetSystem()->GetGravitationalAcceleration().Length2()) {
+        if (m_modal_automatic_gravity) {
             ChVectorDynamic<> g_acc_loc;
             g_acc_loc.setZero(m_num_coords_vel_boundary + m_num_coords_vel_internal);
 
