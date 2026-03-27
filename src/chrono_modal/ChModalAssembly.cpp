@@ -2518,7 +2518,7 @@ void ChModalAssembly::IntLoadResidual_F(const unsigned int off,  // offset in R 
 
         // 4-
         // Update the gravitational force on the internal bodies and nodes
-        if (m_modal_automatic_gravity && GetSystem()->GetGravitationalAcceleration().Length2()) {
+        if (m_modal_automatic_gravity) {
             ChVectorDynamic<> g_acc_loc;
             g_acc_loc.setZero(m_num_coords_vel_boundary + m_num_coords_vel_internal);
 
