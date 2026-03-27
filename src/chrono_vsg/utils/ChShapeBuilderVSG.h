@@ -45,6 +45,7 @@ class CH_VSG_API ShapeBuilder : public vsg::Inherit<vsg::Object, ShapeBuilder> {
     vsg::ref_ptr<vsg::Group> CreatePbrShape(ShapeType shape_type,
                                             std::shared_ptr<ChVisualMaterial> material,
                                             vsg::ref_ptr<vsg::MatrixTransform> transform,
+                                            bool double_faced,
                                             bool wireframe,
                                             float wire_width = 1);
 
@@ -53,12 +54,14 @@ class CH_VSG_API ShapeBuilder : public vsg::Inherit<vsg::Object, ShapeBuilder> {
                                                    vsg::ref_ptr<vsg::MatrixTransform> transform,
                                                    int resolution_u,
                                                    int resolution_v,
+                                                   bool double_faced,
                                                    bool wireframe,
                                                    float wire_width = 1);
 
     vsg::ref_ptr<vsg::Group> CreateTrimeshPbrMatShape(std::shared_ptr<ChTriangleMeshConnected> mesh,
                                                       vsg::ref_ptr<vsg::MatrixTransform> transform,
                                                       const std::vector<ChVisualMaterialSharedPtr>& materials,
+                                                      bool double_faced,
                                                       bool wireframe,
                                                       float wire_width = 1);
 
@@ -68,6 +71,7 @@ class CH_VSG_API ShapeBuilder : public vsg::Inherit<vsg::Object, ShapeBuilder> {
                                                    vsg::ref_ptr<vsg::MatrixTransform> transform,
                                                    const ChColor& default_color,
                                                    float opacity,
+                                                   bool double_faced,
                                                    bool wireframe,
                                                    float wire_width = 1);
 
@@ -76,6 +80,7 @@ class CH_VSG_API ShapeBuilder : public vsg::Inherit<vsg::Object, ShapeBuilder> {
     vsg::ref_ptr<vsg::Group> CreateTrimeshColAvgShape(std::shared_ptr<ChTriangleMeshConnected> mesh,
                                                       vsg::ref_ptr<vsg::MatrixTransform> transform,
                                                       const ChColor& default_color,
+                                                      bool double_faced,
                                                       bool wireframe,
                                                       float wire_width = 1);
 
@@ -153,6 +158,7 @@ class CH_VSG_API ShapeBuilder : public vsg::Inherit<vsg::Object, ShapeBuilder> {
                                             vsg::ref_ptr<vsg::ushortArray>& indices,
                                             std::shared_ptr<ChVisualMaterial> material,
                                             vsg::ref_ptr<vsg::MatrixTransform> transform,
+                                            bool double_Faced,
                                             bool wireframe,
                                             float wire_width);
 

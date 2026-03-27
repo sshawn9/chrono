@@ -188,7 +188,11 @@ vsg::ref_ptr<vsg::StateGroup> createLineStateGroup(vsg::ref_ptr<const vsg::Optio
     return stateGroup;
 }
 
-vsg::ref_ptr<vsg::StateGroup> createPbrStateGroup(vsg::ref_ptr<const vsg::Options> options, std::shared_ptr<ChVisualMaterial> material, bool wireframe, float wire_width) {
+vsg::ref_ptr<vsg::StateGroup> createPbrStateGroup(vsg::ref_ptr<const vsg::Options> options,
+                                                  std::shared_ptr<ChVisualMaterial> material,
+                                                  bool double_faced,
+                                                  bool wireframe,
+                                                  float wire_width) {
     vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
 
     bool use_blending = (material->GetOpacity() < 1.0) || (!material->GetOpacityTexture().empty());
@@ -399,14 +403,20 @@ vsg::ref_ptr<vsg::StateGroup> createPbrStateGroup(vsg::ref_ptr<const vsg::Option
         bool wireframe;
         float wire_width;
         bool blending;
+        bool double_faced;
 
-        SetPipelineStates(bool wireframe, float wire_width, bool blending) : wireframe(wireframe), wire_width(wire_width), blending(blending) {}
+        SetPipelineStates(bool wireframe, float wire_width, bool blending, bool double_faced)
+            : wireframe(wireframe), wire_width(wire_width), blending(blending), double_faced(double_faced) {}
 
         void apply(vsg::Object& object) { object.traverse(*this); }
         void apply(vsg::RasterizationState& rs) {
-            // Transparent objects must render both faces
-            if (blending)
+            if (blending) {
+                // Transparent objects must always render both faces
                 rs.cullMode = VK_CULL_MODE_NONE;
+            }
+            if (double_faced) {
+                rs.cullMode = VK_CULL_MODE_NONE;
+            }
             if (wireframe) {
                 rs.polygonMode = VK_POLYGON_MODE_LINE;
                 rs.lineWidth = wire_width;
@@ -425,7 +435,7 @@ vsg::ref_ptr<vsg::StateGroup> createPbrStateGroup(vsg::ref_ptr<const vsg::Option
         void apply(vsg::ColorBlendState& cbs) { cbs.configureAttachments(blending); }
     };
 
-    SetPipelineStates sps(wireframe, wire_width, use_blending);
+    SetPipelineStates sps(wireframe, wire_width, use_blending, double_faced);
     graphicsPipelineConfig->accept(sps);
 
     // if required initialize GraphicsPipeline/Layout etc.
