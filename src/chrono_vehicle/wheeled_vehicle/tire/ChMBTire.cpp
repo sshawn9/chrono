@@ -1864,6 +1864,7 @@ void MBTireModel::AddVisualizationAssets(VisualizationType vis) {
 
     m_trimesh_shape->SetWireframe(true);
     m_trimesh_shape->SetMutable(true);
+    m_trimesh_shape->SetDoubleFaced(true);
     AddVisualShape(m_trimesh_shape);
 
     for (const auto& node : m_rim_nodes) {
