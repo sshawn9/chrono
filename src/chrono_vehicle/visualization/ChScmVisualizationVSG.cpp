@@ -96,7 +96,7 @@ ChScmVisualizationVSG::ChScmVisualizationVSG(SCMTerrain* scm)
 }
 
 ChScmVisualizationVSG::~ChScmVisualizationVSG() {
-    if (m_vsys) {
+    if (m_vsys && m_sys->GetVisualSystem()) {
         auto& systems = m_vsys->GetSystems();
         auto index = std::find(systems.begin(), systems.end(), m_sys);
         if (index != systems.end())
