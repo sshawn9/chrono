@@ -46,6 +46,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreatePbrShape(vsg::ref_ptr<vsg::vec3Arra
                                                       vsg::ref_ptr<vsg::ushortArray>& indices,
                                                       std::shared_ptr<ChVisualMaterial> material,
                                                       vsg::ref_ptr<vsg::MatrixTransform> transform,
+                                                      bool double_faced,
                                                       bool wireframe,
                                                       float wire_width) {
     const uint32_t instanceCount = 1;
@@ -59,7 +60,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreatePbrShape(vsg::ref_ptr<vsg::vec3Arra
 
     auto colors = vsg::vec4Array::create(vertices->size(), vsg::vec4CH(material->GetDiffuseColor(), material->GetOpacity()));
     auto scenegraph = vsg::Group::create();
-    auto stategraph = createPbrStateGroup(m_options, material, wireframe, wire_width);
+    auto stategraph = createPbrStateGroup(m_options, material, double_faced, wireframe, wire_width);
     transform->subgraphRequiresLocalFrustum = false;
 
     // setup geometry
@@ -92,6 +93,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreatePbrShape(vsg::ref_ptr<vsg::vec3Arra
 vsg::ref_ptr<vsg::Group> ShapeBuilder::CreatePbrShape(ShapeType shape_type,
                                                       std::shared_ptr<ChVisualMaterial> material,
                                                       vsg::ref_ptr<vsg::MatrixTransform> transform,
+                                                      bool double_faced,
                                                       bool wireframe,
                                                       float wire_width) {
     vsg::ref_ptr<vsg::vec3Array> vertices;
@@ -156,7 +158,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreatePbrShape(ShapeType shape_type,
             indices = m_cone_data->indices;
             break;
     }
-    auto scenegraph = CreatePbrShape(vertices, normals, texcoords, indices, material, transform, wireframe, wire_width);
+    auto scenegraph = CreatePbrShape(vertices, normals, texcoords, indices, material, transform, double_faced, wireframe, wire_width);
     return scenegraph;
 }
 
@@ -215,6 +217,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreatePbrSurfaceShape(std::shared_ptr<ChS
                                                              vsg::ref_ptr<vsg::MatrixTransform> transform,
                                                              int resolution_u,
                                                              int resolution_v,
+                                                             bool double_faced,
                                                              bool wireframe,
                                                              float wire_width) {
     vsg::ref_ptr<vsg::vec3Array> vertices;
@@ -222,7 +225,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreatePbrSurfaceShape(std::shared_ptr<ChS
     vsg::ref_ptr<vsg::vec2Array> texcoords;
     vsg::ref_ptr<vsg::ushortArray> indices;
     GetSurfaceShapeData(geometry, resolution_u, resolution_v, vertices, normals, texcoords, indices);
-    auto scenegraph = CreatePbrShape(vertices, normals, texcoords, indices, material, transform, wireframe, wire_width);
+    auto scenegraph = CreatePbrShape(vertices, normals, texcoords, indices, material, transform, double_faced, wireframe, wire_width);
     return scenegraph;
 }
 
@@ -232,6 +235,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshColShape(std::shared_ptr<ChT
                                                              vsg::ref_ptr<vsg::MatrixTransform> transform,
                                                              const ChColor& default_color,
                                                              float opacity,
+                                                             bool double_faced,
                                                              bool wireframe,
                                                              float wire_width) {
     auto scenegraph = vsg::Group::create();
@@ -333,7 +337,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshColShape(std::shared_ptr<ChT
     vid->indexCount = static_cast<uint32_t>(vsg_indices->size());
     vid->instanceCount = 1;
 
-    auto stategraph = createPbrStateGroup(m_options, chronoMat, wireframe, wire_width);
+    auto stategraph = createPbrStateGroup(m_options, chronoMat, double_faced, wireframe, wire_width);
     stategraph->addChild(vid);
     transform->addChild(stategraph);
 
@@ -348,6 +352,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshColShape(std::shared_ptr<ChT
 vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshColAvgShape(std::shared_ptr<ChTriangleMeshConnected> mesh,
                                                                 vsg::ref_ptr<vsg::MatrixTransform> transform,
                                                                 const ChColor& default_color,
+                                                                bool double_faced,
                                                                 bool wireframe,
                                                                 float wire_width) {
     auto scenegraph = vsg::Group::create();
@@ -413,7 +418,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshColAvgShape(std::shared_ptr<
     vid->indexCount = static_cast<uint32_t>(vsg_indices->size());
     vid->instanceCount = 1;
 
-    auto stategraph = createPbrStateGroup(m_options, chronoMat, wireframe, wire_width);
+    auto stategraph = createPbrStateGroup(m_options, chronoMat, double_faced, wireframe, wire_width);
     stategraph->addChild(vid);
     transform->addChild(stategraph);
 
@@ -428,6 +433,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshColAvgShape(std::shared_ptr<
 vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshPbrMatShape(std::shared_ptr<ChTriangleMeshConnected> mesh,
                                                                 vsg::ref_ptr<vsg::MatrixTransform> transform,
                                                                 const std::vector<ChVisualMaterialSharedPtr>& materials,
+                                                                bool double_faced,
                                                                 bool wireframe,
                                                                 float wire_width) {
     auto scenegraph = vsg::Group::create();
@@ -532,7 +538,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshPbrMatShape(std::shared_ptr<
         vid->indexCount = static_cast<uint32_t>(vsg_indices->size());
         vid->instanceCount = 1;
 
-        auto stategraph = createPbrStateGroup(m_options, chronoMat, wireframe, wire_width);
+        auto stategraph = createPbrStateGroup(m_options, chronoMat, double_faced, wireframe, wire_width);
         stategraph->addChild(vid);
         transform->addChild(stategraph);
     }
