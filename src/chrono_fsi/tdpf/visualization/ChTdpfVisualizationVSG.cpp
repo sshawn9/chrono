@@ -142,7 +142,7 @@ ChTdpfVisualizationVSG::ChTdpfVisualizationVSG(ChFsiFluidSystemTDPF* sysTDPF)
 }
 
 ChTdpfVisualizationVSG::~ChTdpfVisualizationVSG() {
-    if (m_vsys) {
+    if (m_vsys && m_sysMBS->GetVisualSystem()) {
         auto& systems = m_vsys->GetSystems();
         auto index = std::find(systems.begin(), systems.end(), m_sysMBS);
         if (index != systems.end())
