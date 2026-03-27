@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
         NumNodes(i, 6) = (numDiv_x + 1) * (numDiv_y + 1) + NumNodes(i, 2);
         NumNodes(i, 7) = (numDiv_x + 1) * (numDiv_y + 1) + NumNodes(i, 3);
 
-        // All the elements have the same lenght in this example
+        // All the elements have the same length in this example
         ElemLengthXY(i, 0) = dx;
         ElemLengthXY(i, 1) = dy;
         ElemLengthXY(i, 2) = dz;
@@ -292,8 +292,7 @@ int main(int argc, char* argv[]) {
             AbsVal = std::abs(nodetip->GetPos().z() - FileInputMat(stepNo, 1));
             std::cout << "time = " << sys.GetChTime() << "\t" << nodetip->GetPos().z() << "\n";
             if (AbsVal > precision) {
-                std::cout << "error = " << AbsVal << " > " << precision << " = tolerance" << std::endl;
-                std::cout << "\nTest FAILED" << std::endl;
+                std::cout << "Unit test check failed \n";
                 return 1;
             }
             stepNo++;

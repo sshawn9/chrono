@@ -16,7 +16,6 @@
 #define CH_TIMESTEPPER_IMPLICIT_H
 
 #include <array>
-#include <sstream>
 
 #include "chrono/timestepper/ChTimestepper.h"
 
@@ -72,7 +71,7 @@ class ChApi ChTimestepperImplicit : public ChTimestepper {
     /// Get the max number of iterations using the Newton Raphson procedure.
     double GetMaxIters() const { return max_iters; }
 
-    /// Get the current Jacobian update startegy.
+    /// Get the current Jacobian update strategy.
     JacobianUpdate GetJacobianUpdateMethod() const { return jacobian_update_method; }
 
     /// Return Jacobian update method as a string.
@@ -95,7 +94,7 @@ class ChApi ChTimestepperImplicit : public ChTimestepper {
     /// Return the cumulative number of Newton iterations.
     unsigned int GetNumIterations() const { return num_iters; }
 
-    /// Return the cummulative number of calls to the solver's Setup function.
+    /// Return the cumulative number of calls to the solver's Setup function.
     unsigned int GetNumSetupCalls() const { return num_setups; }
 
     /// Return the cumulative number of calls to the solver's Solve function.
@@ -205,10 +204,7 @@ class ChApi ChTimestepperImplicit : public ChTimestepper {
     /// Check convergence of Newton process.
     bool CheckConvergence(int iteration);
 
-    /// Calculate residual norm weights based on the given state and absolute tolerance.
-    void CalcResidualWeights(const ChVectorDynamic<>& x, double atol, ChVectorDynamic<>& rwt);
-
-    /// Calculate error weights based on the given state and relative and absolute tolerances.
+    /// Calculate error weights based on the given state and tolerances.
     void CalcErrorWeights(const ChVectorDynamic<>& x, double rtol, double atol, ChVectorDynamic<>& ewt);
 
     JacobianUpdate jacobian_update_method;  ///< Jacobian update strategy
@@ -227,7 +223,7 @@ class ChApi ChTimestepperImplicit : public ChTimestepper {
 
     unsigned int num_iters;   ///< current cumulative number of Newton iterations
     unsigned int num_setups;  ///< current cumulative number of Setup() calls
-    unsigned int num_solves;  ///< current cummulative number of Solve() calls
+    unsigned int num_solves;  ///< current cumulative number of Solve() calls
 
     unsigned int num_terminated;  ///< number of terminated NEwton iterations
 
@@ -241,11 +237,8 @@ class ChApi ChTimestepperImplicit : public ChTimestepper {
     std::array<double, 3> Ds_nrm_hist;  ///< last 3 update norms
     std::array<double, 3> Dl_nrm_hist;  ///< last 3 update norms
 
-    ChVectorDynamic<> rwtS;  ///< vector of residual norm weights (states)
-    ChVectorDynamic<> rwtL;  ///< vector of residual norm weights (Lagrange multipliers)
-
-    ChVectorDynamic<> ewtS;  ///< vector of error norm weights (states)
-    ChVectorDynamic<> ewtL;  ///< vector of error norm weights (Lagrange multipliers)
+    ChVectorDynamic<> ewtS;  ///< vector of error weights (states)
+    ChVectorDynamic<> ewtL;  ///< vector of error weights (Lagrange multipliers)
 
     bool accept_terminated;  ///< accept or reject steps after a non-converged Newton solve
 
@@ -257,8 +250,6 @@ class ChApi ChTimestepperImplicit : public ChTimestepper {
     double h_min;                       ///< minimum allowable stepsize
     double h;                           ///< internal stepsize
     unsigned int num_successful_steps;  ///< number of successful steps
-
-    std::ostringstream log_buffer;
 };
 
 /// Euler implicit for II order systems.

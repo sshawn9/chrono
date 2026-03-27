@@ -61,7 +61,7 @@ using namespace chrono;
 %rename("ChStaticNonLinearRheonomicAnalysis_IterationCallback") chrono::ChStaticNonLinearRheonomicAnalysis::IterationCallback;
 
 %feature("director") chrono::ChStaticNonLinearAnalysisIncremental::LoadIncrementCallback;
-%rename("ChStaticNonLinearIncremental_LoadIncrementCallback") chrono::ChStaticNonLinearAnalysisIncremental::LoadIncrementCallback;
+%rename("ChStaticNonLinearAnalysisIncremental_LoadIncrementCallback") chrono::ChStaticNonLinearAnalysisIncremental::LoadIncrementCallback;
 
 // C++ implicit timesteppers use multiple inheritance:
 //   class ChTimestepperEulerImplicit : public ChTimestepperIIorder, public ChTimestepperImplicit
@@ -153,3 +153,8 @@ FIX_IMPLICIT_TIMESTEPPER_INHERITANCE(ChTimestepperHHT)
 %include "../../../chrono/timestepper/ChTimestepperHHT.h"
 %include "../../../chrono/timestepper/ChAssemblyAnalysis.h"
 %include "../../../chrono/timestepper/ChStaticAnalysis.h"
+
+%DefSharedPtrDynamicCast(chrono, ChTimestepper, ChTimestepperImplicit)
+%DefSharedPtrDynamicCast(chrono, ChTimestepper, ChTimestepperHHT)
+%DefSharedPtrDynamicCast(chrono, ChTimestepperImplicit, ChTimestepperHHT)
+%DefSharedPtrDynamicCast(chrono, ChTimestepperIIorder, ChTimestepperHHT)

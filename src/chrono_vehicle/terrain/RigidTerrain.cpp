@@ -216,7 +216,7 @@ std::shared_ptr<RigidTerrain::Patch> RigidTerrain::AddPatch(std::shared_ptr<ChCo
                 patch->m_body->AddCollisionShape(ct_shape, ChFrame<>(loc, QUNIT));
             }
         }
-    } else {  // non-tiled terrain creation of a single collision box and centre based on worldframe detection
+    } else {  // non-tiled terrain creation of a single collision box and center based on worldframe detection
         auto ct_shape = chrono_types::make_shared<ChCollisionShapeBox>(material, length, width, thickness);
         ChVector3d loc(0, 0, -0.5 * thickness);
         patch->m_body->AddCollisionShape(ct_shape, ChFrame<>(loc, QUNIT));
@@ -449,14 +449,14 @@ std::shared_ptr<RigidTerrain::Patch> RigidTerrain::AddPatch(std::shared_ptr<ChCo
                                                             double sweep_sphere_radius,
                                                             bool visualization) {
     //---------------
-    // Initialisation
+    // Initialization
     //---------------
 
     auto patch = chrono_types::make_shared<MeshPatch>();
     AddPatch(patch, position, material);
     patch->m_visualize = visualization;
 
-    // Initialise the mesh
+    // Initialize the mesh
     patch->m_trimesh = chrono_types::make_shared<ChTriangleMeshConnected>();
 
     // Calculate coarse grid resolution. Ensure not less than heightmap resolution
@@ -487,7 +487,7 @@ std::shared_ptr<RigidTerrain::Patch> RigidTerrain::AddPatch(std::shared_ptr<ChCo
     const double cell_length = length / heightmap_resolution;  // in the x
     const double cell_width = width / heightmap_resolution;    // in the y
 
-    // initialisations for when calling RefineMeshEdges
+    // initializations for when calling RefineMeshEdges
     std::vector<std::vector<double>*> aux_data_double;
     std::vector<std::vector<int>*> aux_data_int;
     std::vector<std::vector<bool>*> aux_data_bool;
@@ -532,7 +532,7 @@ std::shared_ptr<RigidTerrain::Patch> RigidTerrain::AddPatch(std::shared_ptr<ChCo
     }
 
     //--------------------------------------------------------
-    // Stage 1: Point cloud processing and grid initialisation
+    // Stage 1: Point cloud processing and grid initialization
     //--------------------------------------------------------
 
     // Populate fine height map directly from point cloud.
@@ -568,7 +568,7 @@ std::shared_ptr<RigidTerrain::Patch> RigidTerrain::AddPatch(std::shared_ptr<ChCo
         }
     }
 
-    // Normalise, assign and clamp heights (ensure the averaged heights aren't excessively influencing magnitude beyond
+    // Normalize, assign and clamp heights (ensure the averaged heights aren't excessively influencing magnitude beyond
     // what's already max from point cloud)
     for (int i = 0; i < heightmap_resolution; ++i) {
         for (int j = 0; j < heightmap_resolution; ++j) {
@@ -579,7 +579,7 @@ std::shared_ptr<RigidTerrain::Patch> RigidTerrain::AddPatch(std::shared_ptr<ChCo
         }
     }
 
-    // Initialise the coarse height map
+    // Initialize the coarse height map
     // Iterate over the grid and assign heights to mesh vertices - heights are directly assigned from the cells of
     // the height_map (rather than re-average). Bilinear height assignment is given in the refinement process
     for (int i = 0; i < n_verts_across_down; ++i) {
@@ -822,11 +822,11 @@ std::shared_ptr<RigidTerrain::Patch> RigidTerrain::AddPatch(std::shared_ptr<ChCo
     // Final setup, collision body and caching
     // ---------------------------------------
 
-    // Set colour of all vertices to white
+    // Set color of all vertices to white
     for (auto& vertex_color : patch->m_trimesh->GetCoordsColors()) {
         vertex_color = ChColor(1, 1, 1);
     }
-    // No UV mapping as terrain is simply a single colour
+    // No UV mapping as terrain is simply a single color
 
     // Build the connected mesh
     auto ct_shape = chrono_types::make_shared<ChCollisionShapeTriangleMesh>(material, patch->m_trimesh, true, false,
@@ -1006,32 +1006,55 @@ void RigidTerrain::RemovePatch(std::shared_ptr<Patch> patch) {
 }
 
 // -----------------------------------------------------------------------------
-// Functions for obtaining the terrain height, normal, and coefficient of
+// Functions for obtaining the terrain point, height, normal, and coefficient of
 // friction  at the specified location.
 // This is done by casting vertical rays into each patch collision model.
 // -----------------------------------------------------------------------------
+
+ChVector3d RigidTerrain::GetPoint(const ChVector3d& loc) const {
+    if (m_point_fun)
+        return (*m_point_fun)(loc);
+
+    double height;
+    ChVector3d point;
+    ChVector3d normal;
+    float friction;
+
+    bool hit = FindPoint(loc, point, height, normal, friction);
+
+    if (!hit) {
+        point = loc;
+        ChWorldFrame::Project(point);
+    }
+
+    return point;
+}
+
 double RigidTerrain::GetHeight(const ChVector3d& loc) const {
     if (m_height_fun)
         return (*m_height_fun)(loc);
 
     double height;
+    ChVector3d point;
     ChVector3d normal;
     float friction;
 
-    bool hit = FindPoint(loc, height, normal, friction);
+    bool hit = FindPoint(loc, point, height, normal, friction);
 
-    return hit ? height : 0.0;
+    return hit ? height : 0;
 }
+
 
 ChVector3d RigidTerrain::GetNormal(const ChVector3d& loc) const {
     if (m_normal_fun)
         return (*m_normal_fun)(loc);
 
     double height;
+    ChVector3d point;
     ChVector3d normal;
     float friction;
 
-    bool hit = FindPoint(loc, height, normal, friction);
+    bool hit = FindPoint(loc, point, height, normal, friction);
 
     return hit ? normal : ChWorldFrame::Vertical();
 }
@@ -1041,31 +1064,38 @@ float RigidTerrain::GetCoefficientFriction(const ChVector3d& loc) const {
         return (*m_friction_fun)(loc);
 
     double height;
+    ChVector3d point;
     ChVector3d normal;
     float friction;
 
-    bool hit = FindPoint(loc, height, normal, friction);
+    bool hit = FindPoint(loc, point, height, normal, friction);
 
     return hit ? friction : 0.8f;
 }
 
-void RigidTerrain::GetProperties(const ChVector3d& loc, double& height, ChVector3d& normal, float& friction) const {
-    if (m_height_fun && m_normal_fun && m_friction_fun) {
+void RigidTerrain::GetProperties(const ChVector3d& loc, ChVector3d& point, double& height, ChVector3d& normal, float& friction) const {
+    if (m_height_fun && m_point_fun && m_normal_fun && m_friction_fun) {
         height = (*m_height_fun)(loc);
+        point = (*m_point_fun)(loc);
         normal = (*m_normal_fun)(loc);
         friction = (*m_friction_fun)(loc);
         return;
     }
 
-    bool hit = FindPoint(loc, height, normal, friction);
+    bool hit = FindPoint(loc, point, height, normal, friction);
     if (!hit) {
         height = 0;
+        point = loc;
+        ChWorldFrame::Project(point);
         normal = ChWorldFrame::Vertical();
         friction = 0.8f;
     }
 
     if (m_height_fun)
         height = (*m_height_fun)(loc);
+
+    if (m_point_fun)
+        point = (*m_point_fun)(loc);
 
     if (m_normal_fun)
         normal = (*m_normal_fun)(loc);
@@ -1074,18 +1104,26 @@ void RigidTerrain::GetProperties(const ChVector3d& loc, double& height, ChVector
         friction = (*m_friction_fun)(loc);
 }
 
-bool RigidTerrain::FindPoint(const ChVector3d loc, double& height, ChVector3d& normal, float& friction) const {
+bool RigidTerrain::FindPoint(const ChVector3d loc,
+                             ChVector3d& point,
+                             double& height,
+                             ChVector3d& normal,
+                             float& friction) const {
     bool hit = false;
+    point = loc;
+    ChWorldFrame::Project(point);
     height = std::numeric_limits<double>::lowest();
     normal = ChWorldFrame::Vertical();
     friction = 0.8f;
 
     for (auto patch : m_patches) {
         double pheight;
+        ChVector3d ppoint;
         ChVector3d pnormal;
-        bool phit = patch->FindPoint(loc, pheight, pnormal);
+        bool phit = patch->FindPoint(loc, ppoint, pheight, pnormal);
         if (phit && pheight > height) {
             hit = true;
+            point = ppoint;
             height = pheight;
             normal = pnormal;
             friction = patch->m_friction;
@@ -1095,29 +1133,36 @@ bool RigidTerrain::FindPoint(const ChVector3d loc, double& height, ChVector3d& n
     return hit;
 }
 
-bool RigidTerrain::BoxPatch::FindPoint(const ChVector3d& loc, double& height, ChVector3d& normal) const {
+bool RigidTerrain::BoxPatch::FindPoint(const ChVector3d& loc,
+                                       ChVector3d& point,
+                                       double& height,
+                                       ChVector3d& normal) const {
     // Ray definition (in global frame)
     ChVector3d A = loc;                        // start point
     ChVector3d v = -ChWorldFrame::Vertical();  // direction (downward)
 
     // Intersect ray with top plane
     double t = Vdot(m_location - A, m_normal) / Vdot(v, m_normal);
-    ChVector3d C = A + t * v;
-    height = ChWorldFrame::Height(C);
+    point = A + t * v;
+    height = ChWorldFrame::Height(point);
     normal = m_normal;
 
     // Check bounds
-    ChVector3d Cl = m_body->TransformPointParentToLocal(C);
+    ChVector3d Cl = m_body->TransformPointParentToLocal(point);
     return std::abs(Cl.x()) <= m_hlength && std::abs(Cl.y()) <= m_hwidth;
 }
 
-bool RigidTerrain::MeshPatch::FindPoint(const ChVector3d& loc, double& height, ChVector3d& normal) const {
+bool RigidTerrain::MeshPatch::FindPoint(const ChVector3d& loc,
+                                        ChVector3d& point,
+                                        double& height,
+                                        ChVector3d& normal) const {
     ChVector3d from = loc;
     ChVector3d to = loc - (m_radius + 1000) * ChWorldFrame::Vertical();
 
     ChCollisionSystem::ChRayhitResult result;
     m_body->GetSystem()->GetCollisionSystem()->RayHit(from, to, m_body->GetCollisionModel().get(), result);
-    height = ChWorldFrame::Height(result.abs_hitPoint);
+    point = result.abs_hitPoint;
+    height = ChWorldFrame::Height(point);
     normal = result.abs_hitNormal;
 
     return result.hit;

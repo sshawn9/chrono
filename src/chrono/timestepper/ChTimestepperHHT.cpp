@@ -93,14 +93,12 @@ void ChTimestepperHHT::PrepareStep() {
         Anew = A;
     Vnew = V + Anew * h;
     Xnew = X + Vnew * h + Anew * (h * h);
-    Lnew = L;
-
     integrable->LoadResidual_F(Rold, -alpha / (1.0 + alpha));       // -alpha/(1.0+alpha) * f_old
     integrable->LoadResidual_CqL(Rold, L, -alpha / (1.0 + alpha));  // -alpha/(1.0+alpha) * Cq'*l_old
-
-    CalcResidualWeights(A, abstolS, rwtS);
-    CalcResidualWeights(L, abstolL, rwtL);
     CalcErrorWeights(A, reltol, abstolS, ewtS);
+
+    Lnew = L;
+
     CalcErrorWeights(L, reltol, abstolL, ewtL);
 }
 

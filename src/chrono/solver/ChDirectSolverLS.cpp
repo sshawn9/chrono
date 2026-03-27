@@ -75,7 +75,7 @@ bool ChDirectSolverLS::Setup(ChSystemDescriptor& sysd, bool analyze) {
     }
 
     // Let the system descriptor load the current matrix
-    sysd.BuildSystemMatrix(&m_mat, nullptr);
+    sysd.BuildSystemMatrix(&m_mat, nullptr, conditioning_factor);
 
     // Allow the matrix to be compressed
     m_mat.makeCompressed();
@@ -85,7 +85,7 @@ bool ChDirectSolverLS::Setup(ChSystemDescriptor& sysd, bool analyze) {
     if (write_matrix)
         WriteMatrix(output_dir + "/LS_" + frame_id + "_A.dat", m_mat);
 
-    // Let the concrete solver perform the facorization
+    // Let the concrete solver perform the factorization
     m_timer_setup_solvercall.start();
     bool result = FactorizeMatrix(analyze);
     m_timer_setup_solvercall.stop();
@@ -118,7 +118,7 @@ bool ChDirectSolverLS::Setup(ChSystemDescriptor& sysd, bool analyze) {
 double ChDirectSolverLS::Solve(ChSystemDescriptor& sysd) {
     // Assemble the problem right-hand side vector
     m_timer_solve_assembly.start();
-    sysd.BuildSystemMatrix(nullptr, &m_rhs);
+    sysd.BuildSystemMatrix(nullptr, &m_rhs, conditioning_factor);
     m_sol.resize(m_rhs.size());
     m_timer_solve_assembly.stop();
 
@@ -135,7 +135,7 @@ double ChDirectSolverLS::Solve(ChSystemDescriptor& sysd) {
 
     // Scatter solution vector to the system descriptor
     m_timer_solve_assembly.start();
-    sysd.FromVectorToUnknowns(m_sol);
+    sysd.FromVectorToUnknowns(m_sol, conditioning_factor);
     m_timer_solve_assembly.stop();
 
     if (verbose) {

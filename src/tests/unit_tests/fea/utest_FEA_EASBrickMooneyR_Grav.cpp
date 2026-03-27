@@ -271,8 +271,7 @@ int main(int argc, char* argv[]) {
             AbsVal = std::abs(nodetip->GetPos().z() - FileInputMat(stepNo, 1));
             std::cout << "time = " << sys.GetChTime() << "\t" << nodetip->GetPos().z() << "\n";
             if (AbsVal > precision) {
-                std::cout << "error = " << AbsVal << " > " << precision << " = tolerance" << std::endl;
-                std::cout << "\nTest FAILED" << std::endl;
+                std::cout << "Unit test check failed \n";
                 return 1;
             }
             stepNo++;
@@ -280,8 +279,8 @@ int main(int argc, char* argv[]) {
         // Report run time and total number of iterations.
         double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
         std::cout << "Computation Time: " << duration << "   Number of iterations: " << mystepper->GetNumIterations()
-                  << std::endl;
-        std::cout << "\nTest PASSED" << std::endl;
+                  << "\n";
+        std::cout << "Unit test check succeeded \n";
     }
 
     return 0;

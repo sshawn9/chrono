@@ -96,10 +96,12 @@ ChScmVisualizationVSG::ChScmVisualizationVSG(SCMTerrain* scm)
 }
 
 ChScmVisualizationVSG::~ChScmVisualizationVSG() {
-    auto& systems = m_vsys->GetSystems();
-    auto index = std::find(systems.begin(), systems.end(), m_sys);
-    if (index != systems.end())
-        systems.erase(index);
+    if (m_vsys) {
+        auto& systems = m_vsys->GetSystems();
+        auto index = std::find(systems.begin(), systems.end(), m_sys);
+        if (index != systems.end())
+            systems.erase(index);
+    }
 
     delete m_sys;
 }
@@ -144,7 +146,7 @@ void ChScmVisualizationVSG::OnInitialize() {
     m_vsys->SetImageOutputDirectory(m_image_dir);
 
     // Issue performance warning if shadows are enabled for the containing visualization system
-    if (m_vsys->AreShadowsEnabled()) {
+    if (m_vsys->ShadowsEnabled()) {
         std::cerr << "WARNING:  Shadow rendering is enabled for the associated VSG visualization system.\n";
         std::cerr << "          This negatively affects rendering performance, especially for large particle systems."
                   << std::endl;

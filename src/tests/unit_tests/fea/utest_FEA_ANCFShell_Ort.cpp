@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
         double err = std::abs(nodetip->pos.z() - FileInputMat(it, 1));
         max_err = std::max(max_err, err);
         if (err > precision) {
-            std::cout << "\nTest FAILED -- node_tip: " << nodetip->pos.z()
+            std::cout << "Unit test check failed -- node_tip: " << nodetip->pos.z()
                       << "  reference: " << FileInputMat(it, 1) << std::endl;
             return 1;
         }
@@ -259,7 +259,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "Maximum error = " << max_err << std::endl;
-    std::cout << "\nTest PASSED" << std::endl;
+    std::cout << "Unit test check succeeded \n";
 
     return 0;
 }

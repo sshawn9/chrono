@@ -33,18 +33,11 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/terrain/SCMTerrain.h"
 
+#include "chrono_vsg/ChVisualSystemVSG.h"
+
 #include "chrono_thirdparty/filesystem/path.h"
 
 #include "demos/SetChronoSolver.h"
-
-#ifdef CHRONO_IRRLICHT
-    #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
-using namespace chrono::irrlicht;
-#endif
-#ifdef CHRONO_VSG
-    #include "chrono_vsg/ChVisualSystemVSG.h"
-using namespace chrono::vsg3d;
-#endif
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -58,9 +51,6 @@ bool fix_wheel = false;
 // Terrain type (RIGID or SCM)
 enum class TerrainType { RIGID, SCM };
 TerrainType terrain_type = TerrainType::RIGID;
-
-// Run-time visualization system (IRRLICHT or VSG or NONE)
-ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
 
 // Contact formulation type (SMC or NSC)
 ChContactMethod contact_method = ChContactMethod::SMC;
@@ -170,8 +160,7 @@ int main() {
             cinfo.Y = 2e7f;
             auto patch_mat = cinfo.CreateMaterial(contact_method);
 
-            auto patch = terrain_rigid->AddPatch(patch_mat, ChCoordsys<>(ChVector3d(0, 0, -1.2 * tire_radius), QUNIT),
-                                                 sizeX, sizeY, 0.1);
+            auto patch = terrain_rigid->AddPatch(patch_mat, ChCoordsys<>(ChVector3d(0, 0, -1.2 * tire_radius), QUNIT), sizeX, sizeY, 0.1);
             patch->SetTexture(GetChronoDataFile("textures/concrete.jpg"), 10, 10);
 
             terrain_rigid->Initialize();
@@ -197,8 +186,7 @@ int main() {
             terrain_scm->SetMeshWireframe(false);
             terrain_scm->SetPlotType(vehicle::SCMTerrain::PLOT_SINKAGE, 0, 0.05);
             terrain_scm->Initialize(sizeX, sizeY, delta);
-            terrain_scm->AddActiveDomain(spindle, ChVector3d(0, 0, 0),
-                                         ChVector3d(2 * tire->GetRadius(), 1.0, 2 * tire->GetRadius()));
+            terrain_scm->AddActiveDomain(spindle, ChVector3d(0, 0, 0), ChVector3d(2 * tire->GetRadius(), 1.0, 2 * tire->GetRadius()));
 
             terrain = terrain_scm;
 
@@ -207,56 +195,15 @@ int main() {
     }
 
     // Create run-time visualization interface
-    std::shared_ptr<ChVisualSystem> vis;
-
-#ifndef CHRONO_IRRLICHT
-    if (vis_type == ChVisualSystem::Type::IRRLICHT)
-        vis_type = ChVisualSystem::Type::VSG;
-#endif
-#ifndef CHRONO_VSG
-    if (vis_type == ChVisualSystem::Type::VSG)
-        vis_type = ChVisualSystem::Type::IRRLICHT;
-#endif
-
-    switch (vis_type) {
-        case ChVisualSystem::Type::IRRLICHT: {
-#ifdef CHRONO_IRRLICHT
-            auto vis_irr = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-            vis_irr->AttachSystem(sys);
-            vis_irr->SetCameraVertical(CameraVerticalDir::Z);
-            vis_irr->SetWindowSize(1200, 600);
-            vis_irr->SetWindowTitle("Tire Test Rig");
-            vis_irr->Initialize();
-            vis_irr->AddLogo();
-            vis_irr->AddSkyBox();
-            vis_irr->AddCamera(ChVector3d(1.0, 2.5, 1.0));
-            vis_irr->AddLightDirectional();
-
-            vis_irr->GetActiveCamera()->setFOV(irr::core::PI / 4.5f);
-
-            vis = vis_irr;
-#endif
-            break;
-        }
-        case ChVisualSystem::Type::VSG: {
-#ifdef CHRONO_VSG
-            auto vis_vsg = chrono_types::make_shared<ChVisualSystemVSG>();
-            vis_vsg->AttachSystem(sys);
-            vis_vsg->SetCameraVertical(CameraVerticalDir::Z);
-            vis_vsg->SetWindowSize(1200, 600);
-            vis_vsg->SetWindowTitle("Tire Test Rig");
-            vis_vsg->AddCamera(ChVector3d(1.0, 2.5, 1.0));
-            vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
-            vis_vsg->EnableShadows();
-            vis_vsg->Initialize();
-
-            vis = vis_vsg;
-#endif
-            break;
-        }
-        default:
-            break;
-    }
+    auto vis = chrono_types::make_shared<vsg3d::ChVisualSystemVSG>();
+    vis->AttachSystem(sys);
+    vis->SetCameraVertical(CameraVerticalDir::Z);
+    vis->SetWindowSize(1200, 600);
+    vis->SetWindowTitle("Tire Test Rig");
+    vis->AddCamera(ChVector3d(1.0, 2.5, 1.0));
+    vis->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
+    vis->EnableShadows();
+    vis->Initialize();
 
     ChTimer timer;         // timer for measuring total run time
     double time = 0;       // simulated time
@@ -275,9 +222,7 @@ int main() {
         if (vis && time >= render_frame / fps) {
             if (!vis->Run())
                 break;
-            vis->BeginScene();
             vis->Render();
-            vis->EndScene();
             render_frame++;
         }
 
@@ -303,25 +248,25 @@ int main() {
             case VerboseMode::FORCES: {
                 auto wheel_force = tire->ReportTireForce(terrain.get());
                 std::cout << "time: " << time << " RTF: " << sys->GetRTF() << std::endl;
-                std::cout << "   wheel frc: " << wheel_force.force << std::endl;
-                std::cout << "   wheel trq: " << wheel_force.moment << std::endl;
+                std::cout << "   wheel force:  " << wheel_force.force << std::endl;
+                std::cout << "   wheel torque: " << wheel_force.moment << std::endl;
                 break;
             }
             case VerboseMode::TIMERS: {
                 printf("%5.2f || ", time);
-                printf("%8.3e ", sys->GetTimerStep());  
+                printf("%8.3e ", sys->GetTimerStep());
                 printf("| ");
-                printf("%8.3e ", sys->GetTimerSetup());  
-                printf("%8.3e ", sys->GetTimerUpdate());  
+                printf("%8.3e ", sys->GetTimerSetup());
+                printf("%8.3e ", sys->GetTimerUpdate());
                 printf("%8.3e ", sys->GetTimerAdvance());
                 printf("| ");
-                printf("%8.3e ", sys->GetTimerLSsolve());  
-                printf("%8.3e ", sys->GetTimerLSsetup());  
-                printf("%8.3e ", sys->GetTimerJacobian());  
+                printf("%8.3e ", sys->GetTimerLSsolve());
+                printf("%8.3e ", sys->GetTimerLSsetup());
+                printf("%8.3e ", sys->GetTimerJacobian());
                 printf("| ");
-                printf("%8.3e ", sys->GetTimerCollision());  
-                printf("%8.3e ", sys->GetTimerCollisionBroad());  
-                printf("%8.3e ", sys->GetTimerCollisionNarrow());  
+                printf("%8.3e ", sys->GetTimerCollision());
+                printf("%8.3e ", sys->GetTimerCollisionBroad());
+                printf("%8.3e ", sys->GetTimerCollisionNarrow());
                 printf("\n");
                 break;
             }

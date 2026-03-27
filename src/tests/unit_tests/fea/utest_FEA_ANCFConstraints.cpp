@@ -300,13 +300,15 @@ int main(int argc, char* argv[]) {
         ChVectorDynamic<> Cr = joint_revolute->GetConstraintViolation();
         printf("Rev joint constraints:  %12.4e  %12.4e  %12.4e  %12.4e  %12.4e\n", Cr(0), Cr(1), Cr(2), Cr(3), Cr(4));
 
+        printf("\n\n");
+
         if (!CheckConstraints()) {
-            std::cout << "\nTest FAILED" << std::endl;
+            std::cout << "Unit test check failed \n";
             return 1;
         }
     }
 
-    std::cout << "\nTest PASSED" << std::endl;
+    std::cout << "Unit test check succeeded \n";
 
     return 0;
 }

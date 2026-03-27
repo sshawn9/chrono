@@ -19,7 +19,7 @@
 //
 // The reference file data was validated by digitizing Figs. 4 and 5 of the paper
 // Gerstmayr and Shabana, 2006, "Analysis of Thin Beams and Cables Using the Absolute
-// Nodal Co-ordinate Formulation", Nonlinear Dynamics, 45: 109-130.
+// Nodal Coordinate Formulation", Nonlinear Dynamics, 45: 109-130.
 //
 // Special attention must be paid to the number of Gauss points for gravity. For
 // successful verification, this number must be 2.
@@ -181,22 +181,21 @@ int main(int argc, char* argv[]) {
 
     for (unsigned int it = 0; it < num_steps; it++) {
         sys.DoStepDynamics(0.0001);
-
+        std::cout << "Time t = " << sys.GetChTime() << "s \n";
         // Checking midpoint and tip Y displacement
         double AbsVal = std::abs(hnodeancf3->GetPos().y() - FileInputMat(it, 4));
         double AbsVal2 = std::abs(hnodeancf5->GetPos().z() - FileInputMat(it, 6));
 
         if (std::max(AbsVal, AbsVal2) > precision) {
-            std::cout << "\nTest FAILED" << std::endl;
+            std::cout << "Unit test check failed \n";
             std::cout << "  y position: " << hnodeancf3->GetPos().y() << "  (reference: " << FileInputMat(it, 4)
-                      << "  diff: " << AbsVal << ")" << std::endl;
+                      << "  diff: " << AbsVal << ")\n";
             std::cout << "  z position: " << hnodeancf5->GetPos().z() << "  (reference: " << FileInputMat(it, 6)
-                      << "  diff: " << AbsVal2 << ")" << std::endl;
+                      << "  diff: " << AbsVal2 << ")\n";
             return 1;
         }
     }
-
-    std::cout << "\nTest PASSED" << std::endl;
+    std::cout << "Unit test check succeeded \n";
 
     /*
     // This code snippet creates the benchmark file.

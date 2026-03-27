@@ -34,16 +34,9 @@
 #include "chrono_vehicle/wheeled_vehicle/tire/ChMBTire.h"
 #include "chrono_vehicle/wheeled_vehicle/tire/ChRigidTire.h"
 
-#include "chrono_thirdparty/filesystem/path.h"
+#include "chrono_vsg/ChVisualSystemVSG.h"
 
-#ifdef CHRONO_IRRLICHT
-    #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
-using namespace chrono::irrlicht;
-#endif
-#ifdef CHRONO_VSG
-    #include "chrono_vsg/ChVisualSystemVSG.h"
-using namespace chrono::vsg3d;
-#endif
+#include "chrono_thirdparty/filesystem/path.h"
 
 #include "demos/SetChronoSolver.h"
 
@@ -55,9 +48,6 @@ using namespace chrono;
 using namespace chrono::vehicle;
 
 // -----------------------------------------------------------------------------
-
-// Run-time visualization system (IRRLICHT or VSG)
-ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
 
 // Tire specification file
 ////std::string tire_json = "hmmwv/tire/HMMWV_RigidTire.json";
@@ -232,55 +222,16 @@ int main() {
     // Create the run-time visualization
     // ---------------------------------
 
-#ifndef CHRONO_IRRLICHT
-    if (vis_type == ChVisualSystem::Type::IRRLICHT)
-        vis_type = ChVisualSystem::Type::VSG;
-#endif
-#ifndef CHRONO_VSG
-    if (vis_type == ChVisualSystem::Type::VSG)
-        vis_type = ChVisualSystem::Type::IRRLICHT;
-#endif
-
-    std::shared_ptr<ChVisualSystem> vis;
-    switch (vis_type) {
-        case ChVisualSystem::Type::IRRLICHT: {
-#ifdef CHRONO_IRRLICHT
-            auto vis_irr = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-            vis_irr->AttachSystem(sys);
-            vis_irr->SetCameraVertical(CameraVerticalDir::Z);
-            vis_irr->SetWindowSize(1200, 600);
-            vis_irr->SetWindowTitle("Tire Test Rig");
-            vis_irr->Initialize();
-            vis_irr->AddLogo();
-            vis_irr->AddSkyBox();
-            vis_irr->AddCamera(ChVector3d(1.0, 2.5, 1.0), rig.GetWheelPos());
-            vis_irr->AddLightDirectional();
-
-            vis_irr->GetActiveCamera()->setFOV(irr::core::PI / 4.5f);
-
-            vis = vis_irr;
-#endif
-            break;
-        }
-        default:
-        case ChVisualSystem::Type::VSG: {
-#ifdef CHRONO_VSG
-            auto vis_vsg = chrono_types::make_shared<ChVisualSystemVSG>();
-            vis_vsg->AttachSystem(sys);
-            vis_vsg->SetCameraVertical(CameraVerticalDir::Z);
-            vis_vsg->SetWindowSize(1200, 600);
-            vis_vsg->SetWindowTitle("Tire Test Rig");
-            vis_vsg->SetBackgroundColor(ChColor(0.4f, 0.5f, 0.6f));
-            vis_vsg->AddCamera(ChVector3d(1.0, 2.5, 1.0), rig.GetWheelPos());
-            vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
-            vis_vsg->EnableShadows();
-            vis_vsg->Initialize();
-
-            vis = vis_vsg;
-#endif
-            break;
-        }
-    }
+    auto vis = chrono_types::make_shared<vsg3d::ChVisualSystemVSG>();
+    vis->AttachSystem(sys);
+    vis->SetCameraVertical(CameraVerticalDir::Z);
+    vis->SetWindowSize(1200, 600);
+    vis->SetWindowTitle("Tire Test Rig");
+    vis->SetBackgroundColor(ChColor(0.4f, 0.5f, 0.6f));
+    vis->AddCamera(ChVector3d(1.0, 2.5, 1.0), rig.GetWheelPos());
+    vis->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
+    vis->EnableShadows();
+    vis->Initialize();
 
     // ---------------
     // Simulation loop
@@ -298,9 +249,7 @@ int main() {
         time = sys->GetChTime();
 
         if (time >= render_frame / fps) {
-            vis->BeginScene();
             vis->Render();
-            vis->EndScene();
         }
 
         rig.Advance(step_size);
