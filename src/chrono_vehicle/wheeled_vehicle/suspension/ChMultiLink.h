@@ -165,8 +165,8 @@ class CH_VEHICLE_API ChMultiLink : public ChSuspension {
     ChMultiLink(const std::string& name  ///< [in] name of the subsystem
     );
 
-    /// Indicate whether or not tirod bodies are modelled (default: false).
-    /// If false, tierods are modelled using distance constraints.
+    /// Indicate whether or not tirod bodies are modeled (default: false).
+    /// If false, tierods are modeled using distance constraints.
     /// If true, rigid tierod bodies are created (in which case a derived class must provide the mass and inertia) and
     /// connected either with kinematic joints or bushings (depending on whether or not bushing data is defined).
     virtual bool UseTierodBodies() const { return false; }
@@ -303,9 +303,7 @@ class CH_VEHICLE_API ChMultiLink : public ChSuspension {
                                        const ChVector3d pt_U,
                                        double radius);
 
-    virtual void ExportComponentList(rapidjson::Document& jsonDocument) const override;
-
-    virtual void Output(ChOutput& database) const override;
+    virtual void PopulateComponentList() override;
 
     static const std::string m_pointNames[NUM_POINTS];
 };

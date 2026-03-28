@@ -18,7 +18,7 @@
 // =============================================================================
 
 #include "chrono/physics/ChBodyEasy.h"
-#include "chrono/physics/ChInertiaUtils.h"
+#include "chrono/physics/ChMassProperties.h"
 
 #include "chrono/assets/ChVisualShapeBox.h"
 #include "chrono/assets/ChVisualShapeCylinder.h"
@@ -308,7 +308,6 @@ void ChBodyEasyConvexHull::SetupBody(std::vector<ChVector3d>& points,
                                      bool create_collision,
                                      std::shared_ptr<ChContactMaterial> material) {
     auto vshape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
-    vshape->SetMutable(false);
     bt_utils::ChConvexHullLibraryWrapper lh;
     lh.ComputeHull(points, *vshape->GetMesh());
     if (create_visualization) {
@@ -331,7 +330,7 @@ void ChBodyEasyConvexHull::SetupBody(std::vector<ChVector3d>& points,
     if (create_collision) {
         assert(material);
         // avoid passing to collision the inner points discarded by convex hull
-        // processor, so use mesh vertexes instead of all argument points
+        // processor, so use mesh vertices instead of all argument points
         std::vector<ChVector3d> points_reduced;
         points_reduced.resize(vshape->GetMesh()->GetCoordsVertices().size());
         for (unsigned int i = 0; i < vshape->GetMesh()->GetCoordsVertices().size(); ++i)
@@ -389,7 +388,6 @@ void ChBodyEasyConvexHullAuxRef::SetupBody(std::vector<ChVector3d>& points,
                                            bool create_collision,
                                            std::shared_ptr<ChContactMaterial> material) {
     auto vshape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
-    vshape->SetMutable(false);
     bt_utils::ChConvexHullLibraryWrapper lh;
     lh.ComputeHull(points, *vshape->GetMesh());
     if (create_visualization) {
@@ -418,7 +416,7 @@ void ChBodyEasyConvexHullAuxRef::SetupBody(std::vector<ChVector3d>& points,
     if (create_collision) {
         assert(material);
         // avoid passing to collision the inner points discarded by convex hull
-        // processor, so use mesh vertexes instead of all argument points
+        // processor, so use mesh vertices instead of all argument points
         std::vector<ChVector3d> points_reduced;
         points_reduced.resize(vshape->GetMesh()->GetCoordsVertices().size());
         for (unsigned int i = 0; i < vshape->GetMesh()->GetCoordsVertices().size(); ++i)
@@ -509,7 +507,6 @@ void ChBodyEasyMesh::SetupBody(std::shared_ptr<ChTriangleMeshConnected> trimesh,
 
     if (create_visualization) {
         auto vshape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
-        vshape->SetMutable(false);
         vshape->SetMesh(trimesh);
         vshape->SetName(name);
         AddVisualShape(vshape);

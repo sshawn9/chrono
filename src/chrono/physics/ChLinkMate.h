@@ -174,7 +174,7 @@ class ChApi ChLinkMateGeneric : public ChLinkMate {
     /// Update link state, constraint Jacobian, and frames.
     /// This is called automatically by the solver at each time step.
     /// Derived classes must call this parent method and then take care of updating their own assets.
-    virtual void Update(double time, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 
     virtual void IntStateGatherReactions(const unsigned int off_L, ChVectorDynamic<>& L) override;
     virtual void IntStateScatterReactions(const unsigned int off_L, const ChVectorDynamic<>& L) override;
@@ -270,7 +270,7 @@ class ChApi ChLinkMatePlanar : public ChLinkMateGeneric {
 
     /// Update link state. This is called automatically by the solver at each time step.
     /// Update constraint jacobian and frames.
-    virtual void Update(double time, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 };
 
 CH_CLASS_VERSION(ChLinkMatePlanar, 0)
@@ -461,7 +461,7 @@ class ChApi ChLinkMateDistanceZ : public ChLinkMateGeneric {
     /// "Virtual" copy constructor (covariant return type).
     virtual ChLinkMateDistanceZ* Clone() const override { return new ChLinkMateDistanceZ(*this); }
 
-    /// Set the distance of the two constrainted frames along the Z axis of frame 2.
+    /// Set the distance of the two constrained frames along the Z axis of frame 2.
     void SetDistance(double distance) { m_distance = distance; }
 
     /// Get the imposed distance on Z of frame 2.
@@ -490,7 +490,7 @@ class ChApi ChLinkMateDistanceZ : public ChLinkMateGeneric {
 
     /// Update link state, constraint Jacobian, and frames.
     /// Called automatically by the solver at each time step.
-    virtual void Update(double mtime, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 };
 
 CH_CLASS_VERSION(ChLinkMateDistanceZ, 0)
@@ -578,7 +578,7 @@ class ChApi ChLinkMateOrthogonal : public ChLinkMateGeneric {
 
     /// Update link state. This is called automatically by the solver at each time step.
     /// Update constraint jacobian and frames.
-    virtual void Update(double mtime, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 };
 
 CH_CLASS_VERSION(ChLinkMateOrthogonal, 0)
@@ -621,7 +621,7 @@ class ChApi ChLinkMateRackPinion : public ChLinkMateGeneric {
     virtual ChLinkMateRackPinion* Clone() const override { return new ChLinkMateRackPinion(*this); }
 
     // Updates aux frames positions
-    virtual void Update(double time, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 
     // data get/set
 

@@ -127,7 +127,7 @@ class ChApi ChLinkMarkers : public ChLink {
     virtual void UpdateForces(double time);
 
     /// Complete link update, including UpdateRelMarkerCoords and UpdateForces.
-    virtual void Update(double time, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 
     /// Adds force to residual R, as R*= F*c
     /// NOTE: here the off offset in R is NOT used because add F at the TWO offsets of the two connected bodies,
@@ -164,7 +164,7 @@ class ChApi ChLinkMarkers : public ChLink {
 
     double relAngle;        ///< relative angle of rotation
     ChVector3d relAxis;     ///< relative axis of rotation
-    ChVector3d relRotaxis;  ///< relative rotaion vector =angle*axis
+    ChVector3d relRotaxis;  ///< relative rotation vector =angle*axis
     ChVector3d relWvel;     ///< relative angular speed
     ChVector3d relWacc;     ///< relative angular acceleration
     double dist;            ///< the distance between the two origins of markers,

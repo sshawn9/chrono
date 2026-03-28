@@ -53,14 +53,19 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
     /// Structure with elastic material properties.
     /// Used if solving an SPH continuum representation of granular dynamics.
     struct CH_FSI_API ElasticMaterialProperties {
-        double density;         ///< bulk density (default: 1000.0)
-        double Young_modulus;   ///< Young's modulus (default: 1e6)
-        double Poisson_ratio;   ///< Poisson's ratio (default: 0.3)
-        double mu_I0;           ///< reference inertia number (default: 0.03)
-        double mu_fric_s;       ///< friction mu_s (default: 0.7)
-        double mu_fric_2;       ///< mu_2 constant in mu=mu(I) (default: 0.7)
-        double average_diam;    ///< average particle diameter (default: 0.005)
-        double cohesion_coeff;  ///< cohesion coefficient (default: 0)
+        double density;              ///< bulk density (default: 1000.0)
+        double Young_modulus;        ///< Young's modulus (default: 1e6)
+        double Poisson_ratio;        ///< Poisson's ratio (default: 0.3)
+        double mu_I0;                ///< reference inertia number (default: 0.03)
+        double mu_fric_s;            ///< friction mu_s (default: 0.7)
+        double mu_fric_2;            ///< mu_2 constant in mu=mu(I) (default: 0.7)
+        double average_diam;         ///< average particle diameter (default: 0.005)
+        double cohesion_coeff;       ///< cohesion coefficient (default: 0)
+        RheologyCRM rheology_model;  ///< rheology model (default: MU_OF_I)
+        double mcc_M;                // CSL line slope
+        double mcc_kappa;            // Compression index
+        double mcc_lambda;           // Swelling index
+        double mcc_v_lambda;         // Specific volume at reference pressure of 1000 Pa
 
         ElasticMaterialProperties();
     };
@@ -85,16 +90,19 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
         double shifting_diffusion_AFSM;   ///< shifting coefficient used in diffusion (default: 3.0)
         double shifting_diffusion_AFST;   ///< shifting coefficient used in diffusion (default: 2.0)
         double min_distance_coefficient;  ///< min inter-particle distance as fraction of kernel radius (default: 0.01)
-        int density_reinit_steps;         ///< number of steps between density reinitializations (default: 2e8)
-        bool use_density_based_projection;         ///< (ISPH only, default: false)
+        int density_reinit_steps;         ///< number of steps between density re-initializations (default: 2e8)
+        bool use_density_based_projection;             ///< (ISPH only, default: false)
         bool use_consistent_gradient_discretization;   ///< use G matrix in SPH gradient approximation (default: false)
         bool use_consistent_laplacian_discretization;  ///< use L matrix in SPH Laplacian approximation (default: false)
-        double artificial_viscosity;               ///< artificial viscosity coefficient (default: 0.02)
-        bool use_delta_sph;                        ///< use delta SPH (default: true)
-        double delta_sph_coefficient;              ///< delta SPH coefficient (default: 0.1)
-        double free_surface_threshold;                   ///< threshold for identifying free surface (CRM only, default: 0.8)
-        int num_proximity_search_steps;            ///< number of steps between updates to neighbor lists (default: 4)
-        bool use_variable_time_step;               ///< use variable time step (default: false)
+        double artificial_viscosity;                   ///< artificial viscosity coefficient (default: 0.02)
+        bool use_delta_sph;                            ///< use delta SPH (default: true)
+        double delta_sph_coefficient;                  ///< delta SPH coefficient (default: 0.1)
+        double free_surface_threshold;  ///< threshold for identifying free surface. The divergence of the position
+                                        ///< field is computed and compared to this threshold. Particles with divergence
+                                        ///< less than this threshold are considered free surface particles (CRM only,
+                                        ///< default: 2.0)
+        int num_proximity_search_steps;  ///< number of steps between updates to neighbor lists (default: 4)
+        bool use_variable_time_step;     ///< use variable time step (default: false)
 
         SPHParameters();
     };
@@ -181,7 +189,7 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
     /// Set prescribed initial pressure for gravity field.
     void SetInitPressure(const double fzDim);
 
-    /// Set gravity for the FSI syatem.
+    /// Set gravity for the FSI system.
     virtual void SetGravitationalAcceleration(const ChVector3d& gravity) override;
 
     /// Set a constant force applied to the fluid.
@@ -347,13 +355,15 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
                         double mu,
                         const ChVector3d& vel = ChVector3d(0),
                         const ChVector3d& tauXxYyZz = ChVector3d(0),
-                        const ChVector3d& tauXyXzYz = ChVector3d(0));
+                        const ChVector3d& tauXyXzYz = ChVector3d(0),
+                        const double pc = 1e3);
 
     /// Add an SPH particle with current properties to the SPH system.
     void AddSPHParticle(const ChVector3d& pos,
                         const ChVector3d& vel = ChVector3d(0),
                         const ChVector3d& tauXxYyZz = ChVector3d(0),
-                        const ChVector3d& tauXyXzYz = ChVector3d(0));
+                        const ChVector3d& tauXyXzYz = ChVector3d(0),
+                        const double pc = 1e3);
 
     /// Create SPH particles in the specified box volume.
     /// The SPH particles are created on a uniform grid with resolution equal to the FSI initial separation.
@@ -364,8 +374,8 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
     /// Add boundary BCE markers at the specified points.
     /// The points are assumed to be provided relative to the specified frame.
     /// These BCE markers are not associated with a particular FSI body and, as such, cannot be used to extract fluid
-    /// forces and moments. If fluid reaction forces are needed, create an FSI body with the desirted geometry or list
-    /// of BCE points and add it through the contianing FSI system.
+    /// forces and moments. If fluid reaction forces are needed, create an FSI body with the desired geometry or list
+    /// of BCE points and add it through the containing FSI system.
     void AddBCEBoundary(const std::vector<ChVector3d>& points, const ChFramed& frame);
 
     // ----------- Utility functions for extracting information at specific SPH particles
@@ -400,7 +410,7 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
     /// Extract accelerations of all markers (SPH and BCE) with indices in the provided array.
     std::vector<Real3> GetAccelerations(const std::vector<int>& indices) const;
 
-    /// Extract forces applied to allmarkers (SPH and BCE) with indices in the provided array.
+    /// Extract forces applied to all markers (SPH and BCE) with indices in the provided array.
     std::vector<Real3> GetForces(const std::vector<int>& indices) const;
 
     // ----------- Utility functions for creating points in various volumes
@@ -430,7 +440,7 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
     /// Markers are created using spherical coordinates (polar=true), or else on a uniform Cartesian grid.
     std::vector<ChVector3d> CreatePointsSphereInterior(double radius, bool polar) const;
 
-    /// Create exterior marker pointss for a sphere of specified radius, assumed centered at the origin.
+    /// Create exterior marker points for a sphere of specified radius, assumed centered at the origin.
     /// Markers are created outside the sphere, in a number of layers corresponding to system parameters.
     /// Markers are created using spherical coordinates (polar=true), or else on a uniform Cartesian grid.
     std::vector<ChVector3d> CreatePointsSphereExterior(double radius, bool polar) const;
@@ -450,14 +460,34 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
     /// Create interior marker points for a cone of specified radius and height.
     /// The cone is assumed centered at the origin and aligned with the Z axis.
     /// Markers are created inside the cone, in a number of layers corresponding to system parameters.
-    /// Markers are created using cylinderical coordinates (polar=true), or else on a uniform Cartesian grid.
+    /// Markers are created using cylindrical coordinates (polar=true), or else on a uniform Cartesian grid.
     std::vector<ChVector3d> CreatePointsConeInterior(double rad, double height, bool polar) const;
+
+    /// Create interior marker points for a truncated cone of specified radius and height.
+    /// The truncated cone is assumed centered at the origin and aligned with the Z axis.
+    /// Markers are created inside the truncated cone, in a number of layers corresponding to system parameters.
+    /// Markers are created using cylindrical coordinates (polar=true), or else on a uniform Cartesian grid.
+    /// The base of the truncated cone has a radius of rad, and the tip has a radius of rad_tip.
+    std::vector<ChVector3d> CreatePointsTruncatedConeInterior(double rad,
+                                                              double rad_tip,
+                                                              double height,
+                                                              bool polar) const;
 
     /// Create exterior marker points for a cone of specified radius and height.
     /// The cone is assumed centered at the origin and aligned with the Z axis.
     /// Markers are created outside the cone, in a number of layers corresponding to system parameters.
-    /// Markers are created using cylinderical coordinates (polar=true), or else on a uniform Cartesian grid.
+    /// Markers are created using cylindrical coordinates (polar=true), or else on a uniform Cartesian grid.
     std::vector<ChVector3d> CreatePointsConeExterior(double rad, double height, bool polar) const;
+
+    /// Create exterior marker points for a truncated cone of specified radius and height.
+    /// The truncated cone is assumed centered at the origin and aligned with the Z axis.
+    /// Markers are created outside the truncated cone, in a number of layers corresponding to system parameters.
+    /// Markers are created using cylindrical coordinates (polar=true), or else on a uniform Cartesian grid.
+    /// The base of the truncated cone has a radius of rad, and the tip has a radius of rad_tip.
+    std::vector<ChVector3d> CreatePointsTruncatedConeExterior(double rad,
+                                                              double rad_tip,
+                                                              double height,
+                                                              bool polar) const;
 
     /// Create marker points filling a cylindrical annulus of specified radii and height.
     /// The cylinder annulus is assumed centered at the origin and aligned with the Z axis.
@@ -537,14 +567,14 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
                          bool remove_center         ///< eliminate markers on surface
     );
 
-    /// Create the the local BCE coordinates, their body associations, and the initial global BCE positions for the
+    /// Create the local BCE coordinates, their body associations, and the initial global BCE positions for the
     /// given FSI rigid body.
     void CreateBCEFsiBody(std::shared_ptr<FsiBody> fsi_body,
                           std::vector<int>& bce_ids,
                           std::vector<ChVector3d>& bce_coords,
                           std::vector<ChVector3d>& bce);
 
-    /// Create the the local BCE coordinates, their mesh associations, and the initial global BCE positions for the
+    /// Create the local BCE coordinates, their mesh associations, and the initial global BCE positions for the
     /// given FSI 1D mesh.
     void CreateBCEFsiMesh1D(std::shared_ptr<FsiMesh1D> fsi_mesh,
                             BcePatternMesh1D pattern,
@@ -553,7 +583,7 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
                             std::vector<ChVector3d>& bce_coords,
                             std::vector<ChVector3d>& bce);
 
-    /// Create the the local BCE coordinates, their mesh associations, and the initial global BCE positions for the
+    /// Create the local BCE coordinates, their mesh associations, and the initial global BCE positions for the
     /// given FSI 2D mesh.
     void CreateBCEFsiMesh2D(std::shared_ptr<FsiMesh2D> fsi_mesh,
                             BcePatternMesh2D pattern,
@@ -606,8 +636,10 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
     /// Function to integrate the fluid system from `time` to `time + step`.
     virtual void OnDoStepDynamics(double time, double step) override;
 
-    /// Get the variable step size.
-    double GetVariableStepSize() override;
+    /// Get the current step size.
+    /// If variable step size is enabled, this returns the current step size (calculated based on system state);
+    /// otherwise, it returns the specified constant step size.
+    double GetCurrentStepSize() override;
 
     /// Additional actions taken before applying fluid forces to the solid phase.
     virtual void OnExchangeSolidForces() override;
@@ -623,7 +655,7 @@ class CH_FSI_API ChFsiFluidSystemSPH : public ChFsiFluidSystem {
     std::shared_ptr<ChFsiParamsSPH> m_paramsH;  ///< simulation parameters
     bool m_force_proximity_search;
 
-    std::unique_ptr<FsiDataManager> m_data_mgr;       ///< FSI data manager
+    std::unique_ptr<FsiDataManager> m_data_mgr;          ///< FSI data manager
     std::unique_ptr<SphFluidDynamics> m_fluid_dynamics;  ///< fluid system
     std::unique_ptr<SphBceManager> m_bce_mgr;            ///< BCE manager
 

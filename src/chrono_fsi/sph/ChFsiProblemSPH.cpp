@@ -41,6 +41,9 @@ namespace chrono {
 namespace fsi {
 namespace sph {
 
+// Maximum load factor for unordered maps (percentage of space in actual use)
+constexpr float max_load_factor = 0.75f;
+
 // ----------------------------------------------------------------------------
 
 ChFsiProblemSPH::ChFsiProblemSPH(double spacing, ChSystem* sys)
@@ -53,6 +56,10 @@ ChFsiProblemSPH::ChFsiProblemSPH(double spacing, ChSystem* sys)
       m_verbose(false) {
     m_ground = chrono_types::make_shared<ChBody>();
     m_ground->SetFixed(true);
+
+    // Set max load factor for unordered maps
+    m_sph.max_load_factor(max_load_factor);
+    m_bce.max_load_factor(max_load_factor);
 
     // Create the underlying SPH system
     m_sysSPH = chrono_types::make_shared<ChFsiFluidSystemSPH>();
@@ -266,8 +273,10 @@ void ChFsiProblemSPH::Initialize() {
             for (const auto& pos : sph_points) {
                 m_props_cb->set(*m_sysSPH, pos);
                 ChVector3d tau_diag(-m_props_cb->p0);
+                // Consolidation Pressure is only used in the MCC rheology model
+                double consolidation_pressure = m_props_cb->p0 * m_props_cb->pre_pressure_scale0;
                 m_sysSPH->AddSPHParticle(pos, m_props_cb->rho0, m_props_cb->p0, m_props_cb->mu0, m_props_cb->v0,  //
-                                         tau_diag, tau_offdiag);
+                                         tau_diag, tau_offdiag, consolidation_pressure);
             }
             break;
         }
@@ -386,7 +395,7 @@ void ChFsiProblemSPH::ProcessBody(ChFsiFluidSystemSPH::FsiSphBody& b) {
         }
     }
 
-    // Treat mesh shapes spearately
+    // Treat mesh shapes separately
     for (const auto& mesh : b.fsi_body->geometry->coll_meshes) {
         auto num_removed_mesh = ProcessBodyMesh(b, *mesh.trimesh, mesh.int_point);
         num_removed += num_removed_mesh;
@@ -652,26 +661,66 @@ void ChFsiProblemSPH::WriteReconstructedSurface(const std::string& dir, const st
 
 ChFsiProblemCartesian::ChFsiProblemCartesian(double spacing, ChSystem* sys) : ChFsiProblemSPH(spacing, sys) {}
 
-void ChFsiProblemCartesian::Construct(const std::string& sph_file, const std::string& bce_file, const ChVector3d& pos) {
+void ChFsiProblemCartesian::Construct(const std::string& sph_file,
+                                      const std::string& bce_file,
+                                      const ChVector3d& pos,
+                                      bool use_grid_coordinates) {
     if (m_verbose) {
         cout << "Construct ChFsiProblemSPH from data files" << endl;
     }
 
     std::string line;
-    int x, y, z;
 
     std::ifstream sph(sph_file, std::ios_base::in);
+    size_t num_sph = std::count(std::istreambuf_iterator<char>(sph), std::istreambuf_iterator<char>(), '\n');
+    sph.seekg(0, sph.beg);
+    m_sph.reserve(num_sph);
     while (std::getline(sph, line)) {
-        std::istringstream iss(line, std::ios_base::in);
-        iss >> x >> y >> z;
-        m_sph.insert(ChVector3i(x, y, z));
+        // Replace commas with spaces for CSV format
+        std::replace(line.begin(), line.end(), ',', ' ');
+        std::istringstream iss(line);
+
+        if (use_grid_coordinates) {
+            // Read integer grid coordinates directly
+            int x, y, z;
+            if (iss >> x >> y >> z) {
+                m_sph.insert(ChVector3i(x, y, z));
+            }
+        } else {
+            // Read physical positions and convert to grid coordinates
+            double x, y, z;
+            if (iss >> x >> y >> z) {
+                ChVector3i grid_pos((int)std::round(x / m_spacing), (int)std::round(y / m_spacing),
+                                    (int)std::round(z / m_spacing));
+                m_sph.insert(grid_pos);
+            }
+        }
     }
 
     std::ifstream bce(bce_file, std::ios_base::in);
+    size_t num_bce = std::count(std::istreambuf_iterator<char>(bce), std::istreambuf_iterator<char>(), '\n');
+    bce.seekg(0, bce.beg);
+    m_bce.reserve(num_bce);
     while (std::getline(bce, line)) {
-        std::istringstream iss(line, std::ios_base::in);
-        iss >> x >> y >> z;
-        m_bce.insert(ChVector3i(x, y, z));
+        // Replace commas with spaces for CSV format
+        std::replace(line.begin(), line.end(), ',', ' ');
+        std::istringstream iss(line);
+
+        if (use_grid_coordinates) {
+            // Read integer grid coordinates directly
+            int x, y, z;
+            if (iss >> x >> y >> z) {
+                m_bce.insert(ChVector3i(x, y, z));
+            }
+        } else {
+            // Read physical positions and convert to grid coordinates
+            double x, y, z;
+            if (iss >> x >> y >> z) {
+                ChVector3i grid_pos((int)std::round(x / m_spacing), (int)std::round(y / m_spacing),
+                                    (int)std::round(z / m_spacing));
+                m_bce.insert(grid_pos);
+            }
+        }
     }
 
     if (m_verbose) {
@@ -705,6 +754,7 @@ void ChFsiProblemCartesian::Construct(const ChVector3d& box_size, const ChVector
     }
 
     // Insert in cached sets
+    m_sph.reserve(num_sph);
     for (auto& p : sph) {
         m_sph.insert(p);
     }
@@ -788,10 +838,12 @@ void ChFsiProblemCartesian::Construct(const std::string& heightmap_file,
     int bce_layers = m_sysSPH->GetNumBCELayers();
 
     // Reserve space for containers
+    int num_sph = Nx * Ny * Nz; // underestimate if not uniform depth
+    int num_bce = bce_layers * (Nx * Ny); // underestimate if creating side walls
     std::vector<ChVector3i> sph;
     std::vector<ChVector3i> bce;
-    sph.reserve(Nx * Ny * Nz);            // underestimate if not uniform depth
-    bce.reserve(bce_layers * (Nx * Ny));  // underestimate if creating side walls
+    sph.reserve(num_sph);
+    bce.reserve(num_bce);
 
     // Generate SPH and bottom BCE points
     for (int Ix = 0; Ix < Nx; Ix++) {
@@ -882,10 +934,12 @@ void ChFsiProblemCartesian::Construct(const std::string& heightmap_file,
 
     // Note that pixels in image start at top-left.
     // Modify y coordinates so that particles start at bottom-left before inserting in cached sets.
+    m_sph.reserve(num_sph);
     for (auto& p : sph) {
         p.y() = (Ny - 1) - p.y();
         m_sph.insert(p);
     }
+    m_bce.reserve(num_bce);
     for (auto& p : bce) {
         p.y() = (Ny - 1) - p.y();
         m_bce.insert(p);
@@ -1002,6 +1056,7 @@ size_t ChFsiProblemCartesian::AddBoxContainer(const ChVector3d& box_size,  // bo
     }
 
     // Insert in cached sets
+    m_bce.reserve(num_bce);
     for (auto& p : bce) {
         m_bce.insert(p);
     }
@@ -1123,9 +1178,11 @@ std::shared_ptr<ChBody> ChFsiProblemWavetank::ConstructWaveTank(
     }
 
     // Insert particles and markers in cached sets
+    m_sph.reserve(num_sph);
     for (auto& p : sph) {
         m_sph.insert(p);
     }
+    m_bce.reserve(num_bce);
     for (auto& p : bce) {
         m_bce.insert(p);
     }
@@ -1267,7 +1324,17 @@ void ChFsiProblemCylindrical::Construct(double radius_inner,
     int Nr = std::round((radius_outer - radius_inner) / m_spacing) + 1;
     int Nz = std::round(height / m_spacing) + 1;
 
-    // 1. Generate SPH and bottom BCE points
+    // Estimate number of SPH particles
+    int num_sph = 0;
+    if (filled)
+        num_sph += Nz;
+    for (int Ir = Ir_start; Ir < Ir_start + Nr; Ir++) {
+        int Na = std::floor(CH_2PI * Ir);
+        num_sph += Na * Nz;
+    }
+    m_sph.reserve(num_sph);
+
+    // Generate SPH and bottom BCE points
     if (filled) {
         assert(Ir_start == 0);
 
@@ -1316,6 +1383,8 @@ size_t ChFsiProblemCylindrical::AddCylindricalContainer(double radius_inner,
     int Ir_start = std::round(radius_inner / m_spacing);
     int Nr = std::round((radius_outer - radius_inner) / m_spacing) + 1;
     int Nz = std::round(height / m_spacing) + 1;
+
+    //// TODO - reserve space for m_bce
 
     // 1. Generate bottom BCE points
     if (z_neg) {

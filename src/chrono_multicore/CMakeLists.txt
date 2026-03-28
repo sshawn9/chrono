@@ -68,13 +68,13 @@ endif()
 # Place the header file in the library output directory and make sure it can
 # be found at compile time.
 
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/ChConfigMulticore.h.in
-  ${PROJECT_BINARY_DIR}/chrono_multicore/ChConfigMulticore.h
-  )
+set(Chrono_Multicore_CONFIG_FILE ${PROJECT_BINARY_DIR}/chrono_multicore/ChConfigMulticore.h)
 
-install(FILES "${PROJECT_BINARY_DIR}/chrono_multicore/ChConfigMulticore.h"
-        DESTINATION include/chrono_multicore)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ChConfigMulticore.h.in ${Chrono_Multicore_CONFIG_FILE} @ONLY)
+
+source_group("" FILES ${Chrono_Multicore_CONFIG_FILE})
+
+install(FILES ${Chrono_Multicore_CONFIG_FILE} DESTINATION include/chrono_multicore)
 
 # ------------------------------------------------------------------------------
 # List the files in the Chrono::Multicore module
@@ -107,7 +107,6 @@ set(Chrono_Multicore_PHYSICS
 source_group(physics FILES ${Chrono_Multicore_PHYSICS})
     
 set(Chrono_Multicore_SOLVER
-    solver/ChSystemDescriptorMulticore.h
     solver/ChIterativeSolverMulticore.h
     solver/ChIterativeSolverMulticore.cpp
     solver/ChIterativeSolverMulticoreNSC.cpp
@@ -161,6 +160,7 @@ add_library(Chrono_multicore
   ${Chrono_Multicore_COLLISION}
   ${Chrono_Multicore_CONSTRAINTS}
   ${Chrono_Multicore_SOLVER}
+  ${Chrono_Multicore_CONFIG_FILE}
 )
 add_library(Chrono::multicore ALIAS Chrono_multicore)
 
@@ -212,6 +212,6 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
         DESTINATION include/chrono_multicore
         FILES_MATCHING PATTERN "*.h")
 
-# Install files for chrono-config (in both build and install trees)
+# Install files for ChronoConfig (in both build and install trees)
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/FindBlaze.cmake DESTINATION ${CMAKE_BINARY_DIR}/cmake/)
 install(FILES "${CMAKE_SOURCE_DIR}/cmake/FindBlaze.cmake" DESTINATION ${CH_CONFIG_INSTALL_PATH})

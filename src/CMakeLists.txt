@@ -135,13 +135,25 @@ endif()
 #-----------------------------------------------------------------------------
 
 message(STATUS "Searching for Eigen3")
-find_package(Eigen3 3.3 QUIET)
-if(EIGEN3_FOUND)
-  message(STATUS "  Eigen3 found. EIGEN3_INCLUDE_DIR: ${EIGEN3_INCLUDE_DIR}")
+
+# Look first for Eigen 5.0, then 3.
+message(STATUS "  Try Eigen 5.0 or newer")
+find_package(Eigen3 5.0 QUIET)
+if(NOT Eigen3_FOUND)
+   message(STATUS "  Try Eigen 3.3 or newer")
+   find_package(Eigen3 3.3 QUIET)
+endif()
+
+if(Eigen3_FOUND)
+  message(STATUS "Eigen3 found")
+  message(STATUS "  Eigen3 version:     ${EIGEN3_VERSION}")
+  message(STATUS "  Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
   mark_as_advanced(FORCE EIGEN3_INCLUDE_DIR)
   mark_as_advanced(FORCE Eigen3_DIR)
 else()
-  message(ERROR "  Eigen3 cannot be found. Set either EIGEN3_INCLUDE_DIR or the envvar Eigen3_ROOT to the location of Eigen library or provide location of Eigen3Config.cmake through Eigen3_DIR.")
+  message(ERROR "Eigen3 cannot be found.\n"
+          "  Provide Eigen3_DIR (location of Eigen3Config.cmake) or else\n" 
+          "  set either EIGEN3_INCLUDE_DIR or the envvar Eigen3_ROOT to the location of Eigen library.")
   set(EIGEN3_INCLUDE_DIR "" CACHE PATH "Path to Eigen3 directory (should contain a subfolder named \"Eigen\"")
   set(Eigen3_DIR "" CACHE PATH "Path to Eigen3 config file (should contain the \"Eigen3Config.cmake\" file")
   mark_as_advanced(CLEAR EIGEN3_INCLUDE_DIR)
@@ -480,6 +492,7 @@ add_subdirectory(chrono)
 # ATTENTION: It is important to configure Chrono::Mumps before any other modules that may depend on Intel MKL!
 add_subdirectory(chrono_mumps)
 add_subdirectory(chrono_pardisomkl)
+add_subdirectory(chrono_fsi)
 add_subdirectory(chrono_parsers)
 add_subdirectory(chrono_matlab)
 add_subdirectory(chrono_irrlicht)
@@ -490,15 +503,13 @@ add_subdirectory(chrono_modal)
 add_subdirectory(chrono_postprocess)
 add_subdirectory(chrono_peridynamics)
 add_subdirectory(chrono_multicore)
-add_subdirectory(chrono_fsi)
 add_subdirectory(chrono_dem)
 add_subdirectory(chrono_vehicle)
 add_subdirectory(chrono_models)
 add_subdirectory(chrono_sensor)
 add_subdirectory(chrono_synchrono)
 add_subdirectory(chrono_ros)
-add_subdirectory(chrono_swig/chrono_python)
-add_subdirectory(chrono_swig/chrono_csharp)
+add_subdirectory(chrono_swig)
 
 # Add directories for demo programs, unit test programs, and benchmark test programs.
 if(BUILD_DEMOS)
@@ -506,6 +517,9 @@ if(BUILD_DEMOS)
 endif()
 if(BUILD_TESTING)
   add_subdirectory(tests/unit_tests)
+  if(CH_ENABLE_MODULE_PYTHON)
+    add_subdirectory(tests/unit_tests/python)
+  endif()
 endif()
 if(BUILD_BENCHMARKING)
   add_subdirectory(tests/benchmark_tests)
@@ -598,12 +612,6 @@ else()
   set(CHRONO_PARDISO_MKL "#undef CHRONO_PARDISO_MKL")
 endif()
 
-if(CH_ENABLE_MODULE_PARSERS)
-  set(CHRONO_PARSERS "#define CHRONO_PARSERS")
-else()
-  set(CHRONO_PARSERS "#undef CHRONO_PARSERS")
-endif()
-
 if(CH_ENABLE_MODULE_POSTPROCESS)
   set(CHRONO_POSTPROCESS "#define CHRONO_POSTPROCESS")
 else()
@@ -624,8 +632,26 @@ endif()
 
 if(CH_ENABLE_MODULE_FSI)
   set(CHRONO_FSI "#define CHRONO_FSI")
+  if(CH_ENABLE_MODULE_FSI_SPH)
+    set(CHRONO_FSI_SPH "#define CHRONO_FSI_SPH")
+  else()
+    set(CHRONO_FSI_SPH "#undef CHRONO_FSI_SPH")
+  endif()
+  if(CH_ENABLE_MODULE_FSI_TDPF)
+    set(CHRONO_FSI_TDPF "#define CHRONO_FSI_TDPF")
+  else()
+    set(CHRONO_FSI_TDPF "#undef CHRONO_FSI_TDPF")
+  endif()
 else()
   set(CHRONO_FSI "#undef CHRONO_FSI")
+  set(CHRONO_FSI_SPH "#undef CHRONO_FSI_SPH")
+  set(CHRONO_FSI_TDPF "#undef CHRONO_FSI_TDPF")
+endif()
+
+if(CH_ENABLE_MODULE_PARSERS)
+  set(CHRONO_PARSERS "#define CHRONO_PARSERS")
+else()
+  set(CHRONO_PARSERS "#undef CHRONO_PARSERS")
 endif()
 
 if(CH_ENABLE_MODULE_DEM)
@@ -730,27 +756,33 @@ install(FILES "${CMAKE_SOURCE_DIR}/cmake/FindEigen3.cmake"
         DESTINATION ${CH_CONFIG_INSTALL_PATH}
         )
 
-# Create Chrono configuration header in build and install trees
+# Create Chrono project configuration script for the install tree
 set(CH_INSTALL_TREE TRUE)
+set(CH_BUILD_TREE_DIR "")
+set(CHRONO_SWIG_DIR "${CMAKE_INSTALL_PREFIX}/include/chrono_swig")
 configure_package_config_file(
-  "${CMAKE_SOURCE_DIR}/cmake/chrono-config.cmake.in"
-  "${CMAKE_BINARY_DIR}/cmake/chrono-config.cmake-install"
+  "${CMAKE_SOURCE_DIR}/cmake/ChronoConfig.cmake.in"
+  "${CMAKE_BINARY_DIR}/cmake/ChronoConfig.cmake-install"
   INSTALL_DESTINATION ${CH_CONFIG_INSTALL_PATH}
 )
 
+# Create Chrono project configuration script for the build tree
 set(CH_INSTALL_TREE FALSE)
+set(CH_BUILD_TREE_DIR "${PROJECT_BINARY_DIR}")
+set(CHRONO_SWIG_DIR "${CMAKE_BINARY_DIR}/chrono_swig")
 configure_package_config_file(
-  "${CMAKE_SOURCE_DIR}/cmake/chrono-config.cmake.in"
-  "${CMAKE_BINARY_DIR}/cmake/chrono-config.cmake"
+  "${CMAKE_SOURCE_DIR}/cmake/ChronoConfig.cmake.in"
+  "${CMAKE_BINARY_DIR}/cmake/ChronoConfig.cmake"
   INSTALL_DESTINATION ${CH_CONFIG_INSTALL_PATH}
 )
 
 unset(CH_INSTALL_TREE)
+unset(CH_BUILD_TREE_DIR)
 
-# install config files
+# install config file
 install(FILES
-        "${CMAKE_BINARY_DIR}/cmake/chrono-config.cmake-install"
-        RENAME "chrono-config.cmake"
+        "${CMAKE_BINARY_DIR}/cmake/ChronoConfig.cmake-install"
+        RENAME "ChronoConfig.cmake"
         DESTINATION ${CH_CONFIG_INSTALL_PATH}
 )
 
@@ -774,32 +806,23 @@ if(CH_ENABLE_MODULE_CSHARP)
 endif()
 
 #-----------------------------------------------------------------------------
+# Create the ChronoConfigVersion.cmake file
+#-----------------------------------------------------------------------------
 
+write_basic_package_version_file(
+  "${CMAKE_BINARY_DIR}/cmake/ChronoConfigVersion.cmake"
+  VERSION "${CHRONO_VERSION_MAJOR}.${CHRONO_VERSION_MINOR}.${CHRONO_VERSION_PATCH}"
+  COMPATIBILITY SameMajorVersion
+)
 
-## TODO DARIOM: do version
-# # set version
-# set(version 3.4.1)
-
-# set_property(TARGET MathFunctions PROPERTY VERSION ${version})
-# set_property(TARGET MathFunctions PROPERTY SOVERSION 3)
-# set_property(TARGET MathFunctions PROPERTY
-#   INTERFACE_MathFunctions_MAJOR_VERSION 3)
-# set_property(TARGET MathFunctions APPEND PROPERTY
-#   COMPATIBLE_INTERFACE_STRING MathFunctions_MAJOR_VERSION
-# )
-
-# # generate the version file for the config file
-# write_basic_package_version_file(
-#   "${CMAKE_BINARY_DIR}/MathFunctionsConfigVersion.cmake"
-#   VERSION "${CHRONO_VERSION_MAJOR}.${CHRONO_VERSION_MINOR}.${CHRONO_VERSION_PATCH}"
-#   COMPATIBILITY AnyNewerVersion
-# )
-
+install(FILES
+        "${CMAKE_BINARY_DIR}/cmake/ChronoConfigVersion.cmake"
+        DESTINATION ${CH_CONFIG_INSTALL_PATH}
+)
 
 #-----------------------------------------------------------------------------
 # Export generated ChronoTargets.cmake
 #-----------------------------------------------------------------------------
-
 
 export(EXPORT ChronoTargets
        FILE "${CMAKE_BINARY_DIR}/cmake/ChronoTargets.cmake"

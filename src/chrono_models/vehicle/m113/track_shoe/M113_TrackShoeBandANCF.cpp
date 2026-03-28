@@ -18,7 +18,7 @@
 
 #include "chrono/assets/ChVisualShapeCylinder.h"
 #include "chrono/assets/ChVisualShapeTriangleMesh.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/input_output/ChWriterCSV.h"
 
 #include "chrono_vehicle/ChVehicleDataPath.h"
 
@@ -101,7 +101,6 @@ void M113_TrackShoeBandANCF::AddVisualizationAssets(VisualizationType vis) {
         auto trimesh_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
         trimesh_shape->SetMesh(trimesh);
         trimesh_shape->SetName(filesystem::path(m_meshFile).stem());
-        trimesh_shape->SetMutable(false);
         m_shoe->AddVisualShape(trimesh_shape);
     } else {
         ChTrackShoeBandANCF::AddVisualizationAssets(vis);

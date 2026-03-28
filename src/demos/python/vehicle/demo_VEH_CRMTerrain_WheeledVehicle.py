@@ -58,7 +58,6 @@ def CreateFSIWheels(vehicle, terrain):
 # Set output root directory
 chrono.SetChronoOutputPath("../DEMO_OUTPUT/")
 
-veh.SetVehicleDataPath(chrono.GetChronoDataPath() + 'vehicle/')
 # Problem settings (mirroring the C++ demo)
 target_speed = 7.0
 tend = 30.0
@@ -70,6 +69,10 @@ render_fps = 200
 visualization_sph = True
 visualization_bndry_bce = False
 visualization_rigid_bce = False
+
+# Output settings
+save_images = False  # Set to True to save BMP images
+save_results = False  # Set to True to save results.txt
 
 # CRM material properties
 density = 1700
@@ -199,13 +202,13 @@ sph_params = fsi.SPHParameters()
 sph_params.integration_scheme = fsi.IntegrationScheme_RK2
 sph_params.initial_spacing = spacing
 sph_params.d0_multiplier = 1.2
-sph_params.kernel_threshold = 0.8
+sph_params.free_surface_threshold = 0.8
 sph_params.artificial_viscosity = 0.5
 sph_params.shifting_method = fsi.ShiftingMethod_PPST
 sph_params.shifting_ppst_push = 3.0
 sph_params.shifting_ppst_pull = 1.0
-sph_params.consistent_gradient_discretization = False
-sph_params.consistent_laplacian_discretization = False
+sph_params.use_consistent_gradient_discretization = False
+sph_params.use_consistent_laplacian_discretization = False
 sph_params.viscosity_method = fsi.ViscosityMethod_ARTIFICIAL_BILATERAL
 sph_params.boundary_method = fsi.BoundaryMethod_ADAMI
 terrain.SetSPHParameters(sph_params)
@@ -262,9 +265,12 @@ os.makedirs(out_dir, exist_ok=True)
 out_file = os.path.join(out_dir, "results.txt")
 
 # Use a simple CSV writer
-import csv
-csvfile = open(out_file, 'w', newline='')
-csvwriter = csv.writer(csvfile, delimiter=' ')
+csvfile = None
+csvwriter = None
+if save_results:
+    import csv
+    csvfile = open(out_file, 'w', newline='')
+    csvwriter = csv.writer(csvfile, delimiter=' ')
 
 # -----------------------------
 # Create run-time visualization
@@ -285,12 +291,14 @@ if render:
     visVSG.SetWindowTitle("Wheeled vehicle on CRM deformable terrain")
     visVSG.SetWindowSize(1280, 800)
     visVSG.SetWindowPosition(100, 100)
-    visVSG.EnableSkyBox()
+    visVSG.EnableSkyTexture()
     visVSG.SetLightIntensity(1.0)
     visVSG.SetLightDirection(1.5 * chrono.CH_PI_2, chrono.CH_PI_4)
     visVSG.SetCameraAngleDeg(40)
     visVSG.SetChaseCamera(chrono.VNULL, 6.0, 2.0)
     visVSG.SetChaseCameraPosition(chrono.ChVector3d(0, 8, 1.5))
+    # By default the target render FPS is 60 for all vehicle VSG visualisations, set to 0 to disable
+    # visVSG.SetTargetRenderFPS(200)
     visVSG.Initialize()
     vis = visVSG
 
@@ -330,6 +338,8 @@ while time < tend:
         vis.Render()
         render_frame += 1
 
+
+
     # Synchronize systems
     driver.Synchronize(time)
     if vis:
@@ -341,15 +351,19 @@ while time < tend:
     driver.Advance(step_size)
     if vis:
         vis.Advance(step_size)
-        vis.WriteImageToFile(os.path.join(out_dir, f"img_{render_frame + 1:05d}.bmp"))
+        if save_images:
+            vis.WriteImageToFile(os.path.join(out_dir, f"img_{render_frame + 1:05d}.bmp"))
     terrain.Advance(step_size)
 
     # Output results
-    csvwriter.writerow([time, veh_loc.x, veh_loc.y, veh_loc.z, vehicle.GetSpeed()])
+    if save_results and csvwriter:
+        csvwriter.writerow([time, veh_loc.x, veh_loc.y, veh_loc.z, vehicle.GetSpeed()])
 
     time += step_size
     sim_frame += 1
 
-csvfile.close()
-print("Simulation complete. Results written to:", out_file)
-
+if csvfile:
+    csvfile.close()
+    print("Simulation complete. Results written to:", out_file)
+else:
+    print("Simulation complete.")

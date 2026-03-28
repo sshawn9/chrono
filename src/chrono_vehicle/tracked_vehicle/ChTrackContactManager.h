@@ -24,7 +24,7 @@
 #include "chrono/physics/ChContactContainer.h"
 #include "chrono/physics/ChLoadContainer.h"
 #include "chrono/collision/ChCollisionSystem.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/input_output/ChWriterCSV.h"
 
 #include "chrono_vehicle/ChSubsysDefs.h"
 #include "chrono_vehicle/ChChassis.h"
@@ -101,7 +101,7 @@ class CH_VEHICLE_API ChTrackContactManager : public ChContactContainer::ReportCo
     bool m_render_forces;   ///< render contact forces
     double m_scale_forces;  ///< contact force rendering scale
 
-    utils::ChWriterCSV m_csv;
+    ChWriterCSV m_csv;
 
     std::shared_ptr<ChChassis> m_chassis;
     std::shared_ptr<ChSprocket> m_sprocket_L;
@@ -138,7 +138,7 @@ class CH_VEHICLE_API ChTrackCollisionManager : public ChCollisionSystem::Narrowp
 
     /// Callback used to process collision pairs found by the narrow-phase collision step.
     /// Return true to generate a contact for this pair of overlapping bodies.
-    virtual bool OnNarrowphase(ChCollisionInfo& contactinfo) override;
+    virtual bool OnNarrowphase(ChCollisionInfo& cinfo) override;
 
     bool m_idler_shoe;                                 ///< process collisions with idler bodies
     bool m_wheel_shoe;                                 ///< process collisions with road-wheel bodies
@@ -209,7 +209,7 @@ class CH_VEHICLE_API ChTrackCustomContact : public ChLoadContainer {
 
   private:
     virtual void Setup() override;
-    virtual void Update(double time, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
     void ApplyForces();
 
     ChTrackCollisionManager* m_collision_manager;

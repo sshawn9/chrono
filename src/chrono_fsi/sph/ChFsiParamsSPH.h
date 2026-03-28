@@ -43,6 +43,7 @@ struct ChFsiParamsSPH {
     BoundaryMethod boundary_method;        ///< Boundary type (Adami or Holmes)
     KernelType kernel_type;                ///< Kernel type (Quadratic, cubic spline, quintinc spline, quintic Wendland)
     ShiftingMethod shifting_method;        ///< Shifting method (NONE, PPST, XSPH, PPST_XSPH)
+    RheologyCRM rheology_model_crm;        ///< Rheology model (MU_OF_I or MCC)
 
     bool elastic_SPH;  ///< Set physics problem: CFD (false) or CRM granular (true)
 
@@ -109,7 +110,7 @@ struct ChFsiParamsSPH {
 
     double pressure_height;  ///< height for pressure initialization
 
-    // Note: more frequent re-initialization helps in getting more accurate incompressible fluid, 
+    // Note: more frequent re-initialization helps in getting more accurate incompressible fluid,
     // but more stable solution is obtained for larger values of density_reinit_steps
     int density_reinit_steps;  ///< reinitialize density after density_reinit_steps steps
 
@@ -117,12 +118,12 @@ struct ChFsiParamsSPH {
     int gradient_type;       ///< Type of the gradient operator
     int laplacian_type;      ///< Type of the laplacian operator
 
-    bool use_consistent_gradient_discretization;                         ///< use consistent discretization for gradient operator
+    bool use_consistent_gradient_discretization;   ///< use consistent discretization for gradient operator
     bool use_consistent_laplacian_discretization;  ///< use consistent discretization for laplacian operator
     bool use_delta_sph;                            ///< use delta SPH
     Real density_delta;                            ///< parameter for delta SPH
 
-    bool use_density_based_projection;  ///< Set true to use density based projetion scheme in ISPH solver
+    bool use_density_based_projection;  ///< Set true to use density based projection scheme in ISPH solver
 
     bool Pressure_Constraint;  ///< Whether the singularity of the pressure equation should be fixed
     SolverType LinearSolver;   ///< Type of the linear solver
@@ -143,11 +144,11 @@ struct ChFsiParamsSPH {
     bool Apply_BC_U;        ///< This option lets you apply a velocity BC on the BCE markers
     Real L_Characteristic;  ///< Characteristic for Re number computation
 
-    bool non_newtonian;       ///< Set true to model non-newtonian fluid
+    bool non_newtonian;       ///< Set true to model non-Newtonian fluid
     Rheology rheology_model;  ///< Model of the rheology
     Real ave_diam;            ///< average particle diameter
     Real cohesion;            ///< c in the stress model sigma=(mu*p+c)/|D|
-    FrictionLaw mu_of_I;      ///< Constant I in granular material dyanmcis
+    FrictionLaw mu_of_I;      ///< Constant I in granular material dynamics
     Real mu_max;              ///< maximum viscosity
     Real mu_fric_s;           ///< friction mu_s
     Real mu_fric_2;           ///< mu_2 constant in mu=mu(I)
@@ -157,16 +158,23 @@ struct ChFsiParamsSPH {
     Real HB_sr0;   ///< Herschel–Bulkley consistency index
     Real HB_k;     ///< Herschel–Bulkley consistency index
     Real HB_n;     ///< Herschel–Bulkley  power
-    Real HB_tau0;  ///< Herschel–Bulkley yeild stress
+    Real HB_tau0;  ///< Herschel–Bulkley yield stress
 
-    Real E_young;       ///< Young's modulus
-    Real G_shear;       ///< Shear modulus
-    Real INV_G_shear;   ///< 1.0 / G_shear
-    Real K_bulk;        ///< Bulk modulus
-    Real Nu_poisson;    ///< Poisson's ratio
-    Real artificial_viscosity;  ///< Artifical viscosity coefficient
-    Real Coh_coeff;     ///< Cohesion coefficient
-    Real free_surface_threshold;          ///< Threshold of the integration of the kernel function
+    Real E_young;                 ///< Young's modulus
+    Real G_shear;                 ///< Shear modulus
+    Real INV_G_shear;             ///< 1.0 / G_shear
+    Real K_bulk;                  ///< Bulk modulus
+    Real Nu_poisson;              ///< Poisson's ratio
+    Real artificial_viscosity;    ///< Artifical viscosity coefficient
+    Real Coh_coeff;               ///< Cohesion coefficient
+    Real free_surface_threshold;  ///< threshold for identifying free surface. The divergence of the position
+    ///< field is computed and compared to this threshold. Particles with divergence
+    ///< less than this threshold are considered free surface particles (CRM only,
+    ///< default: 2.0)
+    Real mcc_M;         ///< CSL line slope
+    Real mcc_kappa;     ///< Compression index
+    Real mcc_lambda;    ///< Swelling index
+    Real mcc_v_lambda;  ///< Specific volume at reference pressure of 1000 Pa
 
     Real boxDimX;  ///< Dimension of the space domain - X
     Real boxDimY;  ///< Dimension of the space domain - Y

@@ -68,6 +68,11 @@ ChVector3d SCMTerrain::GetInitNormal(const ChVector3d& loc) const {
     return m_loader->GetInitNormal(loc);
 }
 
+// Get the point on the terrain below the specified location.
+ChVector3d SCMTerrain::GetPoint(const ChVector3d& loc) const {
+    return m_loader->GetPoint(loc);
+}
+
 // Get the terrain height below the specified location.
 double SCMTerrain::GetHeight(const ChVector3d& loc) const {
     return m_loader->GetHeight(loc);
@@ -314,7 +319,7 @@ int SCMTerrain::GetNumContactPatches() const {
     return m_loader->m_num_contact_patches;
 }
 
-// Return the number of nodes in the erosion domain at last step (bulldosing effects).
+// Return the number of nodes in the erosion domain at last step (bulldozing effects).
 int SCMTerrain::GetNumErosionNodes() const {
     return m_loader->m_num_erosion_nodes;
 }
@@ -391,7 +396,9 @@ SCMLoader::SCMLoader(ChSystem* system, bool visualization_mesh) : m_soil_fun(nul
     if (visualization_mesh) {
         // Create the visualization mesh and asset
         m_trimesh_shape = std::shared_ptr<ChVisualShapeTriangleMesh>(new ChVisualShapeTriangleMesh);
+        m_trimesh_shape->SetMutable(true);
         m_trimesh_shape->SetWireframe(true);
+        m_trimesh_shape->SetDoubleFaced(true);
         m_trimesh_shape->SetFixedConnectivity();
     }
 
@@ -843,6 +850,11 @@ ChVector3d SCMLoader::GetInitNormal(const ChVector2i& loc) const {
     }
 }
 
+// Get the terrain point (relative to the SCM plane) at the specified grid node.
+ChVector3d SCMLoader::GetPoint(const ChVector2i& loc) const {
+    return m_frame.TransformPointLocalToParent(ChVector3d(loc.x() * m_delta, loc.y() * m_delta, GetHeight(loc)));
+}
+
 // Get the terrain height (relative to the SCM plane) at the specified grid vertex.
 double SCMLoader::GetHeight(const ChVector2i& loc) const {
     // First query the hash-map
@@ -855,7 +867,7 @@ double SCMLoader::GetHeight(const ChVector2i& loc) const {
 }
 
 // Get the terrain normal (relative to the SCM plane) at the specified grid vertex.
-ChVector3d SCMLoader::GetNormal(const ChVector2d& loc) const {
+ChVector3d SCMLoader::GetNormal(const ChVector2i& loc) const {
     switch (m_type) {
         case PatchType::HEIGHT_MAP:
         case PatchType::TRI_MESH: {
@@ -900,6 +912,15 @@ ChVector3d SCMLoader::GetInitNormal(const ChVector3d& loc) const {
     // Express in global frame
     auto nrm_abs = m_frame.TransformDirectionLocalToParent(nrm_loc);
     return ChWorldFrame::FromISO(nrm_abs);
+}
+
+// Get the terrain point below the specified location.
+ChVector3d SCMLoader::GetPoint(const ChVector3d& loc) const {
+    // Express location in the SCM frame
+    ChVector3d loc_loc = m_frame.TransformPointParentToLocal(loc);
+
+    // Return point in world frame
+    return m_frame.TransformPointLocalToParent(ChVector3d(loc_loc.x(), loc_loc.y(), GetHeight(loc)));
 }
 
 // Get the terrain height below the specified location.
@@ -973,7 +994,7 @@ void SCMLoader::UpdateActiveDomain(ActiveDomainInfo& ad, const ChVector3d& Z) {
     }
 
     // Calculate inverse of SCM normal expressed in body frame (for optimization of ray-OBB test)
-    ChVector3d dir = ad.m_body->TransformDirectionParentToLocal(Z);
+    ChVector3d dir = ad.m_body->GetFrameRefToAbs().TransformDirectionParentToLocal(Z);
     ad.m_ooN.x() = (dir.x() == 0) ? 1e10 : 1.0 / dir.x();
     ad.m_ooN.y() = (dir.y() == 0) ? 1e10 : 1.0 / dir.y();
     ad.m_ooN.z() = (dir.z() == 0) ? 1e10 : 1.0 / dir.z();
@@ -1593,10 +1614,10 @@ void SCMLoader::ComputeInternalForces() {
                     const ChVector3d& n = GetInitNormal(ij);                     //     terrain normal
                     m_grid_map.insert(std::make_pair(ij, NodeRecord(z, z, n)));  //     add new node record
                     m_modified_nodes.push_back(ij);                              //     mark as modified
-                }                                                                //
-                auto& nr = m_grid_map.at(ij);                                    //   node record
-                nr.erosion = true;                                               //   add to erosion domain
-                AddMaterialToNode(diff, nr);                                     //   add raise amount
+                }
+                auto& nr = m_grid_map.at(ij);  //   node record
+                nr.erosion = true;             //   add to erosion domain
+                AddMaterialToNode(diff, nr);   //   add raise amount
             }
 
             // Accumulate boundary
@@ -1717,9 +1738,9 @@ void SCMLoader::AddMaterialToNode(double amount, NodeRecord& nr) {
     if (amount > nr.hit_level - nr.level) {                      //   if not possible to assign all mass
         nr.massremainder += amount - (nr.hit_level - nr.level);  //     material to be further propagated
         amount = nr.hit_level - nr.level;                        //     clamp raise amount
-    }                                                            //
-    nr.level += amount;                                          //   modify node level
-    nr.level_initial += amount;                                  //   reset node initial level
+    }
+    nr.level += amount;          //   modify node level
+    nr.level_initial += amount;  //   reset node initial level
 }
 
 void SCMLoader::RemoveMaterialFromNode(double amount, NodeRecord& nr) {
@@ -1729,9 +1750,9 @@ void SCMLoader::RemoveMaterialFromNode(double amount, NodeRecord& nr) {
     } else if (nr.massremainder < amount && nr.massremainder > 0) {  // if not enough remainder material
         amount -= nr.massremainder;                                  //   clamp removed amount
         nr.massremainder = 0;                                        //   remainder material exhausted
-    }                                                                //
-    nr.level -= amount;                                              //   modify node level
-    nr.level_initial -= amount;                                      //   reset node initial level
+    }
+    nr.level -= amount;          //   modify node level
+    nr.level_initial -= amount;  //   reset node initial level
 }
 
 // Update vertex position and color in visualization mesh

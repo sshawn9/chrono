@@ -42,7 +42,7 @@
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
 #include "chrono/physics/ChLinkMotorRotationTorque.h"
 #include "chrono/physics/ChShaftBodyConstraint.h"
-#include "chrono/physics/ChInertiaUtils.h"
+#include "chrono/physics/ChMassProperties.h"
 
 #include "chrono/utils/ChUtils.h"
 
@@ -224,7 +224,6 @@ void ViperPart::Construct(ChSystem* system) {
         auto trimesh_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
         trimesh_shape->SetMesh(trimesh_vis);
         trimesh_shape->SetName(m_mesh_name);
-        trimesh_shape->SetMutable(false);
         m_body->AddVisualShape(trimesh_shape);
     }
 
@@ -385,7 +384,7 @@ void Viper::Create(ViperWheelType wheel_type) {
     // create rover chassis
     m_chassis = chrono_types::make_shared<ViperChassis>("chassis", m_default_material);
 
-    // initilize rover wheels
+    // initialize rover wheels
     double wx = 0.5618 + 0.08;
     double wy = 0.2067 + 0.32 + 0.0831;
     double wz = 0.0;
@@ -524,7 +523,7 @@ void Viper::Initialize(const ChFrame<>& pos) {
     };
 
     // Orientation of lift motors.
-    // A positive lifting input results in rasing the chassis relative to the wheels.
+    // A positive lifting input results in raising the chassis relative to the wheels.
     ChQuaternion<> lm_rot[] = {
         QUNIT,                  // LF
         QuatFromAngleX(CH_PI),  // RF

@@ -108,6 +108,14 @@ target_compile_definitions(Chrono_modal PRIVATE $<$<COMPILE_LANGUAGE:CXX>:CH_API
 target_link_libraries(Chrono_modal PRIVATE Chrono_core)
 target_link_libraries(Chrono_modal PRIVATE Spectra::Spectra)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    #
+elseif(MSVC)
+    #
+else()
+    target_compile_options(Chrono_core PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-Wdeprecated-declarations>)
+endif()
+
 install(TARGETS Chrono_modal
         EXPORT ChronoTargets
         RUNTIME DESTINATION bin
@@ -124,6 +132,6 @@ install(TARGETS Chrono_modal
 install(FILES ${Chrono_MODAL_HEADERS}
         DESTINATION include/chrono_modal)
 
-# Install files for chrono-config (in both build and install trees)
+# Install files for ChronoConfig (in both build and install trees)
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/FindSpectra.cmake DESTINATION ${CMAKE_BINARY_DIR}/cmake/)
 install(FILES "${CMAKE_SOURCE_DIR}/cmake/FindSpectra.cmake" DESTINATION ${CH_CONFIG_INSTALL_PATH})

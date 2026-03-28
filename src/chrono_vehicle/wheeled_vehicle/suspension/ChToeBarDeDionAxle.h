@@ -235,7 +235,7 @@ class CH_VEHICLE_API ChToeBarDeDionAxle : public ChSuspension {
     /// Return the functor object for shock force.
     virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getShockForceFunctor() const = 0;
 
-    /// Returns toplology flag for knuckle/draglink connection
+    /// Returns topology flag for knuckle/draglink connection
     virtual bool isLeftKnuckleActuated() const = 0;
 
     std::shared_ptr<ChBody> m_axleTube;            ///< handles to the axle tube body
@@ -303,9 +303,7 @@ class CH_VEHICLE_API ChToeBarDeDionAxle : public ChSuspension {
                                         const ChVector3d pt_T,
                                         double radius);
 
-    virtual void ExportComponentList(rapidjson::Document& jsonDocument) const override;
-
-    virtual void Output(ChOutput& database) const override;
+    virtual void PopulateComponentList() override;
 
     static const std::string m_pointNames[NUM_POINTS];
 };

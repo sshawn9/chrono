@@ -40,7 +40,7 @@
 
 #include "chrono_thirdparty/filesystem/path.h"
 
-#ifdef HAVE_ROS
+#ifdef CHRONO_HAS_ROS
     #include "ament_index_cpp/get_package_prefix.hpp"
     #include "ament_index_cpp/get_package_share_directory.hpp"
 #endif
@@ -134,9 +134,9 @@ void ChParserURDF::SetBodyMeshCollisionType(const std::string& body_name, MeshCo
     m_coll_type[body_name] = collision_type;
 }
 
-void ChParserURDF::SetAllBodiesMeshCollisinoType(MeshCollisionType collision_type) {
+void ChParserURDF::SetAllBodiesMeshCollisionType(MeshCollisionType collision_type) {
     if (m_sys) {
-        cerr << "WARNING: SetAllBodiesMeshCollisinoType must be called before PopulateSystem." << endl;
+        cerr << "WARNING: SetAllBodiesMeshCollisionType must be called before PopulateSystem." << endl;
         return;
     }
 
@@ -189,7 +189,7 @@ std::string ChParserURDF::resolveFilename(const std::string& filename) {
         const std::string path = filename.substr(pos_separator + separator.length(), std::string::npos);
 
         if (scheme == "package") {
-#ifdef HAVE_ROS
+#ifdef CHRONO_HAS_ROS
             const size_t pos_package = path.find("/");
             if (pos_package == std::string::npos) {
                 cerr << "While resolving " + filename + ": Could not parse package:// format." << endl;
@@ -817,7 +817,7 @@ void ChParserURDF::PrintModelJoints() {
                 cout << "fixed     ";
                 break;
             case urdf::Joint::CONTINUOUS:
-                cout << "continous ";
+                cout << "continuous ";
                 break;
             case urdf::Joint::UNKNOWN:
                 break;

@@ -26,7 +26,6 @@
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChBody.h"
 #include "chrono/physics/ChForce.h"
-#include "chrono/timestepper/ChTimestepper.h"
 #include "chrono/utils/ChUtilsSamplers.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/assets/ChVisualShapeSphere.h"
@@ -34,6 +33,7 @@
 #include "chrono_dem/physics/ChSystemDem.h"
 #include "chrono_dem/utils/ChDemJsonParser.h"
 
+#include "chrono/assets/ChVisualSystem.h"
 #ifdef CHRONO_VSG
     #include "chrono_dem/visualization/ChDemVisualizationVSG.h"
 #endif

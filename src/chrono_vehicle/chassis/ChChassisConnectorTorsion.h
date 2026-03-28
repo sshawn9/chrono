@@ -51,6 +51,8 @@ class CH_VEHICLE_API ChChassisConnectorTorsion : public ChChassisConnector {
     /// Return the torsion stiffness of the chassis.
     virtual double GetTorsionStiffness() const = 0;
 
+    virtual void PopulateComponentList() override;
+
     std::shared_ptr<ChLinkLockRevolute> m_joint;  ///< revolute joint of the connector
     std::shared_ptr<ChLinkRSDA> m_spring;         ///< rotational spring-damper
 };

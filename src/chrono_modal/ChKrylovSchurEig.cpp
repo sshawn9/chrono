@@ -138,7 +138,7 @@ void ordschur(ChMatrixDynamic<std::complex<double>>& U,
 // test the convergence of the ith eigenvalue in Krylov-Schur iteration
 int testConverge(ChMatrixDynamic<std::complex<double>>& H, int k, int i, double tol) {
     /*
-    % H is the hessenberg matrix after truncation
+    % H is the Hessenberg matrix after truncation
     % The test rule is
     %    | b_i | < max( ||H(1:k, 1:k)||_F * epsilon, tol * | \lambda_i | )
     % Return flag:
@@ -185,14 +185,16 @@ void truncateKrylov(ChMatrixDynamic<std::complex<double>>& Q,
                     const int m) {
     auto Qo = Q;
     auto Ho = H;
+    // Q = [Q(:, 1 : k),   Q(:, m + 1)];
     Q.setZero(Qo.rows(), k + 1);
-    Q << Qo(Eigen::all, seq(0, k - 1)), Qo(Eigen::all, m);  // Q = [Q(:, 1 : k),   Q(:, m + 1)];
+    Q << Qo(Eigen::placeholders::all, seq(0, k - 1)), Qo(Eigen::placeholders::all, m);
 
+    // H = [H(1:k, 1:k); H(m + 1, 1:k)];
     H.setZero(k + 1, k);
-    H << Ho(seq(0, k - 1), seq(0, k - 1)), Ho(m, seq(0, k - 1));  // H = [H(1:k, 1:k); H(m + 1, 1:k)];
+    H << Ho(seq(0, k - 1), seq(0, k - 1)), Ho(m, seq(0, k - 1));
 }
 
-// Perform Schur decompostion on A and put the needed k eigenvalues
+// Perform Schur decomposition on A and put the needed k eigenvalues
 // on the upper left block.
 void sortSchur(ChMatrixDynamic<std::complex<double>>& US,
                ChMatrixDynamic<std::complex<double>>& TS,
@@ -329,8 +331,9 @@ void KrylovSchur(
         sortSchur(U, T, isC, H(seq(p - 1, m - 1), seq(p - 1, m - 1)), k - p + 1);  // matlab: H.block(p:m, p:m)
         H(seq(p - 1, m - 1), seq(p - 1, m - 1)) = T;                               // H(p:m, p:m) = T;
         H(seq(0, p - 1 - 1), seq(p - 1, m - 1)) =
-            H(seq(0, p - 1 - 1), seq(p - 1, m - 1)) * U;                          // H(1:p-1, p:m) = H(1:p-1, p:m) * U;
-        Q(Eigen::all, seq(p - 1, m - 1)) = Q(Eigen::all, seq(p - 1, m - 1)) * U;  // Q(:, p:m) = Q(:, p:m) * U;
+            H(seq(0, p - 1 - 1), seq(p - 1, m - 1)) * U;  // H(1:p-1, p:m) = H(1:p-1, p:m) * U;
+        Q(Eigen::placeholders::all, seq(p - 1, m - 1)) =
+            Q(Eigen::placeholders::all, seq(p - 1, m - 1)) * U;       // Q(:, p:m) = Q(:, p:m) * U;
         H.row(m)(seq(p - 1, m - 1)) = H(m, m - 1) * U.bottomRows(1);  // H(m+1, p:m) = H(m+1, m) * U(end, :);
         // disp('err'); disp(Ax(Q(:, 1:m)) - Q(:, 1:m+1) * H(1:m+1, 1:m));
         // disp('Q'); disp(Q); disp('H'); disp(H);
@@ -354,7 +357,7 @@ void KrylovSchur(
         }
     }
 
-    // return the convergence infomation
+    // return the convergence information
     ni = i;
     if (p > k) {
         flag = 0;  // converges

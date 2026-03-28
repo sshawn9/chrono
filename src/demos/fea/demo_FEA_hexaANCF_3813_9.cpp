@@ -12,17 +12,20 @@
 // Authors: Bryan Peterson, Antonio Recuero
 // =============================================================================
 //
-// Demo for 9-node, large deformation brick element
-// The user can run seven demos in the main function. 1) Axial dynamics excites
-// a beam made up of brick elements axially; 2) BendingQuasiStatic applies a qua-
-// sistatic load at a corner of a plate and is used for convergence verification;
-// 3) Swinging shell is used for verification of dynamics, rigid body and large
-// deformation problems, 4) ShellBrickContact is used to visualize contact between
-//  ANCF shell elements and 9-node bricks, 5) SimpleBoxContact is intended to
-// visualize contact between rigid bodies and bricks. 6) DPCapPress is a soil bin
-// scenario in which a set of nodal forces is applied to validate the Drucker-
-// Prager Cap Model.
-// The user can uncomment and run any of the seven demos
+// Demo for 9-node, large deformation brick element.
+// The user can run seven demos in the main function:
+// 1) AxialDynamics excites a beam made up of brick elements axially; 
+// 2) BendingQuasiStatic applies a qua-static load at a corner of a plate and
+//    is used for convergence verification;
+// 3) SwingingShell is used for verification of dynamics, rigid body and large
+//    deformation problems;
+// 4) SoilBin
+// 5) SimpleBoxContact is intended to visualize contact between rigid bodies and
+//    bricks;
+// 6) ShellBrickContact is used to visualize contact between ANCF shell elements
+//    and 9-node bricks;
+// 7) DPCapPress is a soil bin scenario in which a set of nodal forces is applied
+//    to validate the Drucker-Prager Cap Model.
 //
 // =============================================================================
 
@@ -70,18 +73,56 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // DPCapPress(out_dir);
-    // ShellBrickContact(out_dir);
-    // SimpleBoxContact(out_dir);
-    // SoilBin(out_dir);
-    // AxialDynamics(out_dir);
-    // BendingQuasiStatic(out_dir);
-    SwingingShell(out_dir);
+    std::string input;
+    int which_test = 1;
+    std::cout << "Select test model:\n";
+    std::cout << "  1. AxialDynamics" << std::endl;
+    std::cout << "  2. BendingQuasiStatic" << std::endl;
+    std::cout << "  3. SwingingShell [DEFAULT]" << std::endl;
+    std::cout << "  4. SoilBin" << std::endl;
+    std::cout << "  5. SimpleBoxContact" << std::endl;
+    std::cout << "  6. ShellBrickContact" << std::endl;
+    std::cout << "  7. DPCapPress" << std::endl;
+    std::getline(std::cin, input);
+    if (!input.empty()) {
+        std::istringstream stream(input);
+        stream >> which_test;
+        which_test = std::min(std::max(1, which_test), 7);
+    }
+
+    switch (which_test) {
+        case 1:
+            AxialDynamics(out_dir);
+            break;
+        case 2:
+            BendingQuasiStatic(out_dir);
+            break;
+        case 3:
+            SwingingShell(out_dir);
+            break;
+        case 4:
+            SoilBin(out_dir);
+            break;
+        case 5:
+            SimpleBoxContact(out_dir);
+            break;
+        case 6:
+            ShellBrickContact(out_dir);
+            break;
+        case 7:
+            DPCapPress(out_dir);
+            break;
+        default:
+            SwingingShell(out_dir);
+            break;
+    }
 
     return 0;
 }
 
+// -----------------------------------------------------------------------------
 // Soil Bin case testing Drucker-Prager Cap model
+
 void DPCapPress(const std::string& out_dir) {
     FILE* outputfile;
     ChSystemSMC sys;
@@ -324,7 +365,7 @@ void DPCapPress(const std::string& out_dir) {
 
     // Create the run-time visualization system
     auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "9-Node, Large Deformation Brick Element",
-                                         ChVector3d(-0.4, -0.3, 0.0), ChVector3d(0.0, 0.5, -0.1));
+                                         ChVector3d(-0.8, -0.6, 0.0), ChVector3d(0.0, 0.5, -0.1));
 
     // Use the MKL Solver
     auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
@@ -339,13 +380,12 @@ void DPCapPress(const std::string& out_dir) {
     mystepper->SetAbsTolerances(1e-4, 1e-2);
     mystepper->SetVerbose(true);
 
-    sys.Update(false);
+    sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
 
     std::string filename = out_dir + "/DPCapPress.txt";
     outputfile = fopen(filename.c_str(), "w");
 
     double start = std::clock();
-    int Iter = 0;
 
     double force = 0.0;
 
@@ -368,9 +408,8 @@ void DPCapPress(const std::string& out_dir) {
             }
         }
 
-        Iter += mystepper->GetNumIterations();
         std::cout << "t = " << sys.GetChTime() << std::endl;
-        std::cout << "Last it: " << mystepper->GetNumIterations() << std::endl;
+        std::cout << "Last it: " << mystepper->GetNumStepIterations() << std::endl;
 
         fprintf(outputfile, "%15.7e  ", sys.GetChTime());
         inc = inc / 2;
@@ -389,10 +428,11 @@ void DPCapPress(const std::string& out_dir) {
     std::cout << "Force Time: " << my_mesh->GetTimeInternalForces() << std::endl;
     std::cout << "Jacobian Time: " << my_mesh->GetTimeJacobianLoad() << std::endl;
     std::cout << "Solver Time: " << sys.GetTimerLSsolve() << std::endl;
-    std::cout << Iter << std::endl;
+    std::cout << mystepper->GetNumIterations() << std::endl;
 }
 
-// Test1 Case
+// -----------------------------------------------------------------------------
+
 void ShellBrickContact(const std::string& out_dir) {
     FILE* outputfile;
     ChSystemSMC sys;
@@ -450,7 +490,7 @@ void ShellBrickContact(const std::string& out_dir) {
     double Sdy = shell_lenght_y / SnumDiv_y;
 
     bool Plasticity = true;
-    double timestep = 1e-4;
+    double timestep = 1e-5;
 
     // Create and add the nodes
     for (int j = 0; j <= numDiv_z; j++) {
@@ -698,7 +738,7 @@ void ShellBrickContact(const std::string& out_dir) {
 
     // Create the run-time visualization system
     auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "9-Node, Large Deformation Brick Element",
-                                         ChVector3d(-0.4, -0.3, 0.0), ChVector3d(0.0, 0.5, -0.1));
+                                         ChVector3d(-0.8, -0.6, 0.0), ChVector3d(0.0, 0.5, -0.1));
 
     // Use the MKL Solver
     auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
@@ -708,12 +748,12 @@ void ShellBrickContact(const std::string& out_dir) {
     // Set the time integrator parameters
     sys.SetTimestepperType(ChTimestepper::Type::HHT);
     auto mystepper = std::dynamic_pointer_cast<ChTimestepperHHT>(sys.GetTimestepper());
-    mystepper->SetAlpha(0.0);
+    mystepper->SetAlpha(-0.2);
     mystepper->SetMaxIters(20);
-    mystepper->SetAbsTolerances(1e-4, 1e-2);
+    mystepper->SetAbsTolerances(1e-3, 1e-2);
     mystepper->SetVerbose(true);
 
-    sys.Update(false);
+    sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
 
     std::string filename = out_dir + "/ShellBrickContact.txt";
     outputfile = fopen(filename.c_str(), "w");
@@ -724,7 +764,6 @@ void ShellBrickContact(const std::string& out_dir) {
     fprintf(outputfile, "\n  ");
 
     double start = std::clock();
-    int Iter = 0;
     int timecount = 0;
     while (vis->Run() && (sys.GetChTime() <= 1.0)) {
         if (sys.GetChTime() < 0.5) {
@@ -744,9 +783,8 @@ void ShellBrickContact(const std::string& out_dir) {
         vis->EndScene();
         sys.DoStepDynamics(timestep);
 
-        Iter += mystepper->GetNumIterations();
         std::cout << "t = " << sys.GetChTime() << std::endl;
-        std::cout << "Last it: " << mystepper->GetNumIterations() << std::endl;
+        std::cout << "Last it: " << mystepper->GetNumStepIterations() << std::endl;
         // std::cout << "Body Contact F: " << Plate->GetContactForce() << std::endl;
         std::cout << nodetip1->GetPos().x() << std::endl;
         std::cout << nodetip1->GetPos().y() << std::endl;
@@ -770,10 +808,11 @@ void ShellBrickContact(const std::string& out_dir) {
     std::cout << "Force Time: " << my_mesh->GetTimeInternalForces() << std::endl;
     std::cout << "Jacobian Time: " << my_mesh->GetTimeJacobianLoad() << std::endl;
     std::cout << "Solver Time: " << sys.GetTimerLSsolve() << std::endl;
-    std::cout << Iter << std::endl;
+    std::cout << mystepper->GetNumIterations() << std::endl;
 }
 
-// Test Case
+// -----------------------------------------------------------------------------
+
 void SimpleBoxContact(const std::string& out_dir) {
     FILE* outputfile;
     ChSystemSMC sys;
@@ -991,7 +1030,7 @@ void SimpleBoxContact(const std::string& out_dir) {
 
     // Create the run-time visualization system
     auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "9-Node, Large Deformation Brick Element",
-                                         ChVector3d(-0.4, -0.3, 0.0), ChVector3d(0.0, 0.5, -0.1));
+                                         ChVector3d(-0.8, -0.6, 0.0), ChVector3d(0.0, 0.5, -0.1));
 
     // Use the MKL Solver
     auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
@@ -1006,7 +1045,7 @@ void SimpleBoxContact(const std::string& out_dir) {
     mystepper->SetAbsTolerances(1e-3, 1e-2);
     mystepper->SetVerbose(true);
 
-    sys.Update(false);
+    sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
 
     std::string filename = out_dir + "/SimpleBoxContact.txt";
     outputfile = fopen(filename.c_str(), "w");
@@ -1017,7 +1056,6 @@ void SimpleBoxContact(const std::string& out_dir) {
     fprintf(outputfile, "\n  ");
 
     double start = std::clock();
-    int Iter = 0;
     int timecount = 0;
     while (vis->Run() && (sys.GetChTime() <= 1.0)) {
         vis->BeginScene();
@@ -1025,9 +1063,8 @@ void SimpleBoxContact(const std::string& out_dir) {
         vis->EndScene();
         sys.DoStepDynamics(timestep);
 
-        Iter += mystepper->GetNumIterations();
         // std::cout << "t = " << sys.GetChTime() << std::endl;
-        // std::cout << "Last it: " << mystepper->GetNumIterations() << std::endl;
+        // std::cout << "Last it: " << mystepper->GetNumStepIterations() << std::endl;
         // std::cout << "Plate Pos: " << Plate->GetPos();
         // std::cout << "Plate Vel: " << Plate->GetPosDt();
         // std::cout << "Body Contact F: " << Plate->GetContactForce() << std::endl;
@@ -1053,10 +1090,12 @@ void SimpleBoxContact(const std::string& out_dir) {
     std::cout << "Force Time: " << my_mesh->GetTimeInternalForces() << std::endl;
     std::cout << "Jacobian Time: " << my_mesh->GetTimeJacobianLoad() << std::endl;
     std::cout << "Solver Time: " << sys.GetTimerLSsolve() << std::endl;
-    std::cout << Iter << std::endl;
+    std::cout << mystepper->GetNumIterations() << std::endl;
 }
 
+// -----------------------------------------------------------------------------
 // SoilBin Dynamic
+
 void SoilBin(const std::string& out_dir) {
     FILE* outputfile;
     ChSystemSMC sys;
@@ -1306,7 +1345,7 @@ void SoilBin(const std::string& out_dir) {
 
     // Create the run-time visualization system
     auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "9-Node, Large Deformation Brick Element",
-                                         ChVector3d(-0.4, -0.3, 0.0), ChVector3d(0.0, 0.5, -0.1));
+                                         ChVector3d(-0.8, -0.6, 0.0), ChVector3d(0.0, 0.5, -0.1));
 
     // Use the MKL Solver
     auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
@@ -1321,7 +1360,7 @@ void SoilBin(const std::string& out_dir) {
     mystepper->SetAbsTolerances(1e-4, 1e-2);
     mystepper->SetVerbose(false);
 
-    sys.Update(false);
+    sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
 
     std::string filename = out_dir + "/SoilBin.txt";
     outputfile = fopen(filename.c_str(), "w");
@@ -1336,7 +1375,6 @@ void SoilBin(const std::string& out_dir) {
     fprintf(outputfile, "\n  ");
 
     double start = std::clock();
-    int Iter = 0;
 
     while (vis->Run()) {
         double time = sys.GetChTime();
@@ -1350,9 +1388,8 @@ void SoilBin(const std::string& out_dir) {
         vis->EndScene();
         sys.DoStepDynamics(timestep);
 
-        Iter += mystepper->GetNumIterations();
         std::cout << "t = " << time << std::endl;
-        std::cout << "   Last it: " << mystepper->GetNumIterations() << std::endl;
+        std::cout << "   Last it: " << mystepper->GetNumStepIterations() << std::endl;
         std::cout << "   Plate Pos: " << Plate->GetPos() << std::endl;
         std::cout << "   Plate Vel: " << Plate->GetPosDt() << std::endl;
         std::cout << "   Plate Rot: " << Plate->GetRot() << std::endl;
@@ -1380,10 +1417,12 @@ void SoilBin(const std::string& out_dir) {
     std::cout << "Force Time: " << my_mesh->GetTimeInternalForces() << std::endl;
     std::cout << "Jacobian Time: " << my_mesh->GetTimeJacobianLoad() << std::endl;
     std::cout << "Solver Time: " << sys.GetTimerLSsolve() << std::endl;
-    std::cout << Iter << std::endl;
+    std::cout << mystepper->GetNumIterations() << std::endl;
 }
 
+// -----------------------------------------------------------------------------
 // Axial Dynamic
+
 void AxialDynamics(const std::string& out_dir) {
     FILE* outputfile;
     ChSystemSMC sys;
@@ -1589,7 +1628,7 @@ void AxialDynamics(const std::string& out_dir) {
     mystepper->SetAbsTolerances(1e-4, 1e-2);
     mystepper->SetVerbose(false);
 
-    sys.Update(false);
+    sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
 
     std::string filename = out_dir + "/AxialDynamics.txt";
     outputfile = fopen(filename.c_str(), "w");
@@ -1600,7 +1639,6 @@ void AxialDynamics(const std::string& out_dir) {
     fprintf(outputfile, "\n  ");
 
     double start = std::clock();
-    int Iter = 0;
     while (/*vis->Run() && */ (sys.GetChTime() <= 1.0)) {
         // application.BeginScene();
         // application.Render();
@@ -1613,9 +1651,8 @@ void AxialDynamics(const std::string& out_dir) {
         nodetip4->SetForce(ChVector3d(force, 0.0, 0.0));
         sys.DoStepDynamics(timestep);
         // application.EndScene();
-        Iter += mystepper->GetNumIterations();
         // std::cout << "t = " << sys.GetChTime() << std::endl;
-        // std::cout << "Last it: " << mystepper->GetNumIterations() << "\n\n";
+        // std::cout << "Last it: " << mystepper->GetNumStepIterations() << "\n\n";
         // if (!application.GetPaused()) {
         fprintf(outputfile, "%15.7e  ", sys.GetChTime());
         fprintf(outputfile, "%15.7e  ", nodetip1->GetPos().x());
@@ -1629,10 +1666,12 @@ void AxialDynamics(const std::string& out_dir) {
     std::cout << "Force Time: " << my_mesh->GetTimeInternalForces() << std::endl;
     std::cout << "Jacobian Time: " << my_mesh->GetTimeJacobianLoad() << std::endl;
     std::cout << "Solver Time: " << sys.GetTimerLSsolve() << std::endl;
-    std::cout << Iter << std::endl;
+    std::cout << mystepper->GetNumIterations() << std::endl;
 }
 
+// -----------------------------------------------------------------------------
 // QuasiStatic
+
 void BendingQuasiStatic(const std::string& out_dir) {
     FILE* outputfile;
     ChSystemSMC sys;
@@ -1791,7 +1830,7 @@ void BendingQuasiStatic(const std::string& out_dir) {
 
     // Create the run-time visualization system
     auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "9-Node, Large Deformation Brick Element",
-                                         ChVector3d(-0.4, -0.3, 0.0), ChVector3d(0.0, 0.5, -0.1));
+                                         ChVector3d(-0.8, -0.6, 0.0), ChVector3d(0.0, 0.5, -0.1));
 
     // ----------------------------------
     // Perform a dynamic time integration
@@ -1810,7 +1849,7 @@ void BendingQuasiStatic(const std::string& out_dir) {
     mystepper->SetAbsTolerances(1e-3, 1e-1);
     mystepper->SetVerbose(true);
 
-    sys.Update(false);
+    sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
 
     std::string filename = out_dir + "/BendingQuasistatic.txt";
     outputfile = fopen(filename.c_str(), "w");
@@ -1849,7 +1888,9 @@ void BendingQuasiStatic(const std::string& out_dir) {
     }
 }
 
+// -----------------------------------------------------------------------------
 // Swinging (Bricked) Shell
+
 void SwingingShell(const std::string& out_dir) {
     FILE* outputfile;
     ChSystemSMC sys;
@@ -2011,7 +2052,7 @@ void SwingingShell(const std::string& out_dir) {
 
     // Create the run-time visualization system
     auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "9-Node, Large Deformation Brick Element",
-                                         ChVector3d(-0.4, -0.3, -0.5), ChVector3d(0.0, 0.5, -0.1));
+                                         ChVector3d(-0.8, -0.6, -1.0), ChVector3d(0.0, 0.5, -0.1));
 
     // ----------------------------------
     // Perform a dynamic time integration
@@ -2030,7 +2071,7 @@ void SwingingShell(const std::string& out_dir) {
     mystepper->SetAbsTolerances(1e-3, 1e-1);
     mystepper->SetVerbose(true);
 
-    sys.Update(false);
+    sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
 
     std::string filename = out_dir + "SwingingShell.txt";
     outputfile = fopen(filename.c_str(), "w");

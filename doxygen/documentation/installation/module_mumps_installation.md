@@ -25,10 +25,10 @@ Look at the [API section](group__mumps__module.html) of this module for a more i
 	
 ## Building and installing prerequisistes
 
-The Chrono::Mumps module requires the [MUMPS](http://mumps.enseeiht.fr) library. 
+The Chrono::Mumps module requires the [MUMPS](https://mumps-solver.org/index.php) library. 
 Mumps does not provide a CMake-based installation system. To address this issue, we provide (with the Chrono source code) a set of utility scripts which download the Mumps sources, build all necessary libraries, and install them in a user-specified location.
 
-These scripts (`buildMUMPS.bat`, `buildMUMPS.sh`, and buildMUMPS_Mac.sh, for Windows, Linux, and MacOS, respectively) are available in the `contrib/build-scripts/mumps` directory of the [Chrono repository](https://github.com/projectchrono/chrono/tree/main/contrib/build-scripts/mumps). 
+These scripts (`buildMUMPS.bat`, `buildMUMPS.sh`, and `buildMUMPS_Mac.sh`, for Windows, Linux, and MacOS, respectively) are available in the corresponding subdirectories of the Chrono [contrib/build-scripts/mumps](https://github.com/projectchrono/chrono/tree/main/contrib/build-scripts). 
 
 1. Copy the appropriate script and place in an arbitrary temporary directory.
 2. Edit the script copy to:
@@ -51,6 +51,11 @@ These scripts (`buildMUMPS.bat`, `buildMUMPS.sh`, and buildMUMPS_Mac.sh, for Win
 
 5. Press 'Configure' again, then 'Generate', and proceed as usual in the installation instructions.
 
+<div class="ce-warning">
+If using the Intel oneAPI Fortran compiler, `ifort` was superseded by `ifx` in the latest releases of oneAPI. 
+<br>
+To ensure that CMake uses the correct Fortran compiler, make sure to explicitly specify it when invoking CMake, by passing `-T fortran=ifx` (of course, this assumes that you have properly configured Intel oneAPI and `ifx` is in the search path).
+</div>
 
 
 ## How to use it

@@ -34,7 +34,7 @@
 
 #include "chrono/core/ChBezierCurve.h"
 #include "chrono/core/ChFrameMoving.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/input_output/ChWriterCSV.h"
 #include "chrono/utils/ChFilters.h"
 
 #include "chrono_vehicle/ChApiVehicle.h"
@@ -119,7 +119,7 @@ class CH_VEHICLE_API ChSteeringController {
     double m_errd;  ///< error derivative
     double m_erri;  ///< integral of error
 
-    utils::ChWriterCSV* m_csv;  ///< ChWriterCSV object for data collection
+    ChWriterCSV* m_csv;  ///< ChWriterCSV object for data collection
     bool m_collect;             ///< flag indicating whether or not data is being collected
 };
 
@@ -255,7 +255,7 @@ class CH_VEHICLE_API ChPathSteeringControllerXT : public ChSteeringController {
 /// Path-following steering P-like controller with variable path prediction.
 /// The algorithm is from:
 ///    M.C. Best, "A simple realistic driver model,"
-///    AVEC `12: The 11th International Symposium on Advanced Vehicle Control, 9th-12th September 2012, Seoul, Korea.
+///    AVEC 2012: The 11th International Symposium on Advanced Vehicle Control, 9th-12th September 2012, Seoul, Korea.
 /// The path to be followed is specified as a ChBezierCurve object and the the original definition points are extracted
 /// automatically. Open and closed course definitions can be handled. The ChBezier is still used for visualization.
 class CH_VEHICLE_API ChPathSteeringControllerSR : public ChSteeringController {

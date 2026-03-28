@@ -79,9 +79,9 @@ void ChLinkMotorRotation::SetSpindleConstraint(const SpindleConstraint mconstrai
     }
 }
 
-void ChLinkMotorRotation::Update(double time, bool update_assets) {
+void ChLinkMotorRotation::Update(double time, UpdateFlags update_flags) {
     // Inherit parent class:
-    ChLinkMotor::Update(time, update_assets);
+    ChLinkMotor::Update(time, update_flags);
 
     // compute aux data for future reference (istantaneous pos speed accel)
     ChFrameMoving<> aframe1 = ChFrameMoving<>(m_frame1) >> (ChFrameMoving<>)(*this->m_body1);
@@ -93,14 +93,23 @@ void ChLinkMotorRotation::Update(double time, bool update_assets) {
     double last_rot = remainder(last_totrot, CH_2PI);
     double last_turns = last_totrot - last_rot;
     double new_rot = remainder(aframe12.GetRot().GetRotVec().z(), CH_2PI);
-    this->mrot = last_turns + new_rot;
+    mrot = last_turns + new_rot;
     if (fabs(new_rot + CH_2PI - last_rot) < fabs(new_rot - last_rot))
-        this->mrot = last_turns + new_rot + CH_2PI;
+        mrot = last_turns + new_rot + CH_2PI;
     if (fabs(new_rot - CH_2PI - last_rot) < fabs(new_rot - last_rot))
-        this->mrot = last_turns + new_rot - CH_2PI;
+        mrot = last_turns + new_rot - CH_2PI;
 
-    this->mrot_dt = aframe12.GetAngVelLocal().z();
-    this->mrot_dtdt = aframe12.GetAngAccLocal().z();
+    mrot_dt = aframe12.GetAngVelLocal().z();
+    mrot_dtdt = aframe12.GetAngAccLocal().z();
+}
+
+void ChLinkMotorRotation::IntStateScatterAcceleration(const unsigned int off_a, const ChStateDelta& a) {
+    ChFrameMoving<> aframe1 = ChFrameMoving<>(m_frame1) >> (ChFrameMoving<>)(*this->m_body1);
+    ChFrameMoving<> aframe2 = ChFrameMoving<>(m_frame2) >> (ChFrameMoving<>)(*this->m_body2);
+    ChFrameMoving<> aframe12 = aframe2.TransformParentToLocal(aframe1);
+
+    mrot_dt = aframe12.GetAngVelLocal().z();
+    mrot_dtdt = aframe12.GetAngAccLocal().z();
 }
 
 std::string ChLinkMotorRotation::GetSpindleTypeString(SpindleConstraint type) {

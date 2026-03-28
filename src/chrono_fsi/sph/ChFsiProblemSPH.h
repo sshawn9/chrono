@@ -20,6 +20,7 @@
 #define CH_FSI_PROBLEM_SPH_H
 
 #include <cmath>
+#include <cstdint>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -128,7 +129,7 @@ class CH_FSI_API ChFsiProblemSPH {
     /// Interface for callback to set initial particle pressure, density, viscosity, and velocity.
     class CH_FSI_API ParticlePropertiesCallback {
       public:
-        ParticlePropertiesCallback() : p0(0), rho0(0), mu0(0), v0(VNULL) {}
+        ParticlePropertiesCallback() : p0(0), rho0(0), mu0(0), v0(VNULL), pre_pressure_scale0(1.01) {}
         ParticlePropertiesCallback(const ParticlePropertiesCallback& other) = default;
         virtual ~ParticlePropertiesCallback() {}
 
@@ -140,12 +141,14 @@ class CH_FSI_API ChFsiProblemSPH {
             rho0 = sysSPH.GetDensity();
             mu0 = sysSPH.GetViscosity();
             v0 = VNULL;
+            pre_pressure_scale0 = 1.01;
         }
 
         double p0;
         double rho0;
         double mu0;
         ChVector3d v0;
+        double pre_pressure_scale0;
     };
 
     /// Register a callback for setting SPH particle initial properties.
@@ -235,10 +238,10 @@ class CH_FSI_API ChFsiProblemSPH {
 
     /// Reconstruct surface from the current SPH particle data cloud.
     /// This function invokes the external `splashsurf` tool to generate a Wavefront OBJ mesh reconstructed from the
-    /// current positions of the SPH pareticles. If splashsurf was not found during configuration, this function is a
+    /// current positions of the SPH particles. If splashsurf was not found during configuration, this function is a
     /// no-op. The intermediate data file with SPH particle positions and the resulting mesh file are created in the
     /// specified directory and are named [name].json and [name].obj, respectively. If quiet=true, splashsurf console
-    /// output is supressed. This is a blocking operation which can be computationally expensive for large problems.
+    /// output is suppressed. This is a blocking operation which can be computationally expensive for large problems.
     /// See ChFsiSplashsurfSPH.
     void WriteReconstructedSurface(const std::string& dir, const std::string& name, bool quiet = false);
 
@@ -246,18 +249,30 @@ class CH_FSI_API ChFsiProblemSPH {
     std::string GetPhysicsProblemString() const { return m_sysSPH->GetPhysicsProblemString(); }
     std::string GetSphIntegrationSchemeString() const { return m_sysSPH->GetSphIntegrationSchemeString(); }
 
+    void SetActiveDomain(const ChVector3d& box_dim) { m_sysSPH->SetActiveDomain(box_dim); }
+
   protected:
     /// Create a ChFsiProblemSPH object.
     /// No SPH parameters are set.
     ChFsiProblemSPH(double spacing, ChSystem* sys = nullptr);
 
     /// Hash function for a 3D integer grid coordinate.
+    static inline std::uint64_t mix64(std::uint64_t x) {
+        x += 0x9e3779b97f4a7c15ULL;
+        x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+        x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+        return x ^ (x >> 31);
+    }
     struct CoordHash {
-        std::size_t operator()(const ChVector3i& p) const {
-            size_t h1 = std::hash<int>()(p.x());
-            size_t h2 = std::hash<int>()(p.y());
-            size_t h3 = std::hash<int>()(p.z());
-            return (h1 ^ (h2 << 1)) ^ h3;
+        std::size_t operator()(const ChVector3i& p) const noexcept {
+            // Pack the three ints into 64-bit lanes; mix each, then combine.
+            std::uint64_t x = static_cast<std::uint32_t>(p.x());
+            std::uint64_t y = static_cast<std::uint32_t>(p.y());
+            std::uint64_t z = static_cast<std::uint32_t>(p.z());
+            std::uint64_t h = mix64(x);
+            h ^= mix64(y) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+            h ^= mix64(z) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+            return static_cast<std::size_t>(h);
         }
     };
 
@@ -332,9 +347,11 @@ class CH_FSI_API ChFsiProblemCartesian : public ChFsiProblemSPH {
     /// The SPH particle and BCE marker locations are assumed to be provided on an integer grid.
     /// Locations in real space are generated using the specified grid separation value and the
     /// patch translated to the specified position.
-    void Construct(const std::string& sph_file,  ///< filename with SPH grid particle positions
-                   const std::string& bce_file,  ///< filename with BCE grid marker positions
-                   const ChVector3d& pos         ///< reference position
+    void Construct(const std::string& sph_file,      ///< filename with SPH grid particle positions
+                   const std::string& bce_file,      ///< filename with BCE grid marker positions
+                   const ChVector3d& pos,            ///< reference position,
+                   bool use_grid_coordinates = true  ///< if true, uses the data in the file as integer grid
+                                                     ///< coordinates, otherwise uses physical positions
     );
 
     /// Construct SPH particles and optionally BCE markers in a box of given dimensions.

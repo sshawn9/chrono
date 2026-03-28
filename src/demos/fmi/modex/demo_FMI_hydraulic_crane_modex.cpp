@@ -22,7 +22,7 @@
 
 #include "chrono/ChConfig.h"
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/input_output/ChWriterCSV.h"
 #include "chrono/assets/ChVisualShapeSphere.h"
 #include "chrono/assets/ChVisualShapeCylinder.h"
 #include "chrono/solver/ChDirectSolverLS.h"
@@ -139,8 +139,8 @@ class ChExternalActuatorFmu : public ChExternalFmu {
 
     virtual bool IsStiff() const override { return true; }
 
-    virtual void Update(double time, bool update_assets) override {
-        ChExternalFmu::Update(time, update_assets);
+    virtual void Update(double time, UpdateFlags update_flags) override {
+        ChExternalFmu::Update(time, update_flags);
 
         if (is_attached) {
             // Calculate length and length rate from attached bodies
@@ -231,7 +231,7 @@ class ChExternalActuatorFmu : public ChExternalFmu {
     std::string m_fmu_filename;               ///< name of the FMU file
     std::string m_unpack_dir;                 ///< name of directory where FMU file is unpacked
     bool is_attached;                         ///< true if actuator attached to bodies
-    ChBody* m_body1;                          ///< first conected body
+    ChBody* m_body1;                          ///< first connected body
     ChBody* m_body2;                          ///< second connected body
     ChVector3d m_loc1;                        ///< point on body 1 (local frame)
     ChVector3d m_loc2;                        ///< point on body 2 (local frame)
@@ -471,7 +471,7 @@ int main(int argc, char* argv[]) {
 
     // Initialize output file
     Eigen::IOFormat rowFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " ", " ", " ", " ", " ");
-    utils::ChWriterCSV csv(" ");
+    ChWriterCSV csv(" ");
 
     double t = 0;
     double Uref = actuation->GetVal(t);

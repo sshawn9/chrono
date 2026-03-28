@@ -45,6 +45,7 @@ int main(int argc, char* argv[]) {
     //    will be handled by this ChSystemNSC object.
 
     ChSystemNSC sys;
+    sys.SetGravityY();
 
     // 2- Create the rigid bodies of the slider-crank mechanical system
     //   (a crank, a rod, a truss), maybe setting position/mass/inertias of
@@ -99,8 +100,7 @@ int main(int argc, char* argv[]) {
     vis->SetWindowTitle("Simple slider-crank example");
     vis->Initialize();
     vis->AddLogo();
-    vis->AddSkyBox();
-    vis->AddCamera(ChVector3d(0, 0, -6));
+    vis->AddCamera(ChVector3d(0, 0, -7));
     vis->AddTypicalLights();
 
     // Simulation loop
@@ -133,6 +133,9 @@ int main(int argc, char* argv[]) {
                            my_link_BC->GetMarker1()->GetAbsCoordsys().pos, ChColor(1, 0, 0));
         // .. draw a small circle at crank origin
         tools::drawCircle(vis.get(), 0.1, ChCoordsys<>(ChVector3d(0, 0, 0), QUNIT));
+        // .. draw a small circle at rod end
+        tools::drawCircle(vis.get(), 0.1, ChCoordsys<>(my_link_CA->GetMarker1()->GetAbsCoordsys().pos, QUNIT),
+                          ChColor(1, 1, 0));
 
         /* test: delete a link after 10 seconds
         if (sys.GetChTime() >10 && (!removed))

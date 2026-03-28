@@ -2,7 +2,7 @@
 # This snippet install Chrono in ${PACKAGE_DIR}/chrono
 # It includes other snippets, where specific modules can be added or removed based on need
 
-ARG CHRONO_BRANCH="feature/modern_cmake"
+ARG CHRONO_BRANCH="main"
 ARG CHRONO_REPO="https://github.com/projectchrono/chrono.git"
 ARG CHRONO_DIR="${USERHOME}/chrono"
 ARG CHRONO_INSTALL_DIR="${USERHOME}/packages/chrono"
@@ -53,6 +53,8 @@ INCLUDE ./ch_vehicle.dockerfile
 INCLUDE ./ch_sensor.dockerfile
 INCLUDE ./ch_parser.dockerfile
 INCLUDE ./ch_python.dockerfile
+INCLUDE ./ch_synchrono.dockerfile
+
 
 # Install Chrono
 RUN ${PRE_BUILD_SCRIPTS} && \

@@ -39,7 +39,7 @@ class ChApiPeridynamics ChMatterPeriSprings : public ChMatterPeri<> {
 
     ChMatterPeriSprings() {}
 
-    /// Add the peridynamics force to each node, as a summation of all the effects of neighbouring nodes.
+    /// Add the peridynamics force to each node, as a summation of all the effects of neighboring nodes.
     virtual void ComputeForces() override;
 };
 
@@ -60,15 +60,15 @@ class ChApiPeridynamics ChMatterPeriSpringsBreakable
 
     ChMatterPeriSpringsBreakable() {}
 
-    /// Add the peridynamics force to each node, as a summation of all the effects of neighbouring nodes.
+    /// Add the peridynamics force to each node, as a summation of all the effects of neighboring nodes.
     virtual void ComputeForces() override;
 };
 
 class /*ChApiPeridynamics*/ ChVisualPeriSpringsBreakable : public ChGlyphs {
   public:
     ChVisualPeriSpringsBreakable(std::shared_ptr<ChMatterPeriSpringsBreakable> amatter) : mmatter(amatter) {
-        is_mutable = true;
-    };
+        SetMutable(true);
+    }
     virtual ~ChVisualPeriSpringsBreakable() {}
 
     // Attach velocity property. (ex for postprocessing in falsecolor or with vectors with the Blender add-on)
@@ -117,8 +117,8 @@ class /*ChApiPeridynamics*/ ChVisualPeriSpringsBreakable : public ChGlyphs {
 class /*ChApiPeridynamics*/ ChVisualPeriSpringsBreakableBonds : public ChGlyphs {
   public:
     ChVisualPeriSpringsBreakableBonds(std::shared_ptr<ChMatterPeriSpringsBreakable> amatter) : mmatter(amatter) {
-        is_mutable = true;
-    };
+        SetMutable(true);
+    }
     virtual ~ChVisualPeriSpringsBreakableBonds() {}
 
     bool draw_broken = true;

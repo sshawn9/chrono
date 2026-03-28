@@ -73,16 +73,19 @@ ChVisualSystemIrrlicht::ChVisualSystemIrrlicht()
     capsuleMesh = createCapsuleMesh(1, 1, 32, 32);
     coneMesh = createConeMesh(1, 1, 32);
 
+    // when meshes are created their reference counter is already at one;
+    // no need to grab if we are the owner of the first pointer
+
     // if (sphereMesh)
     //  sphereMesh->grab();
-    if (cubeMesh)
-        cubeMesh->grab();
-    if (cylinderMesh)
-        cylinderMesh->grab();
-    if (capsuleMesh)
-        capsuleMesh->grab();
-    if (coneMesh)
-        coneMesh->grab();
+    // if (cubeMesh)
+    //    cubeMesh->grab();
+    // if (cylinderMesh)
+    //    cylinderMesh->grab();
+    // if (capsuleMesh)
+    //    capsuleMesh->grab();
+    // if (coneMesh)
+    //    coneMesh->grab();
 
     // Create default colormap (for colorbar display)
     m_colormap_type = ChColormap::Type::JET;
@@ -113,6 +116,8 @@ ChVisualSystemIrrlicht::~ChVisualSystemIrrlicht() {
         cylinderMesh->drop();
     if (capsuleMesh)
         capsuleMesh->drop();
+    if (coneMesh)
+        coneMesh->drop();
 
     if (m_device)
         m_device->drop();
@@ -168,6 +173,9 @@ void ChVisualSystemIrrlicht::SetSymbolScale(double scale) {
 // -----------------------------------------------------------------------------
 
 void ChVisualSystemIrrlicht::AttachSystem(ChSystem* sys) {
+    //// RADU TODO
+    //// Allow attaching more than one ChSystem to the same Irrlicht visualization
+
     ChVisualSystem::AttachSystem(sys);
 
     // If the visualization system is already initialized
@@ -202,7 +210,7 @@ void ChVisualSystemIrrlicht::Initialize() {
         }
     }
 
-    m_device->grab();
+    // m_device->grab();
 
     std::wstring title = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_win_title);
     m_device->setWindowCaption(title.c_str());
@@ -814,7 +822,6 @@ void ChVisualSystemIrrlicht::PopulateIrrNode(ISceneNode* node,
             auto trimesh = ChTriangleMeshConnected::CreateFromWavefrontFile(obj->GetFilename(), true, true);
             auto trimesh_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
             trimesh_shape->SetMesh(trimesh);
-            trimesh_shape->SetMutable(false);
 
             // Create a number of Irrlicht mesh buffers equal to the number of materials.
             // If no materials defined, create a single mesh buffer.
@@ -1005,6 +1012,11 @@ void ChVisualSystemIrrlicht::PopulateIrrNode(ISceneNode* node,
             mchildnode->setRotation(shape_m4.getRotationDegrees());
 
             SetVisualMaterial(mchildnode, shape);
+
+            mchildnode->setAutomaticCulling(scene::EAC_OFF);
+            mchildnode->setMaterialFlag(video::EMF_WIREFRAME, true);
+            mchildnode->setMaterialFlag(video::EMF_LIGHTING, false);  // avoid shading for wireframe
+            mchildnode->setMaterialFlag(video::EMF_BACK_FACE_CULLING, false);
 
             ////mchildnode->setMaterialFlag(video::EMF_WIREFRAME,  mytrimesh->IsWireframe() );
             ////mchildnode->setMaterialFlag(video::EMF_BACK_FACE_CULLING, mytrimesh->IsBackfaceCull() );

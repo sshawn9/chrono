@@ -28,7 +28,7 @@
 
 #include "chrono/ChConfig.h"
 #include "chrono/utils/ChUtilsCreators.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/input_output/ChWriterCSV.h"
 
 #include "chrono/assets/ChVisualSystem.h"
 #ifdef CHRONO_VSG
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
     vis->AddCamera(ChVector3d(2, -4, 4), ChVector3d(0, 0, 0));
     vis->SetWindowSize(1280, 720);
     vis->SetBackgroundColor(ChColor(0.8f, 0.85f, 0.9f));
-    vis->EnableSkyBox();
+    vis->EnableSkyTexture(SkyMode::BOX);
     vis->SetCameraAngleDeg(40.0);
     vis->SetLightIntensity(1.0f);
     vis->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);

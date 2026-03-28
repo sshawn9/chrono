@@ -77,7 +77,7 @@ class ChApiPeridynamics ChMatterPeriLinearElastic
     /// Initialize material with weighted volume.
     virtual void SetupInitial() override;
 
-    /// Adds the peridynamics force to each node, as a summation of all the effects of neighbouring nodes.
+    /// Adds the peridynamics force to each node, as a summation of all the effects of neighboring nodes.
     /// Formulas based on Silling work
     virtual void ComputeForces() override;
 };
@@ -89,7 +89,7 @@ class ChApiPeridynamics ChMatterPeriLinearElastic
 class /*ChApiPeridynamics*/ ChVisualPeriLinearElastic : public ChGlyphs {
   public:
     ChVisualPeriLinearElastic(std::shared_ptr<ChMatterPeriLinearElastic> amatter) : mmatter(amatter) {
-        is_mutable = true;
+        SetMutable(true);
     }
 
     virtual ~ChVisualPeriLinearElastic() {}
@@ -153,8 +153,8 @@ class /*ChApiPeridynamics*/ ChVisualPeriLinearElastic : public ChGlyphs {
 class /*ChApiPeridynamics*/ ChVisualPeriLinearElasticBonds : public ChGlyphs {
   public:
     ChVisualPeriLinearElasticBonds(std::shared_ptr<ChMatterPeriLinearElastic> amatter) : mmatter(amatter) {
-        is_mutable = true;
-    };
+        SetMutable(true);
+    }
     virtual ~ChVisualPeriLinearElasticBonds() {}
 
     bool draw_broken = true;

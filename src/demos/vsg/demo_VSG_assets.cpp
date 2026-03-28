@@ -46,6 +46,7 @@ using namespace chrono::vsg3d;
 int main(int argc, char* argv[]) {
     // Create a Chrono system
     ChSystemNSC sys;
+    sys.SetGravityY();
     sys.SetCollisionSystemType(ChCollisionSystem::Type::BULLET);
 
     // EXAMPLE 1:
@@ -290,17 +291,22 @@ int main(int argc, char* argv[]) {
     hull->GetVisualShape(0)->GetMaterial(0)->SetOpacity(0.5);  // DepthSorted???
     sys.Add(hull);
 
+    // Set azimuth and elevation of directional light
+    double azimuth = 135 * CH_DEG_TO_RAD;
+    double elevation = 45 * CH_DEG_TO_RAD;
+
     auto vis = chrono_types::make_shared<ChVisualSystemVSG>();
     vis->AttachSystem(&sys);
     vis->SetCameraVertical(CameraVerticalDir::Y);
     vis->SetWindowSize(ChVector2i(1200, 800));
     vis->SetWindowPosition(ChVector2i(100, 300));
     vis->SetWindowTitle("Chrono VSG Assets");
-    vis->EnableSkyBox();
+    vis->EnableSkyTexture(SkyMode::DOME);
+    ////vis->EnableSkyTexture(SkyMode::BOX);
     vis->AddCamera(ChVector3d(-8, 8, -16));
     vis->SetCameraAngleDeg(40);
     vis->SetLightIntensity(1.0f);
-    vis->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
+    vis->SetLightDirection(azimuth, elevation);
     vis->AddGrid(0.5, 0.5, 12, 12, ChCoordsys<>(ChVector3d(0, -0.49, 0), QuatFromAngleX(CH_PI_2)),
                  ChColor(0.31f, 0.43f, 0.43f));
 
@@ -318,7 +324,7 @@ int main(int argc, char* argv[]) {
 
     auto sceneMesh2 = chrono_types::make_shared<ChVisualShapeModelFile>();
     sceneMesh2->SetFilename(GetChronoDataFile("models/bunny.glb"));
-    int bunndyId = vis->AddVisualModel(sceneMesh2, ChFrame<>(ChVector3d(-2, 0, -8), Zup * QuatFromAngleZ(CH_PI)));
+    int bunndyId = vis->AddVisualModel(sceneMesh2, ChFrame<>(ChVector3d(-2, 0, -8), QuatFromAngleY(CH_PI)));
     if (bunndyId == -1)
         std::cerr << "Could not get bunny!" << std::endl;
 

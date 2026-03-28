@@ -35,7 +35,7 @@ class ChMatterPeriBase;
 
 /// Class for handling proximity pairs for a peridynamics
 /// deformable continuum (necessary for inter-particle material forces),
-/// Such an item must be addd to the physical system if you want to use
+/// Such an item must be added to the physical system if you want to use
 /// one or more ChMatterPeri materials.
 
 class ChApiPeridynamics ChPeridynamics : public ChProximityContainer {
@@ -56,7 +56,7 @@ class ChApiPeridynamics ChPeridynamics : public ChProximityContainer {
     /// Get the array of materials.
     const std::list<std::shared_ptr<ChMatterPeriBase>>& GetMaterials() const { return materials; }
 
-    /// Add a node. Only nodes that are added here will be simulated. Nodes can be shared among diffferent ChMatterPeri,
+    /// Add a node. Only nodes that are added here will be simulated. Nodes can be shared among different ChMatterPeri,
     /// but not among different ChPeridynamics.
     void AddNode(std::shared_ptr<ChNodePeri> m_node);
 
@@ -181,7 +181,7 @@ class ChApiPeridynamics ChPeridynamics : public ChProximityContainer {
     virtual void Setup() override;
 
     /// This will call   ComputeForcesReset(), ComputeForces(), ComputeStates()  for each material
-    virtual void Update(double mytime, bool update_assets = true) override;
+    virtual void Update(double mytime, UpdateFlags update_flags) override;
 
     // STATE
 
@@ -202,7 +202,7 @@ class ChApiPeridynamics ChPeridynamics : public ChProximityContainer {
                                  const unsigned int off_v,
                                  const ChStateDelta& v,
                                  const double T,
-                                 bool full_update) override;
+                                 UpdateFlags update_flags) override;
 
     virtual void IntStateGatherAcceleration(const unsigned int off_a, ChStateDelta& a) override;
 

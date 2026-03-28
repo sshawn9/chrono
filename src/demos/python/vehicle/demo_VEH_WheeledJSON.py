@@ -71,7 +71,7 @@ def main() :
         vis = veh.ChWheeledVehicleVisualSystemVSG()
         vis.SetWindowTitle('HMMWV JSON specification')
         vis.SetWindowSize(1280, 1024)
-        vis.EnableSkyBox()
+        vis.EnableSkyTexture()
         vis.SetLightIntensity(1.0)
         vis.SetLightDirection(2.0, 0.75)
         vis.EnableShadows()
@@ -118,13 +118,6 @@ def main() :
         vis.Advance(step_size)
 
 # =============================================================================
-
-# The path to the Chrono data directory containing various assets (meshes, textures, data files)
-# is automatically set, relative to the default location of this demo.
-# If running from a different directory, you must change the path to the data directory with: 
-#chrono.SetChronoDataPath('path/to/data')
-
-veh.SetVehicleDataPath(chrono.GetChronoDataPath() + 'vehicle/')
 
 # Terain JSON specification file
 rigidterrain_file = veh.GetVehicleDataFile('terrain/RigidPlane.json')

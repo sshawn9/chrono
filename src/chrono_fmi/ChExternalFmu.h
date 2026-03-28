@@ -147,13 +147,13 @@ class ChApiFMI ChExternalFmu : public ChExternalDynamicsODE {
     void SetStringParameterValue(const std::string& name, const std::string& value);
 
     /// Set a continuous input (as an std::function).
-    /// This function will be called automatically during the simulation loop, before interogating the FMU for the model
+    /// This function will be called automatically during the simulation loop, before interrogating the FMU for the model
     /// equations, to return a value that is then used to set the FMU variable with specified name at the current time.
     /// Continuous inputs are floating point FMU variables, with causality="input" and variability="continuous".
     void SetRealInputFunction(const std::string& name, std::function<double(double)> function);
 
     /// Set a continuous input (as a ChFunction).
-    /// This function will be called automatically during the simulation loop, before interogating the FMU for the model
+    /// This function will be called automatically during the simulation loop, before interrogating the FMU for the model
     /// equations, to return a value that is then used to set the FMU variable with specified name at the current time.
     /// Continuous inputs are floating point FMU variables, with causality="input" and variability="continuous".
     void SetRealInputChFunction(const std::string& name, std::shared_ptr<ChFunction> function);
@@ -219,7 +219,7 @@ class ChApiFMI ChExternalFmu : public ChExternalDynamicsODE {
                               ChVectorDynamic<>& rhs       ///< output ODE right-hand side vector
                               ) override;
 
-    virtual void Update(double time, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 
     bool m_verbose;
     bool m_initialized;

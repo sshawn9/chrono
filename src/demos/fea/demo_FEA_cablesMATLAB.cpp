@@ -18,7 +18,6 @@
 // =============================================================================
 
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono/timestepper/ChTimestepper.h"
 #include "chrono_matlab/ChMatlabEngine.h"
 #include "chrono_matlab/ChSolverMatlab.h"
 
@@ -35,6 +34,7 @@ int main(int argc, char* argv[]) {
 
     // Create a Chrono physical system
     ChSystemSMC sys;
+    sys.SetGravityY();
 
     // Create a mesh, that is a container for groups of elements and
     // their referenced nodes.
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     // Visualization of the FEM mesh.
     // This will automatically update a triangle mesh (a ChTriangleMeshShape
     // asset that is internally managed) by setting  proper
-    // coordinates and vertex colours as in the FEM elements.
+    // coordinates and vertex colors as in the FEM elements.
     // Such triangle mesh can be rendered by Irrlicht or POVray or whatever
     // postprocessor that can handle a coloured ChTriangleMeshShape).
 
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
 
     // Create the run-time visualization system
     auto vis =
-        CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "Cables FEM (Matlab)", ChVector3d(0, 0.6, -1.0));
+        CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "Cables FEM (Matlab)", ChVector3d(0, 1.2, -2.0));
 
     // Change solver to Matlab external linear solver.
     ChMatlabEngine matlab_engine;

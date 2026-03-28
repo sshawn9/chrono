@@ -19,12 +19,19 @@
 #include <iostream>
 #include <iomanip>
 
+#include "chrono/ChConfig.h"
 #include "chrono/core/ChMatrix.h"
 #include "chrono/assets/ChColor.h"
 #include "chrono/functions/ChFunctionBase.h"
 #include "chrono/functions/ChFunctionInterp.h"
 
 #include "chrono_postprocess/ChApiPostProcess.h"
+
+#ifdef __APPLE__
+#define GNUTRM "qt"
+#else
+#define GNUTRM "wxt"
+#endif
 
 namespace chrono {
 
@@ -266,7 +273,7 @@ class ChGnuPlot {
     /// - index of current subplot.
     /// Notes:
     /// - indices must be given in ascending order (starting from 0)
-    /// - indices must cover all specified subplots (i.e., num indices = rows * cols)
+    /// - indices must cover all specified subplots
     /// - requires manual call to EndSubplot() when all subplots have been completed.
     void StartSubplot(int rows, int cols, int idx) {
         if (idx < 0 || idx > rows * cols - 1 || idx < m_curr_idx)
@@ -371,11 +378,11 @@ class ChGnuPlot {
     void SetAxesEqual(bool axequal) { m_commandfile += axequal ? " set size square \n" : " set size nosquare \n"; }
 
     /// Set output window title.
-    void SetOutputWindowTitle(const std::string& label) { m_commandfile += "set term wxt title '" + label + "'\n"; }
+    void SetOutputWindowTitle(const std::string& label) { m_commandfile += "set term " GNUTRM " title '" + label + "'\n"; }
 
     /// Set canvas size.
     void SetCanvasSize(int width, int height) {
-        m_commandfile += "set term wxt size ";
+        m_commandfile += "set term " GNUTRM " size ";
         m_commandfile += std::to_string(width);
         m_commandfile += ",";
         m_commandfile += std::to_string(height);
@@ -391,7 +398,7 @@ class ChGnuPlot {
     void OutputWindow(int windownum = 0, bool reset_text = false) {
         FlushPlots(m_commandfile);
         m_commandfile += "# Figure " + std::to_string(windownum) + "\n";
-        m_commandfile += "set terminal wxt " + std::to_string(windownum) + "\n";
+        m_commandfile += "set terminal " GNUTRM " " + std::to_string(windownum) + "\n";
 
         if (reset_text) {
             SetLabelX("");
@@ -494,6 +501,11 @@ class ChGnuPlot {
     }
 
     void ExecuteGnuplot(std::string& script) {
+#ifndef CHRONO_HAS_GNUPLOT
+        std::cerr << "Warning: GnuPlot is not installed. No plots will be created." << std::endl;
+        return;
+#endif
+
         // Create a tmp .gpl file
         {
             std::ofstream gnuplot_command(m_gpl_filename);

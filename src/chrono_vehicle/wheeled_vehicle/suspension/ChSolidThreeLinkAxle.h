@@ -134,7 +134,7 @@ class CH_VEHICLE_API ChSolidThreeLinkAxle : public ChSuspension {
         SPRING_C,    ///< spring, chassis
         SPINDLE,     ///< spindle location
         TRIANGLE_A,  ///< triangle link location on the axle (single point y = 0)
-        TRIANGLE_C,  ///< triangle link locationon the chassis (two points)
+        TRIANGLE_C,  ///< triangle link location on the chassis (two points)
         LINK_A,      ///< longitudinal link location on the axle (two points)
         LINK_C,      ///< longitudinal link location on the chassis (two points)
         NUM_POINTS
@@ -190,9 +190,7 @@ class CH_VEHICLE_API ChSolidThreeLinkAxle : public ChSuspension {
     /// Return the functor object for shock force.
     virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getShockForceFunctor() const = 0;
 
-    std::shared_ptr<ChBody> m_axleTube;  ///< handles to the axle tube body
-    ////std::shared_ptr<ChBody> m_tierod;                    ///< handles to the tierod body
-    ////std::shared_ptr<ChLinkLockFree> m_axleTubeGuide;     ///< allows all translations and rotations
+    std::shared_ptr<ChBody> m_axleTube;                  ///< handles to the axle tube body
     std::shared_ptr<ChBody> m_triangleBody;              ///< axle guide body with spherical link and rotary link
     std::shared_ptr<ChLinkLockRevolute> m_triangleRev;   ///< triangle to chassis revolute joint
     std::shared_ptr<ChLinkLockSpherical> m_triangleSph;  ///< triangle to axle tube spherical joint
@@ -240,9 +238,7 @@ class CH_VEHICLE_API ChSolidThreeLinkAxle : public ChSuspension {
                                      double radius,
                                      const ChColor& color);
 
-    virtual void ExportComponentList(rapidjson::Document& jsonDocument) const override;
-
-    virtual void Output(ChOutput& database) const override;
+    virtual void PopulateComponentList() override;
 
     static const std::string m_pointNames[NUM_POINTS];
 };

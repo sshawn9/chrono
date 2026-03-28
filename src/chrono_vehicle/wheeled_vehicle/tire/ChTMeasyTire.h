@@ -17,7 +17,7 @@
 // developed by Prof. Dr. Georg Rill.
 //
 //
-// Ref: Georg Rill, "Road Vehicle Dynamics - Fundamentals and Modelling",
+// Ref: Georg Rill, "Road Vehicle Dynamics - Fundamentals and Modeling",
 //          https://www.routledge.com/Road-Vehicle-Dynamics-Fundamentals-and-Modeling-with-MATLAB/Rill-Castro/p/book/9780367199739
 //      Georg Rill, "An Engineer's Guess On Tyre Model Parameter Made Possible With TMeasy",
 //          https://www.researchgate.net/publication/317036908_An_Engineer's_Guess_on_Tyre_Parameter_made_possible_with_TMeasy
@@ -40,7 +40,7 @@
 //  - FED-Alpha vehicle model
 //  - Tire data sets gained by conversion of Pac02 TIR parameter files
 //  - Steady state cornering test and test results from Keweenah Research Center (KRC)
-//  - unvalidateble functionality has been removed
+//  - non-validated functionality has been removed
 // ===================================================================================
 
 #ifndef CH_TMEASY_TIRE
@@ -232,16 +232,29 @@ class CH_VEHICLE_API ChTMeasyTire : public ChForceElementTire {
     /// Advance the state of this tire by the specified time step.
     virtual void Advance(double step) override;
 
+    /// Get current internal dynamics ODE states (if any).
+    virtual void GetInternalStates(ChVector2d& states) const override {
+        states[0] = m_states.brx;
+        states[1] = m_states.bry;
+    }
+
+    /// Set the internal dynamics ODE states (if any).
+    virtual void SetInternalStates(const ChVector2d& states) override {
+        m_states.brx = states[0];
+        m_states.bry = states[1];
+    }
+
     void CombinedCoulombForces(double& fx, double& fy, double fz, double muscale);
     void tmxy_combined(double& f, double& fos, double s, double df0, double sm, double fm, double ss, double fs);
     double AlignmentTorque(double fy);
 
     // linear interpolation
-    double InterpL(double w1, double w2) { return w1 + (w2 - w1) * (m_states.q - 1.0); };
+    double InterpL(double w1, double w2) { return w1 + (w2 - w1) * (m_states.q - 1.0); }
+
     // quadratic interpolation
     double InterpQ(double w1, double w2) {
         return (m_states.q) * (2.0 * w1 - 0.5 * w2 - (w1 - 0.5 * w2) * (m_states.q));
-    };
+    }
 
     struct TireStates {
         double sx;               // Longitudinal Slip State (sx)

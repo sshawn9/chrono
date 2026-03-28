@@ -18,7 +18,6 @@
 
 #include "chrono_multicore/constraints/ChConstraintUtils.h"
 #include "chrono_multicore/physics/ChSystemMulticore.h"
-#include "chrono_multicore/solver/ChSystemDescriptorMulticore.h"
 
 #include "chrono/ChConfig.h"
 #include "chrono/utils/ChUtilsCreators.h"
@@ -243,7 +242,7 @@ TEST(ChronoMulticore, jacobians) {
         vis->AddCamera(ChVector3d(6, -6, 1), ChVector3d(0, 0, 0));
         vis->SetWindowSize(1280, 720);
         vis->SetBackgroundColor(ChColor(0.8f, 0.85f, 0.9f));
-        vis->EnableSkyBox();
+        vis->EnableSkyTexture(SkyMode::BOX);
         vis->SetCameraAngleDeg(40.0);
         vis->SetLightIntensity(1.0f);
         vis->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);

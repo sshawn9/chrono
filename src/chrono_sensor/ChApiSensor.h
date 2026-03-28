@@ -15,8 +15,8 @@
 // Macro defines for exporting DLL
 // =============================================================================
 
-#ifndef CHAPISENSOR_H_
-#define CHAPISENSOR_H_
+#ifndef CH_API_SENSOR_H
+#define CH_API_SENSOR_H
 
 #include "chrono/ChVersion.h"
 #include "chrono/core/ChPlatform.h"
@@ -48,7 +48,6 @@
         @defgroup sensor_filters Sensor Filters
         @defgroup sensor_cuda CUDA Wrapper Functions
         @defgroup sensor_optix OptiX-Based Code
-        @defgroup sensor_tensorrt TensorRT-Based Code
         @defgroup sensor_scene Scene
         @defgroup sensor_utils Utilities
     @}

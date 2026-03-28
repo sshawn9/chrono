@@ -28,14 +28,8 @@ import os
 
 # =============================================================================
 
-# The path to the Chrono data directory containing various assets (meshes, textures, data files)
-# is automatically set, relative to the default location of this demo.
-# If running from a different directory, you must change the path to the data directory with: 
-
 # Set output root directory
 chrono.SetChronoOutputPath("../DEMO_OUTPUT/")
-
-veh.SetVehicleDataPath(chrono.GetChronoDataPath() + 'vehicle/')
 
 # Initial vehicle location and orientation
 initLoc = chrono.ChVector3d(0, 0, 0.4)
@@ -162,7 +156,7 @@ elif vis_type == chrono.ChVisualSystem.Type_VSG:
     vis = veh.ChWheeledVehicleVisualSystemVSG()
     vis.SetWindowTitle('UAZ bus')
     vis.SetWindowSize(1280, 1024)
-    vis.EnableSkyBox()
+    vis.EnableSkyTexture()
     vis.SetLightIntensity(1.0)
     vis.SetLightDirection(2.0, 0.75)
     vis.EnableShadows()

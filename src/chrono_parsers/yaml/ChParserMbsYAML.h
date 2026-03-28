@@ -50,15 +50,13 @@ class ChParserMbsYAML;
 /// Attached controllers are processed and loads applied to the associated bodies in ChParserMbsYAML::DoStepDynamics.
 class ChLoadController {
   public:
+    virtual ~ChLoadController() {}
+
     virtual void Initialize(const ChParserMbsYAML& parser, int model_instance) {}
     virtual void Synchronize(double time) {}
     virtual void Advance(double time_step) {}
 
     virtual ChVector3d GetLoad() const = 0;
-
-  protected:
-    ChLoadController() {}
-    virtual ~ChLoadController() {}
 };
 
 /// List of load controller names and their associated loads.
@@ -71,15 +69,13 @@ typedef std::unordered_map<std::string, ChVector3d> LoadControllerLoads;
 /// ChParserMbsYAML::DoStepDynamics.
 class ChMotorController {
   public:
+    virtual ~ChMotorController() {}
+
     virtual void Initialize(const ChParserMbsYAML& parser, int model_instance) {}
     virtual void Synchronize(double time) {}
     virtual void Advance(double time_step) {}
 
     virtual double GetActuation() const = 0;
-
-  protected:
-    ChMotorController() {}
-    virtual ~ChMotorController() {}
 };
 
 /// List of motor controller names and their associated loads.
@@ -88,37 +84,33 @@ typedef std::unordered_map<std::string, double> MotorControllerActuations;
 // -----------------------------------------------------------------------------
 
 /// Parser for YAML specification files for Chrono models and simulations.
-/// The parser caches model information and simulation settings from the corresponding YAML input files and then allows
-/// populating a Chrono system and setting solver and simulation parameters.
+/// The parser caches model information and simulation settings from a YAML input file and then allows populating an MBS
+/// Chrono system and setting solver and simulation parameters.
 class ChApiParsers ChParserMbsYAML : public ChParserYAML {
   public:
     ChParserMbsYAML(bool verbose = false);
-
-    /// Create a YAML parser and load the model from the specified input YAML file.
-    ChParserMbsYAML(const std::string& yaml_model_filename, const std::string& yaml_sim_filename, bool verbose = false);
+    ChParserMbsYAML(const std::string& yaml_filename, bool verbose = false);
     ~ChParserMbsYAML();
 
-    /// Return true if a YAML simulation file has been loaded.
-    bool HasSimulationData() const { return m_sim_loaded; }
+    /// Return true if a YAML solver file has been loaded.
+    bool HasSolverData() const { return m_solver_loaded; }
 
     /// Return true if a YAML model file has been loaded.
     bool HasModelData() const { return m_model_loaded; }
 
     // --------------
 
-    /// Load the simulation parameters from the specified input YAML simulation file.
-    void LoadSimulationFile(const std::string& yaml_filename);
+    /// Load the specified MBS simulation input YAML file.
+    virtual void LoadFile(const std::string& yaml_filename);
 
-    double GetTimestep() const { return m_sim.time_step; }
-    double GetEndtime() const { return m_sim.end_time; }
-    bool EnforceRealtime() const { return m_sim.enforce_realtime; }
+    /// Load the simulation, output, and visualization settings from the specified YAML node.
+    virtual void LoadSimData(const YAML::Node& yaml);
 
-    bool Render() const { return m_sim.visualization.render; }
-    double GetRenderFPS() const { return m_sim.visualization.render_fps; }
-    CameraVerticalDir GetCameraVerticalDir() const { return m_sim.visualization.camera_vertical; }
-    const ChVector3d& GetCameraLocation() const { return m_sim.visualization.camera_location; }
-    const ChVector3d& GetCameraTarget() const { return m_sim.visualization.camera_target; }
-    bool EnableShadows() const { return m_sim.visualization.enable_shadows; }
+    /// Load the MBS model from the specified YAML node.
+    virtual void LoadModelData(const YAML::Node& yaml);
+
+    /// Load the solver parameters from the specified YAML node.
+    virtual void LoadSolverData(const YAML::Node& yaml);
 
     /// Create and return a Chrono system configured from cached simulation parameters.
     /// If no YAML simulation file was loaded, this function returns a ChSystemNSC with default settings.
@@ -130,8 +122,18 @@ class ChApiParsers ChParserMbsYAML : public ChParserYAML {
 
     // --------------
 
-    /// Load the model from the specified input YAML model file.
-    void LoadModelFile(const std::string& yaml_filename);
+    double GetTimestep() const { return m_sim.integrator.time_step; }
+    double GetEndtime() const { return m_sim.end_time; }
+    bool EnforceRealtime() const { return m_sim.enforce_realtime; }
+
+    bool Render() const { return m_vis.render; }
+    double GetRenderFPS() const { return m_vis.render_fps; }
+    CameraVerticalDir GetCameraVerticalDir() const { return m_vis.camera_vertical; }
+    const ChVector3d& GetCameraLocation() const { return m_vis.camera_location; }
+    const ChVector3d& GetCameraTarget() const { return m_vis.camera_target; }
+    bool EnableShadows() const { return m_vis.enable_shadows; }
+
+    // --------------
 
     /// Populate the given system with the cached Chrono components.
     /// An instance of the underlying Chrono model can be created at the specified frame (relative to the global frame),
@@ -169,14 +171,14 @@ class ChApiParsers ChParserMbsYAML : public ChParserYAML {
     /// parameters for a load controller with specified name.
     void AttachLoadController(std::shared_ptr<ChLoadController> controller,
                               const std::string& name,
-                              int model_instance = 0);
+                              int model_instance);
 
     /// Attach the external controller for the motor controller with given name.
     /// This function can be called only after the MBS model was loaded, the model specification must include
     /// parameters for a motor with specified name, and that motor was set as externally actuated.
     void AttachMotorController(std::shared_ptr<ChMotorController> controller,
                                const std::string& name,
-                               int model_instance = 0);
+                               int model_instance);
 
     /// Advance dynamics of the multibody system.
     /// - load controllers (if any are attached) are synchronized and their dynamics advanced in time;
@@ -219,6 +221,7 @@ class ChApiParsers ChParserMbsYAML : public ChParserYAML {
         int max_iterations;
         double overrelaxation_factor;
         double sharpness_factor;
+        bool warm_start;
     };
 
     /// Integrator parameters.
@@ -227,6 +230,7 @@ class ChApiParsers ChParserMbsYAML : public ChParserYAML {
         void PrintInfo();
 
         ChTimestepper::Type type;
+        double time_step;
         double rtol;
         double atol_states;
         double atol_multipliers;
@@ -263,13 +267,11 @@ class ChApiParsers ChParserMbsYAML : public ChParserYAML {
         int num_threads_eigen;
         int num_threads_pardiso;
 
-        double time_step;
         double end_time;
         bool enforce_realtime;
 
         SolverParams solver;
         IntegratorParams integrator;
-        VisParams visualization;
     };
 
     /// Internal specification of a body.
@@ -478,7 +480,8 @@ class ChApiParsers ChParserMbsYAML : public ChParserYAML {
     static std::string GetMotorActuationTypeString(MotorActuation type);
 
   private:
-    SimParams m_sim;  ///< simulation parameters
+    SimParams m_sim;  ///< solver and integrator parameters
+    VisParams m_vis;  ///< visualization parameters
 
     std::unordered_map<std::string, BodyParams> m_body_params;                     ///< bodies
     std::unordered_map<std::string, JointParams> m_joint_params;                   ///< joints
@@ -497,10 +500,12 @@ class ChApiParsers ChParserMbsYAML : public ChParserYAML {
 
     OutputData m_output_data;  ///< output data
 
-    bool m_sim_loaded;    ///< YAML simulation file loaded
-    bool m_model_loaded;  ///< YAML model file loaded
-    int m_crt_instance;   ///< index of last instance created
+    bool m_loaded;         ///< YAML simulation file loaded
+    bool m_solver_loaded;  ///< YAML solver file loaded
+    bool m_model_loaded;   ///< YAML model file loaded
+    int m_crt_instance;    ///< index of last instance created
 
+    friend class ChParserVehicleYAML;
     friend class ChParserFsiYAML;
 };
 

@@ -19,8 +19,8 @@
 
 #include "chrono_dem/visualization/ChDemVisualizationVSG.h"
 
-#include "chrono_vsg/utils/ChConversionsVSG.h"
-#include "chrono_vsg/shapes/ShapeBuilder.h"
+#include "chrono_vsg/utils/ChDataUtilsVSG.h"
+#include "chrono_vsg/utils/ChShapeBuilderVSG.h"
 
 namespace chrono {
 namespace dem {
@@ -157,7 +157,7 @@ void ChDemVisualizationVSG::OnInitialize() {
     m_vsys->SetImageOutputDirectory(m_image_dir);
 
     // Issue performance warning if shadows are enabled for the containing visualization system
-    if (m_vsys->AreShadowsEnabled()) {
+    if (m_vsys->ShadowsEnabled()) {
         std::cerr << "WARNING:  Shadow rendering is enabled for the associated VSG visualization system.\n";
         std::cerr << "          This negatively affects rendering performance, especially for large particle systems."
                   << std::endl;

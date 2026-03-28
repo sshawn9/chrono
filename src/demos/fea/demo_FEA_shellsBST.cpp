@@ -21,7 +21,6 @@
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/solver/ChIterativeSolverLS.h"
-#include "chrono/timestepper/ChTimestepper.h"
 #include "chrono/utils/ChUtils.h"
 
 #include "chrono/fea/ChElementShellBST.h"
@@ -49,16 +48,19 @@ int main(int argc, char* argv[]) {
     std::cout << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << std::endl;
 
     // Select demo
+    std::string input;
+    int demo = 2;
     std::cout << "Demo options:" << std::endl;
     std::cout << "1  : single BSTshell element" << std::endl;
-    std::cout << "2  : rectangular mesh of BSTshell elements" << std::endl;
+    std::cout << "2  : rectangular mesh of BSTshell elements [DEFAULT]" << std::endl;
     std::cout << "3  : mesh of BSTshell elements intialized from OBJ file" << std::endl;
     std::cout << "\nSelect option (1, 2, or 3): ";
-
-    int demo = 1;
-    std::cin >> demo;
-    std::cout << std::endl;
-    ChClampValue(demo, 1, 3);
+    std::getline(std::cin, input);
+    if (!input.empty()) {
+        std::istringstream stream(input);
+        stream >> demo;
+        ChClampValue(demo, 1, 3);
+    }
 
     // Create (if needed) output directory
     const std::string out_dir = GetChronoOutputPath() + "FEA_SHELLS";
@@ -69,7 +71,7 @@ int main(int argc, char* argv[]) {
 
     // Create a Chrono physical system
     ChSystemSMC sys;
-
+    sys.SetGravityY();
     sys.SetNumThreads(std::min(4, ChOMP::GetNumProcs()), 0, 1);
 
     // Create a mesh, that is a container for groups
@@ -140,7 +142,7 @@ int main(int argc, char* argv[]) {
 
         // TEST
         sys.Setup();
-        sys.Update(false);
+        sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
         std::cout << "BST initial: \n"
                   << "Area: " << element->area << "\n"
                   << "l0: " << element->l0 << "\n"
@@ -151,7 +153,7 @@ int main(int argc, char* argv[]) {
         node1->SetPos(node1->GetPos() + ChVector3d(0.1, 0, 0));
         node1->SetFixed(true);
 
-        sys.Update(false);
+        sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
         ChVectorDynamic<double> Fi(element->GetNumCoordsPosLevel());
         element->ComputeInternalForces(Fi);
         std::cout << "BST updated: \n"
@@ -347,7 +349,7 @@ int main(int argc, char* argv[]) {
 
     // Create the run-time visualization system
     auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "BST triangle shell",
-                                         ChVector3d(1, 0.3, 1.3), ChVector3d(0.5, -0.3, 0.5));
+                                         ChVector3d(2.0, 0.6, 2.6), ChVector3d(0.5, -0.3, 0.5));
 
     // Change solver to PardisoMKL
     auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
@@ -361,7 +363,7 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     double timestep = 0.005;
     sys.Setup();
-    sys.Update(false);
+    sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
 
     ChFunctionInterp rec_X;
     ChFunctionInterp rec_Y;
@@ -382,9 +384,9 @@ int main(int argc, char* argv[]) {
     // time step, so each time step has less CPU overhead, but this comes at a cost: very short time steps must
     // be used otherwise the integration will diverge - especially if the system has high stiffness and/or low masses.
     // For the case of the falling cloth, we succesfully tested
-    //   ChTimestepperEulerExplIIorder  timestep = 0.00002  (not suggested, better use higher order)
+    //   ChTimestepperEulerExplicitIIorder  timestep = 0.00002  (not suggested, better use higher order)
     //   ChTimestepperHeun              timestep = 0.0001   (Heun is like a 2nd order Runge Kutta)
-    //   ChTimestepperRungeKuttaExpl    timestep = 0.0005   (the famous 4th order Runge Kutta, of course slower)
+    //   ChTimestepperRungeKutta    timestep = 0.0005   (the famous 4th order Runge Kutta, of course slower)
     //
     // You will see that the explicit integrator does not introduce numerical damping unlike implicit integrators,
     // so the motion will be more oscillatory and undamped, thus amplificating the risk of divergence (if you add �

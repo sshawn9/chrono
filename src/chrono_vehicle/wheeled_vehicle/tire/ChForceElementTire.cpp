@@ -60,8 +60,7 @@ TerrainForce ChForceElementTire::GetTireForce() const {
     tireforce.moment = m_data.frame.TransformDirectionLocalToParent(m_tireforce.moment);
 
     // Move the tire forces from the contact patch to the wheel center
-    tireforce.moment +=
-        Vcross((m_data.frame.pos + m_data.depth * m_data.frame.rot.GetAxisZ()) - tireforce.point, tireforce.force);
+    tireforce.moment += Vcross(m_data.frame.pos - tireforce.point, tireforce.force);
 
     return tireforce;
 }
@@ -74,6 +73,54 @@ TerrainForce ChForceElementTire::ReportTireForceLocal(ChTerrain* terrain, ChCoor
     tire_frame = m_data.frame;
     return m_tireforce;
 }
+
+// -----------------------------------------------------------------------------
+
+void ChForceElementTire::ExportCheckpoint(ChCheckpoint::Format format, const std::string& filename) const {
+    ChVector2d states;
+    GetInternalStates(states);
+
+    switch (format) {
+        case ChCheckpoint::Format::ASCII: {
+            std::ofstream ofile(filename);
+            ofile << states[0] << " " << states[1] << std::endl;
+            ofile.close();
+            break;
+        }
+        default:
+            std::cerr << "Error: unrecognized checkpoint format" << std::endl;
+            throw std::runtime_error("Unrecognized checkpoint format");
+    }
+}
+
+void ChForceElementTire::ImportCheckpoint(ChCheckpoint::Format format, const std::string& filename) {
+    ChVector2d states;
+
+    switch (format) {
+        case ChCheckpoint::Format::ASCII: {
+            std::ifstream ifile;
+            try {
+                ifile.exceptions(std::ios::failbit | std::ios::badbit | std::ios::eofbit);
+                ifile.open(filename);
+            } catch (const std::exception&) {
+                std::cerr << "Error: Cannot open ASCII checkpoint file " << filename << std::endl;
+                throw std::invalid_argument("Cannot open ASCII checkpoint file");
+            }
+            std::string line;
+            std::getline(ifile, line);
+            std::istringstream iss(line);
+            iss >> states[0] >> states[1];
+            break;
+        }
+        default:
+            std::cerr << "Error: unrecognized checkpoint format" << std::endl;
+            throw std::runtime_error("Unrecognized checkpoint format");
+    }
+
+    SetInternalStates(states);
+}
+
+
 
 // -----------------------------------------------------------------------------
 

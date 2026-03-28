@@ -17,7 +17,7 @@
 // =============================================================================
 
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/input_output/ChWriterCSV.h"
 #include "chrono/utils/ChUtilsCreators.h"
 
 #include "chrono_vehicle/ChVehicleDataPath.h"
@@ -27,21 +27,16 @@
 
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/terrain/SCMTerrain.h"
-#ifdef CHRONO_FSI
+#ifdef CHRONO_FSI_SPH
     #include "chrono_vehicle/terrain/CRMTerrain.h"
 using namespace chrono::fsi;
 using namespace chrono::fsi::sph;
 #endif
 
 #include "chrono/assets/ChVisualSystem.h"
-#ifdef CHRONO_IRRLICHT
-    #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
-using namespace chrono::irrlicht;
-#endif
-
 #ifdef CHRONO_VSG
     #include "chrono_vsg/ChVisualSystemVSG.h"
-    #ifdef CHRONO_FSI
+    #ifdef CHRONO_FSI_SPH
         #include "chrono_fsi/sph/visualization/ChSphVisualizationVSG.h"
     #endif
 using namespace chrono::vsg3d;
@@ -65,9 +60,6 @@ using std::cerr;
 using std::endl;
 
 // -----------------------------------------------------------------------------
-
-// Run-time visualization system (Irrlicht or VSG)
-ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
 
 // Tire JSON specification file
 std::string tire_json = "Polaris/Polaris_ANCF4Tire_Lumped.json";
@@ -140,7 +132,7 @@ int main(int argc, char* argv[]) {
         hht->SetAlpha(-0.2);
         hht->SetMaxIters(5);
         hht->SetAbsTolerances(1e-2);
-        hht->SetModifiedNewton(true);
+        hht->SetJacobianUpdateMethod(ChTimestepperImplicit::JacobianUpdate::EVERY_STEP);
         hht->SetStepControl(false);
         hht->SetMinStepSize(1e-4);
         ////hht->SetVerbose(true);
@@ -199,7 +191,7 @@ int main(int argc, char* argv[]) {
     joint->Initialize(floor, spindle, ChFramed());
     sys.AddLink(joint);
 
-#ifndef CHRONO_FSI
+#ifndef CHRONO_FSI_SPH
     if (terrain_type == TerrainType::CRM) {
         cout << "CRM terrain not available (Chrono::FSI not enabled)." << endl;
         cout << "Revert to rigid terrain." << endl;
@@ -245,7 +237,7 @@ int main(int argc, char* argv[]) {
             break;
         }
         case TerrainType::CRM: {
-#ifdef CHRONO_FSI
+#ifdef CHRONO_FSI_SPH
             double spacing = 0.04;
             auto terrain_crm = chrono_types::make_shared<CRMTerrain>(sys, spacing);
             terrain_crm->SetGravitationalAcceleration(gacc);
@@ -278,7 +270,7 @@ int main(int argc, char* argv[]) {
             sph_params.initial_spacing = spacing;
             sph_params.shifting_method = ShiftingMethod::PPST_XSPH;
             sph_params.d0_multiplier = 1;
-            sph_params.free_surface_threshold = 0.8;
+            sph_params.free_surface_threshold = 2.0;
             sph_params.artificial_viscosity = 0.5;
             sph_params.use_consistent_gradient_discretization = false;
             sph_params.use_consistent_laplacian_discretization = false;
@@ -304,59 +296,37 @@ int main(int argc, char* argv[]) {
 
     // Create the visualization window (only for the first tire)
     std::shared_ptr<ChVisualSystem> vis;
-    switch (vis_type) {
-        case ChVisualSystem::Type::IRRLICHT: {
-#ifdef CHRONO_IRRLICHT
-            auto vis_irr = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-            vis_irr->AttachSystem(&sys);
-            vis_irr->SetWindowSize(800, 600);
-            vis_irr->SetWindowTitle("FEA tire");
-            vis_irr->SetCameraVertical(CameraVerticalDir::Z);
-            vis_irr->Initialize();
-            vis_irr->AddLogo();
-            vis_irr->AddSkyBox();
-            vis_irr->AddTypicalLights();
-            vis_irr->AddCamera(ChVector3d(0, -1.5, 0), VNULL);
-
-            vis = vis_irr;
-#endif
-            break;
-        }
-        default:
-        case ChVisualSystem::Type::VSG: {
 #ifdef CHRONO_VSG
-            auto vis_vsg = chrono_types::make_shared<ChVisualSystemVSG>();
-            vis_vsg->AttachSystem(&sys);
+    auto vis_vsg = chrono_types::make_shared<ChVisualSystemVSG>();
+    vis_vsg->AttachSystem(&sys);
 
-    #ifdef CHRONO_FSI
-            if (terrain_type == TerrainType::CRM) {
-                auto sysFSI = std::static_pointer_cast<CRMTerrain>(terrain)->GetFsiSystemSPH();
-                auto visFSI = chrono_types::make_shared<ChSphVisualizationVSG>(sysFSI.get());
-                visFSI->EnableFluidMarkers(true);
-                visFSI->EnableBoundaryMarkers(false);
-                visFSI->EnableRigidBodyMarkers(false);
+    #ifdef CHRONO_FSI_SPH
+    if (terrain_type == TerrainType::CRM) {
+        auto sysFSI = std::static_pointer_cast<CRMTerrain>(terrain)->GetFsiSystemSPH();
+        auto visFSI = chrono_types::make_shared<ChSphVisualizationVSG>(sysFSI.get());
+        visFSI->EnableFluidMarkers(true);
+        visFSI->EnableBoundaryMarkers(false);
+        visFSI->EnableRigidBodyMarkers(false);
 
-                vis_vsg->AttachPlugin(visFSI);
-            }
+        vis_vsg->AttachPlugin(visFSI);
+    }
     #endif
 
-            vis_vsg->SetWindowTitle("FEA tire");
-            vis_vsg->AddCamera(ChVector3d(0, -1.5, 0), VNULL);
-            vis_vsg->SetWindowSize(1280, 800);
-            vis_vsg->SetBackgroundColor(ChColor(0.8f, 0.85f, 0.9f));
-            vis_vsg->EnableSkyBox();
-            vis_vsg->SetCameraVertical(CameraVerticalDir::Z);
-            vis_vsg->SetCameraAngleDeg(40.0);
-            vis_vsg->SetLightIntensity(1.0f);
-            vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
-            vis_vsg->EnableShadows();
-            vis_vsg->Initialize();
+    vis_vsg->SetWindowTitle("FEA tire");
+    vis_vsg->AddCamera(ChVector3d(0, -1.5, 0), VNULL);
+    vis_vsg->SetWindowSize(1280, 800);
+    vis_vsg->SetBackgroundColor(ChColor(0.8f, 0.85f, 0.9f));
+    vis_vsg->EnableSkyTexture(SkyMode::DOME);
+    vis_vsg->SetCameraVertical(CameraVerticalDir::Z);
+    vis_vsg->SetCameraAngleDeg(40.0);
+    vis_vsg->SetLightIntensity(1.0f);
+    vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
+    vis_vsg->EnableShadows();
+    vis_vsg->SetContactNormalsVisibility(true, -1);
+    vis_vsg->Initialize();
 
-            vis = vis_vsg;
+    vis = vis_vsg;
 #endif
-            break;
-        }
-    }
 
     // Set up output
     std::string out_dir = GetChronoOutputPath() + "FEAtire_TEST";
@@ -364,7 +334,7 @@ int main(int argc, char* argv[]) {
         cerr << "Error creating directory " << out_dir << endl;
         return 1;
     }
-    utils::ChWriterCSV csv;
+    ChWriterCSV csv;
     csv.SetDelimiter(" ");
 
     // Simulation loop

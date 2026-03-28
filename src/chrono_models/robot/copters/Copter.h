@@ -37,7 +37,7 @@ namespace copter {
 /// @{
 
 /// Base class for any copter, template parameter nop is the number of propellers.
-/// Propellers position, data, rotation verse, vertical axis and all mass porperties are settable.
+/// Propellers position, data, rotation verse, vertical axis and all mass properties are settable.
 template <int nop>
 class Copter {
   public:
@@ -286,7 +286,6 @@ void Copter<nop>::AddVisualizationAssets(const std::string& chassismesh,
     auto trimesh = ChTriangleMeshConnected::CreateFromWavefrontFile(chassismesh, true, true);
     auto trimesh_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
     trimesh_shape->SetMesh(trimesh);
-    trimesh_shape->SetMutable(false);
     trimesh_shape->SetColor(ChColor(0.2f, 0.32f, 0.48f));
     chassis->AddVisualShape(trimesh_shape, cor_m1);
 
@@ -294,7 +293,6 @@ void Copter<nop>::AddVisualizationAssets(const std::string& chassismesh,
         auto prop_trimesh = ChTriangleMeshConnected::CreateFromWavefrontFile(propellermesh, true, true);
         auto trimesh_prop_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
         trimesh_prop_shape->SetMesh(prop_trimesh);
-        trimesh_prop_shape->SetMutable(false);
         trimesh_prop_shape->SetColor(ChColor(0.8f, 0.68f, 0.52f));
         propeller->AddVisualShape(trimesh_prop_shape, cor_m2);
     }

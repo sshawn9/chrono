@@ -51,6 +51,7 @@ class MyEventReceiver : public IEventReceiver {
         msystem = system;
         mdevice = device;
         mmotor = motor;
+        text_motorspeed->setOverrideColor(irr::video::SColor(255, 255, 255, 255));
     }
 
     bool OnEvent(const SEvent& event) {
@@ -92,6 +93,7 @@ int main(int argc, char* argv[]) {
 
     // 1- Create a Chrono physical system
     ChSystemNSC sys;
+    sys.SetGravityY();
 
     // 2- Create the rigid bodies of the four-bar mechanical system
     //   (a flywheel, a rod, a rocker, a truss), maybe setting
@@ -149,8 +151,7 @@ int main(int argc, char* argv[]) {
     vis->SetWindowTitle("Four-bar mechanism");
     vis->Initialize();
     vis->AddLogo();
-    vis->AddSkyBox();
-    vis->AddCamera(ChVector3d(0, 0, -8));
+    vis->AddCamera(ChVector3d(0, 0, -12));
     vis->AddTypicalLights();
 
     // ..add a GUI text and GUI slider to control motor of mechanism via mouse

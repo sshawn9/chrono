@@ -23,14 +23,14 @@ project(my_project)
 #                 OPTIONAL_COMPONENTS opt_module1 opt_module2 ...
 #                 CONFIG)
 # The following Chrono modules can be requested (case insensitive):
-#   Cascade, CSharp, FMI, FSI, DEM, Irrlicht, OpenGL, VSG, Matlab,
+#   Cascade, CSharp, DEM, FMI, FSI, FSI_SPH, FSI_TDPF, Irrlicht, OpenGL, VSG, Matlab,
 #   Modal, Multicore, PardisoMKL, Parsers, Postprocess, Sensor,
 #   Synchrono, Vehicle, VehicleCosim.
 # A component can be requested either as required or optional
 # (see the CMake documentation for find_package).
 # 
 # Note that you will have to set the variable Chrono_DIR to 
-# specify the location of the chrono-config.cmake script, if
+# specify the location of the ChronoConfig.cmake script, if
 # it is not in a default install location. Chrono_DIR can point
 # to either a Chrono build tree or a Chrono install tree.
 # 
@@ -50,8 +50,6 @@ project(my_project)
 #       path to the Chrono data directory
 # CHRONO_VEHICLE_DATA_DIR
 #       path to the Chrono::Vehicle data directory
-# CHRONO_FSI_DATA_DIR
-#       path to the Chrono::FSI data directory
 # SYNCHRONO_DATA_DIR
 #       path to the Chrono::Synchrono data directory
 #

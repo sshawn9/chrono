@@ -9,25 +9,15 @@ option(CH_ENABLE_MODULE_VEHICLE "Enable the Chrono Vehicle module" OFF)
 # Return now if this module is not enabled
 if(NOT CH_ENABLE_MODULE_VEHICLE)
    mark_as_advanced(FORCE CH_ENABLE_OPENCRG)
-   mark_as_advanced(FORCE CH_ENABLE_IRRKLANG)
-   mark_as_advanced(FORCE IRRKLANG_INSTALL_DIR)
-   mark_as_advanced(FORCE IRRKLANG_LIBRARY)
    return()
 endif()
 
 message(STATUS "\n==== Chrono Vehicle module ====\n")
 
 mark_as_advanced(CLEAR CH_ENABLE_OPENCRG)
-mark_as_advanced(CLEAR CH_ENABLE_IRRKLANG)
-mark_as_advanced(CLEAR IRRKLANG_INSTALL_DIR)
-mark_as_advanced(CLEAR IRRKLANG_LIBRARY)
 
 # Provide option to add OpenCRG support.
 option(CH_ENABLE_OPENCRG "Enable OpenCRG terrain library support" OFF)
-
-# If Irrlicht support was enabled, provide option to add Irrklang support.
-cmake_dependent_option(CH_ENABLE_IRRKLANG "Enable Irrklang library for sound" OFF
-                       "CH_ENABLE_MODULE_IRRLICHT" OFF)
 
 # ----------------------------------------------------------------------------
 # Find the OpenCRG library
@@ -47,7 +37,7 @@ if(CH_ENABLE_OPENCRG)
         mark_as_advanced(FORCE OpenCRG_DLL)
     endif()
 
-    set(HAVE_OPENCRG ON)
+    set(CH_USE_OPENCRG ON)
 
     file(COPY ${CMAKE_SOURCE_DIR}/cmake/FindOpenCRG.cmake DESTINATION ${CMAKE_BINARY_DIR}/cmake/)
     install(FILES "${CMAKE_SOURCE_DIR}/cmake/FindOpenCRG.cmake" DESTINATION ${CH_CONFIG_INSTALL_PATH})
@@ -66,69 +56,33 @@ if(CH_ENABLE_OPENCRG)
         mark_as_advanced(CLEAR OpenCRG_DLL)
     endif()
 
-    set(HAVE_OPENCRG OFF)
+    set(CH_USE_OPENCRG OFF)
 
   endif()
 endif()
 
-SET(HAVE_OPENCRG "${HAVE_OPENCRG}" PARENT_SCOPE)
-
-# ----------------------------------------------------------------------------
-# Find IrrKlang library
-# ----------------------------------------------------------------------------
-
-if(CH_ENABLE_IRRKLANG)
-
-  set(IRRKLANG_ROOT "" CACHE PATH "IrrKlang SDK root directory")
-  set(IRRKLANG_LIBDIR "" CACHE PATH "IrrKlang SDK library directory")
-  find_package(IRRKLANG)
-
-  if (NOT IRRKLANG_FOUND)
-    mark_as_advanced(CLEAR IRRKLANG_ROOT)
-    mark_as_advanced(CLEAR IRRKLANG_LIBDIR)
-  else()
-    set(IRRKLANG_LIBDIR ${IRRKLANG_LIBRARY_DIR} CACHE STRING "IrrKlang SDK library directory" FORCE)
-    mark_as_advanced(FORCE IRRKLANG_ROOT)
-    mark_as_advanced(FORCE IRRKLANG_LIBDIR)
-  endif()
-
-  message(STATUS "IrrKlang include dir: ${IRRKLANG_INCLUDE_DIR}")
-  message(STATUS "IrrKlang library:     ${IRRKLANG_LIBRARY}")
-
-  set(HAVE_IRRKLANG ${IRRKLANG_FOUND})
-
-else()
-
-  set(HAVE_IRRKLANG FALSE)
-
-endif()
-
-SET(HAVE_IRRKLANG "${HAVE_IRRKLANG}" PARENT_SCOPE)
+SET(CH_USE_OPENCRG "${CH_USE_OPENCRG}" PARENT_SCOPE)
 
 # ----------------------------------------------------------------------------
 # Generate and install configuration file
 # ----------------------------------------------------------------------------
 
 # Prepare replacement variables
-if(HAVE_OPENCRG)
-  set(CHRONO_OPENCRG "#define CHRONO_OPENCRG")
+if(CH_USE_OPENCRG)
+  set(CHRONO_OPENCRG "#define CHRONO_HAS_OPENCRG")
 else()
-  set(CHRONO_OPENCRG "#undef CHRONO_OPENCRG")
-endif()
-
-if(CH_ENABLE_IRRKLANG)
-  set(CHRONO_IRRKLANG "#define CHRONO_IRRKLANG")
-else()
-  set(CHRONO_IRRKLANG "#undef CHRONO_IRRKLANG")
+  set(CHRONO_OPENCRG "#undef CHRONO_HAS_OPENCRG")
 endif()
 
 # Generate the configuration header file using substitution variables.
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ChConfigVehicle.h.in
-               ${PROJECT_BINARY_DIR}/chrono_vehicle/ChConfigVehicle.h)
+set(CV_CONFIG_FILE ${PROJECT_BINARY_DIR}/chrono_vehicle/ChConfigVehicle.h)
 
-install(FILES "${PROJECT_BINARY_DIR}/chrono_vehicle/ChConfigVehicle.h"
-        DESTINATION include/chrono_vehicle)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ChConfigVehicle.h.in ${CV_CONFIG_FILE} @ONLY)
+
+source_group("" FILES ${CV_CONFIG_FILE})
+
+install(FILES ${CV_CONFIG_FILE} DESTINATION include/chrono_vehicle)
 
 if(CH_ENABLE_MODULE_VSG)
     # Find the VSG library
@@ -273,13 +227,13 @@ set(CV_TERRAIN_FILES
     terrain/FEATerrain.h
     terrain/FEATerrain.cpp
 )
-if(HAVE_OPENCRG)
+if(CH_USE_OPENCRG)
     set(CV_TERRAIN_FILES ${CV_TERRAIN_FILES}
         terrain/CRGTerrain.h
         terrain/CRGTerrain.cpp
     )
 endif()
-if(CH_ENABLE_MODULE_FSI)
+if(CH_ENABLE_MODULE_FSI_SPH)
     set(CV_TERRAIN_FILES ${CV_TERRAIN_FILES}
         terrain/CRMTerrain.h
         terrain/CRMTerrain.cpp    
@@ -847,8 +801,9 @@ endif()
 if(CH_ENABLE_MODULE_VSG)
   list (APPEND DEPENDENCIES_VEHICLE "VSG")
 endif()
-if(CH_ENABLE_MODULE_FSI)
+if(CH_ENABLE_MODULE_FSI_SPH)
   list (APPEND DEPENDENCIES_VEHICLE "FSI")
+  list (APPEND DEPENDENCIES_VEHICLE "FSI_SPH")
 endif()
 
 set(DEPENDENCIES_VEHICLE ${DEPENDENCIES_VEHICLE} PARENT_SCOPE)
@@ -894,6 +849,8 @@ add_library(Chrono_vehicle
     ${CV_TV_VEHICLE_FILES}
 #
     ${CV_STB_FILES}
+#
+    ${CV_CONFIG_FILE}
 )
 
 add_library(Chrono::vehicle ALIAS Chrono_vehicle)
@@ -915,11 +872,12 @@ endif()
 
 target_link_libraries(Chrono_vehicle PUBLIC Chrono_core)
 
-if(HAVE_OPENCRG)
+if(CH_USE_OPENCRG)
   target_link_libraries(Chrono_vehicle PRIVATE OpenCRG::OpenCRG)
 endif()
 
-if(CH_ENABLE_MODULE_FSI)
+if(CH_ENABLE_MODULE_FSI_SPH)
+  target_link_libraries(Chrono_vehicle PRIVATE Chrono_fsi)
   target_link_libraries(Chrono_vehicle PRIVATE Chrono_fsisph)
 endif()
 
@@ -967,10 +925,6 @@ if(CH_ENABLE_MODULE_IRRLICHT)
 
     target_link_libraries(Chrono_vehicle_irrlicht PRIVATE Chrono_core Chrono_vehicle)
     target_link_libraries(Chrono_vehicle_irrlicht PUBLIC Chrono_irrlicht)
-
-    if(CH_ENABLE_IRRKLANG)
-        target_link_libraries(Chrono_vehicle_irrlicht PUBLIC IrrKlang::IrrKlang)
-    endif()
 
     target_compile_definitions(Chrono_vehicle_irrlicht PRIVATE $<$<COMPILE_LANGUAGE:CXX>:CH_API_COMPILE_VEHICLE>)
 
@@ -1069,19 +1023,8 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/stb
         DESTINATION include/chrono_thirdparty
         FILES_MATCHING PATTERN "*.h" PATTERN "*.cuh" PATTERN "*.hpp" PATTERN "*.inl")
 
-# Install files for chrono-config (in both build and install trees)
-file(COPY ${CMAKE_SOURCE_DIR}/cmake/FindIrrKlang.cmake DESTINATION ${CMAKE_BINARY_DIR}/cmake/)
-install(FILES "${CMAKE_SOURCE_DIR}/cmake/FindIrrKlang.cmake" DESTINATION ${CH_CONFIG_INSTALL_PATH})
-
 # On Windows, copy DLLs
 #if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-#    if(CH_ENABLE_MODULE_IRRLICHT AND EXISTS "${IRRKLANG_DLL}")
-#        add_custom_command(TARGET Chrono_vehicle_irrlicht POST_BUILD
-#            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#            "${IRRKLANG_DLL}"
-#            "${PROJECT_BINARY_DIR}/bin/$<CONFIGURATION>")
-#    endif()
-#
 #    if(EXISTS "${OpenCRG_DLL}")
 #        add_custom_command(TARGET Chrono_vehicle POST_BUILD
 #            COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -1091,6 +1034,5 @@ install(FILES "${CMAKE_SOURCE_DIR}/cmake/FindIrrKlang.cmake" DESTINATION ${CH_CO
 #    endif()
 #
 #  # Make variable visible from outside this directory
-#  set(CH_IRRKLANG_DLL "${IRRKLANG_DLL}" PARENT_SCOPE)
 #  set(CH_OPENCRG_DLL "${OpenCRG_DLL}" PARENT_SCOPE)
 #endif()

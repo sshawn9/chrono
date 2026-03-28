@@ -46,6 +46,8 @@ class CH_VEHICLE_API ChChassisConnectorFifthWheel : public ChChassisConnector {
                             ) override;
 
   protected:
+    virtual void PopulateComponentList() override;
+
     std::shared_ptr<ChLinkUniversal> m_joint;  ///< universal joint of the connector
 };
 

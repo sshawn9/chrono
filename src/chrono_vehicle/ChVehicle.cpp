@@ -29,9 +29,10 @@
 
 #include "chrono_vehicle/ChVehicleVisualSystem.h"
 
-#include "chrono/output/ChOutputASCII.h"
+#include "chrono/input_output/ChOutputASCII.h"
+#include "chrono/input_output/ChCheckpointASCII.h"
 #ifdef CHRONO_HAS_HDF5
-    #include "chrono/output/ChOutputHDF5.h"
+    #include "chrono/input_output/ChOutputHDF5.h"
 #endif
 
 namespace chrono {
@@ -144,7 +145,7 @@ void ChVehicle::SetOutput(ChOutput::Type type,
         case ChOutput::Type::ASCII:
             m_output_db = new ChOutputASCII(out_dir + "/" + out_name + ".txt");
             break;
-        case ChOutput::Type::HDF5 :
+        case ChOutput::Type::HDF5:
 #ifdef CHRONO_HAS_HDF5
             m_output_db = new ChOutputHDF5(out_dir + "/" + out_name + ".h5", mode);
 #endif
@@ -168,6 +169,24 @@ void ChVehicle::SetOutput(ChOutput::Type type, ChOutput::Mode mode, std::ostream
 #endif
             break;
     }
+}
+
+void ChVehicle::ExportCheckpoint(ChCheckpoint::Format format, const std::string& filename) const {
+    ChCheckpointASCII checkpoint_db(ChCheckpoint::Type::COMPONENT);
+    checkpoint_db.WriteTime(m_system->GetChTime());
+    WriteCheckpoint(checkpoint_db);
+    checkpoint_db.WriteFile(filename);
+}
+
+void ChVehicle::ImportCheckpoint(ChCheckpoint::Format format, const std::string& filename) {
+    double time;
+
+    ChCheckpointASCII checkpoint_db(ChCheckpoint::Type::COMPONENT);
+    checkpoint_db.OpenFile(filename);
+    checkpoint_db.ReadTime(time);
+    ReadCheckpoint(checkpoint_db);
+
+    GetSystem()->SetChTime(time);
 }
 
 // -----------------------------------------------------------------------------
@@ -254,7 +273,7 @@ void ChVehicle::SetChassisOutput(bool state) {
 // -----------------------------------------------------------------------------
 
 double ChVehicle::GetRoll() const {
-    auto angles = m_chassis->GetBody()->GetFrameRefToAbs().GetRot().GetCardanAnglesZYX(); 
+    auto angles = m_chassis->GetBody()->GetFrameRefToAbs().GetRot().GetCardanAnglesZYX();
     return angles[1];
 }
 
@@ -272,8 +291,9 @@ double ChVehicle::GetRoll(const ChTerrain& terrain) const {
     // Find terrain normal below vehicle position (single point)
     double h;
     float mu;
+    ChVector3d tP;
     ChVector3d tZ;
-    terrain.GetProperties(vP, h, tZ, mu);
+    terrain.GetProperties(vP, tP, h, tZ, mu);
 
     // Calculate terrain Y direction in the vehicle transversal plane
     ChVector3d tY = Vcross(tZ, vX);
@@ -297,8 +317,9 @@ double ChVehicle::GetPitch(const ChTerrain& terrain) const {
     // Find terrain normal below vehicle position (single point)
     double h;
     float mu;
+    ChVector3d tP;
     ChVector3d tZ;
-    terrain.GetProperties(vP, h, tZ, mu);
+    terrain.GetProperties(vP, tP, h, tZ, mu);
 
     // Calculate terrain X direction in the vehicle longitudinal plane
     ChVector3d tX = Vcross(vY, tZ);
@@ -324,8 +345,6 @@ double ChVehicle::GetSlipAngle() const {
 
     return slip_angle;
 }
-
-
 
 }  // end namespace vehicle
 }  // end namespace chrono

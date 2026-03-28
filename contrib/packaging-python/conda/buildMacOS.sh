@@ -37,10 +37,12 @@ cmake -DCMAKE_INSTALL_PREFIX=$PREFIX \
  -DCMAKE_CXX_COMPILER=$(which clang++) \
  -DCMAKE_PREFIX_PATH=$PREFIX \
  -DCMAKE_SYSTEM_PREFIX_PATH=$PREFIX \
+ -DCH_CONDA_INSTALL=ON \
  -DCH_INSTALL_PYTHON_PACKAGE=$SP_DIR \
  -DPython3_ROOT_DIR=$PREFIX \
  -DCMAKE_BUILD_TYPE=RELEASE \
  -DCH_ENABLE_MODULE_IRRLICHT=ON \
+ -DCH_ENABLE_MODULE_VSG=OFF \
  -DCH_ENABLE_MODULE_POSTPROCESS=ON \
  -DCH_ENABLE_MODULE_VEHICLE=ON \
  -DCH_ENABLE_MODULE_PYTHON=ON \
@@ -54,7 +56,7 @@ cmake -DCMAKE_INSTALL_PREFIX=$PREFIX \
  -DIrrlicht_ROOT=$PREFIX/include/irrlicht \
  -DMKL_RT_LIBRARY=$MKL_LIB_DIR/lib/libmkl_rt.dylib \
  -DEIGEN3_INCLUDE_DIR=$PREFIX/include/eigen3 \
- -DCH_PYCHRONO_DATA_PATH=../../../../../../share/chrono/data/ \
+ -DCH_PYCHRONO_DATA_PATH=../../../../share/chrono/data \
  ./..
 # Build step
 # on linux travis, limit the number of concurrent jobs otherwise

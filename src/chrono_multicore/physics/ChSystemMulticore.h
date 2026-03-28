@@ -32,11 +32,13 @@
 #include "chrono/physics/ChLinkMotorLinearSpeed.h"
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
 
-#include "chrono_multicore/physics/Ch3DOFContainer.h"
 #include "chrono_multicore/ChDataManager.h"
 #include "chrono_multicore/ChMulticoreDefines.h"
 #include "chrono_multicore/ChSettings.h"
 #include "chrono_multicore/ChMeasures.h"
+#include "chrono_multicore/physics/Ch3DOFContainer.h"
+#include "chrono_multicore/solver/ChSolverMulticore.h"
+#include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
 namespace chrono {
 
@@ -126,7 +128,7 @@ class CH_MULTICORE_API ChSystemMulticore : public ChSystem {
     /// Return the time (in seconds) for calculating/loading Jacobian information, within the time step.
     virtual double GetTimerJacobian() const override;
 
-    /// Return the time (in seconds) for runnning the collision detection step, within the time step.
+    /// Return the time (in seconds) for running the collision detection step, within the time step.
     virtual double GetTimerCollision() const override;
 
     /// Return the time (in seconds) for system setup, within the time step.

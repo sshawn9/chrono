@@ -45,6 +45,8 @@ class CH_VEHICLE_API ChChassisConnectorHitch : public ChChassisConnector {
                             ) override;
 
   protected:
+    virtual void PopulateComponentList() override;
+
     std::shared_ptr<ChLinkLockSpherical> m_joint;  ///< spherical joint of the connector
 };
 

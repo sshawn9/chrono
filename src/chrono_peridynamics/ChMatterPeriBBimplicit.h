@@ -27,7 +27,7 @@ class ChPeridynamics;
 /// @addtogroup chrono_peridynamics
 /// @{
 
-/// Helper class: the per-bond auxialiary data for ChMatterPeriBBimplicit
+/// Helper class: the per-bond auxiliary data for ChMatterPeriBBimplicit
 class ChApiPeridynamics ChMatterDataPerBondBBimplicit : public ChMatterDataPerBond {
   public:
     enum class bond_state {
@@ -83,7 +83,7 @@ class ChApiPeridynamics ChMatterPeriBBimplicit
     double VolumeCorrection(double dist, double horizon, double vol_size);
 
     // Implement the function that adds the peridynamics force to each node, as a
-    // summation of all the effects of neighbouring nodes.
+    // summation of all the effects of neighboring nodes.
     virtual void ComputeForces() override;
 
     virtual unsigned int GetNumConstraints() override { return (unsigned int)bonds.size(); }
@@ -130,7 +130,7 @@ class ChApiPeridynamics ChMatterPeriBBimplicit
 /// This can be attached to ChPeridynamics with my_peridynamics->AddVisualShape(my_visual);
 class /*ChApiPeridynamics*/ ChVisualPeriBBimplicit : public ChGlyphs {
   public:
-    ChVisualPeriBBimplicit(std::shared_ptr<ChMatterPeriBBimplicit> amatter) : mmatter(amatter) { is_mutable = true; };
+    ChVisualPeriBBimplicit(std::shared_ptr<ChMatterPeriBBimplicit> amatter) : mmatter(amatter) { SetMutable(true); }
     virtual ~ChVisualPeriBBimplicit() {}
 
     // Attach velocity property. (ex for postprocessing in falsecolor or with vectors with the Blender add-on)
@@ -194,8 +194,8 @@ class /*ChApiPeridynamics*/ ChVisualPeriBBimplicit : public ChGlyphs {
 class /*ChApiPeridynamics*/ ChVisualPeriBBimplicitBonds : public ChGlyphs {
   public:
     ChVisualPeriBBimplicitBonds(std::shared_ptr<ChMatterPeriBBimplicit> amatter) : mmatter(amatter) {
-        is_mutable = true;
-    };
+        SetMutable(true);
+    }
     virtual ~ChVisualPeriBBimplicitBonds() {}
 
     bool draw_broken = true;

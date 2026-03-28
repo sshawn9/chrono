@@ -26,10 +26,6 @@
 #include "chrono/core/ChRealtimeStep.h"
 #include "chrono/physics/ChSystem.h"
 
-#ifdef CHRONO_IRRLICHT
-    #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
-using namespace chrono::irrlicht;
-#endif
 #ifdef CHRONO_VSG
     #include "chrono_vsg/ChVisualSystemVSG.h"
 using namespace chrono::vsg3d;
@@ -55,36 +51,25 @@ int instance2 = -1;
 int main(int argc, char* argv[]) {
     std::cout << "Copyright (c) 2025 projectchrono.org\nChrono version: " << CHRONO_VERSION << std::endl;
 
-    // Extract filenames from command-line arguments
-    std::string model_yaml_filename = GetChronoDataFile("yaml/mbs/slider_crank.yaml");
-    std::string sim_yaml_filename = GetChronoDataFile("yaml/mbs/simulation_mbs.yaml");
+    // Extract filename from command-line arguments
+    std::string yaml_filename = GetChronoDataFile("yaml/mbs/mbs.yaml");
 
     ChCLI cli(argv[0], "");
-    cli.AddOption<std::string>("", "m,model_file", "model specification YAML file", model_yaml_filename);
-    cli.AddOption<std::string>("", "s,sim_file", "simulation specification YAML file", sim_yaml_filename);
+    cli.AddOption<std::string>("", "s,simulation_file", "MBS simulation specification YAML file", yaml_filename);
     if (!cli.Parse(argc, argv, true))
         return 1;
     if (argc == 1) {
         cli.Help();
-        std::cout << "Using default YAML model and simulation specification" << std::endl;
+        std::cout << "Using default YAML simulation specification" << std::endl;
     }
-    model_yaml_filename = cli.GetAsType<std::string>("model_file");
-    sim_yaml_filename = cli.GetAsType<std::string>("sim_file");
+    yaml_filename = cli.GetAsType<std::string>("simulation_file");
 
     std::cout << std::endl;
-    std::cout << "Model YAML file:        " << model_yaml_filename << std::endl;
-    std::cout << "Simulation YAML file:   " << sim_yaml_filename << std::endl;
+    std::cout << "YAML specification file: " << yaml_filename << std::endl;
 
-    // Create YAML parser object
-    parsers::ChParserMbsYAML parser;
-    parser.SetVerbose(true);
-
-    // Load the YAML simulation file and create a Chrono system based on its content
-    parser.LoadSimulationFile(sim_yaml_filename);
+    // Create YAML parser object, load the YAML file, then create a Chrono system and populate it
+    parsers::ChParserMbsYAML parser(yaml_filename, true);
     auto sys = parser.CreateSystem();
-
-    // Load the YAML model and populate the Chrono system
-    parser.LoadModelFile(model_yaml_filename);
     instance1 = parser.Populate(*sys, frame1, prefix1);
     if (second_instance)
         instance2 = parser.Populate(*sys, frame2, prefix2);
@@ -112,59 +97,30 @@ int main(int argc, char* argv[]) {
 
     // Create the run-time visualization system
     std::shared_ptr<ChVisualSystem> vis;
-    if (render) {
-        ChVisualSystem::Type vis_type;
-
-#if defined(CHRONO_VSG)
-        vis_type = ChVisualSystem::Type::VSG;
-#elif defined(CHRONO_IRRLICHT)
-        vis_type = ChVisualSystem::Type::IRRLICHT;
-#else
-        std::cout << "No Chrono run-time visualization module enabled. Disabling visualization." << std::endl;
-        render = false;
-#endif
-
-        switch (vis_type) {
-            case ChVisualSystem::Type::IRRLICHT: {
-#ifdef CHRONO_IRRLICHT
-                auto vis_irr = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-                vis_irr->SetWindowSize(800, 600);
-                vis_irr->SetWindowTitle("YAML model - " + model_name);
-                vis_irr->SetCameraVertical(camera_vertical);
-                vis_irr->Initialize();
-                vis_irr->AddLogo();
-                vis_irr->AddTypicalLights();
-                vis_irr->AddCamera(camera_location, camera_target);
-                vis_irr->AttachSystem(sys.get());
-
-                vis = vis_irr;
-#endif
-                break;
-            }
-            default:
-            case ChVisualSystem::Type::VSG: {
 #ifdef CHRONO_VSG
-                auto vis_vsg = chrono_types::make_shared<ChVisualSystemVSG>();
-                vis_vsg->AttachSystem(sys.get());
-                vis_vsg->SetWindowTitle("YAML model - " + model_name);
-                vis_vsg->AddCamera(camera_location, camera_target);
-                vis_vsg->SetWindowSize(1280, 800);
-                vis_vsg->SetWindowPosition(100, 100);
-                vis_vsg->SetCameraVertical(camera_vertical);
-                vis_vsg->SetCameraAngleDeg(40.0);
-                vis_vsg->SetLightIntensity(1.0f);
-                vis_vsg->SetLightDirection(-CH_PI_4, CH_PI_4);
-                vis_vsg->EnableShadows(enable_shadows);
-                vis_vsg->ToggleAbsFrameVisibility();
-                vis_vsg->SetAbsFrameScale(2.0);
-                vis_vsg->Initialize();
+    if (render) {
+        auto vis_vsg = chrono_types::make_shared<ChVisualSystemVSG>();
+        vis_vsg->AttachSystem(sys.get());
+        vis_vsg->SetWindowTitle("YAML model - " + model_name);
+        vis_vsg->AddCamera(camera_location, camera_target);
+        vis_vsg->SetWindowSize(1280, 800);
+        vis_vsg->SetWindowPosition(100, 100);
+        vis_vsg->SetCameraVertical(camera_vertical);
+        vis_vsg->SetCameraAngleDeg(40.0);
+        vis_vsg->SetLightIntensity(1.0f);
+        vis_vsg->SetLightDirection(-CH_PI_4, CH_PI_4);
+        vis_vsg->EnableShadows(enable_shadows);
+        vis_vsg->ToggleAbsFrameVisibility();
+        vis_vsg->SetAbsFrameScale(2.0);
+        vis_vsg->Initialize();
 
-                vis = vis_vsg;
-#endif
-                break;
-            }
-        }
+        vis = vis_vsg;
     }
+#else
+    if (render)
+        std::cout << "Chrono::VSG run-time visualization module not enabled. Disabling visualization." << std::endl;
+    render = false;
+#endif
 
     // Create output directory
     if (output) {

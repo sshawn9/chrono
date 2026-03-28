@@ -23,6 +23,7 @@
 #include "chrono_cascade/ChCascadeBodyEasy.h"
 #include "chrono_cascade/ChCascadeDoc.h"
 #include "chrono_cascade/ChVisualShapeCascade.h"
+#include "chrono/assets/ChVisualSystem.h"
 
 #ifdef CHRONO_IRRLICHT
     #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
@@ -37,12 +38,23 @@ using namespace chrono::vsg3d;
 using namespace chrono;
 using namespace chrono::cascade;
 
-ChVisualSystem::Type vis_type = ChVisualSystem::Type::IRRLICHT;
+ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
 
 int main(int argc, char* argv[]) {
+#if !defined(CHRONO_IRRLICHT) && !defined(CHRONO_VSG)
+    std::cerr << "Configure chrono with VSG or Irrlicht to run this example!" << std::endl;
+    return 1;
+#endif
+
+    // Check for valid visualization system
+    if(vis_type == ChVisualSystem::Type::NONE) {
+        std::cout << "Configure chrono with VSG or Irrlicht to run this example!" << std::endl;
+        return 1;
+    }
     // Create a Chrono physical system: all bodies and constraints
     // will be handled by this ChSystemNSC object.
     ChSystemNSC sys;
+    sys.SetGravityY();
 
     //
     // Load a STEP file, containing a mechanism. The demo STEP file has been
@@ -54,7 +66,7 @@ int main(int argc, char* argv[]) {
     ChCascadeDoc mydoc;
 
     // load the STEP model using this command:
-    bool load_ok = mydoc.Load_STEP(GetChronoDataFile("cascade/assembly.stp").c_str());
+    bool load_ok = mydoc.LoadSTEP(GetChronoDataFile("cascade/assembly.stp").c_str());
     // or specify abs.path: ("C:\\data\\cascade\\assembly.stp");
 
     // print the contained shapes
@@ -97,7 +109,7 @@ int main(int argc, char* argv[]) {
 
         TopoDS_Shape shape2;
         if (mydoc.GetNamedShape(shape2, "Assem1/body2")) {
-            // Create the ChBody using the ChCascadeBodyEasy helper (with more detailed visualization tesselation):
+            // Create the ChBody using the ChCascadeBodyEasy helper (with more detailed visualization tessellation):
             auto vis_params = chrono_types::make_shared<ChCascadeTriangulate>(  //
                 0.02,                                                           // chordal deflection for triangulation
                 false,                                                          // chordal deflection is relative
@@ -140,6 +152,16 @@ int main(int argc, char* argv[]) {
 
     // Create the run-time visualization system
     std::shared_ptr<ChVisualSystem> vis;
+
+#ifndef CHRONO_IRRLICHT
+    if (vis_type == ChVisualSystem::Type::IRRLICHT)
+        vis_type = ChVisualSystem::Type::VSG;
+#endif
+#ifndef CHRONO_VSG
+    if (vis_type == ChVisualSystem::Type::VSG)
+        vis_type = ChVisualSystem::Type::IRRLICHT;
+#endif
+
     switch (vis_type) {
         case ChVisualSystem::Type::IRRLICHT: {
 #ifdef CHRONO_IRRLICHT

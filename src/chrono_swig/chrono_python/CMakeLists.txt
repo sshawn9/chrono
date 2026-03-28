@@ -1,7 +1,5 @@
 #=============================================================================
 # CMake configuration file for the Chrono Python module
-#
-# Cannot be used stand-alone (it's loaded by CMake config. file in parent dir.)
 #=============================================================================
 
 option(CH_ENABLE_MODULE_PYTHON "Enable the Chrono Python module" OFF)
@@ -31,8 +29,10 @@ if(DEFINED CH_CONDA_INSTALL)
     message(FATAL_ERROR "Relative path to Chrono data/ directory not specified. Set CH_PYCHRONO_DATA_PATH")
   endif()
 
-  if (NOT DEFINED CH_PYCHRONO_SHADER_PATH)
-    message(FATAL_ERROR "Relative path to Chrono::Sensor shaders/ directory not specified. Set CH_PYCHRONO_SHADER_PATH")
+  if (CH_ENABLE_MODULE_SENSOR AND CH_USE_SENSOR_OPTIX)
+    if (NOT DEFINED CH_PYCHRONO_SHADER_PATH)
+      message(FATAL_ERROR "Relative path to Chrono::Sensor shaders/ directory not specified. Set CH_PYCHRONO_SHADER_PATH")
+    endif()
   endif()
 
 endif()
@@ -80,7 +80,7 @@ include(${SWIG_USE_FILE})
 set(CMAKE_SWIG_OUTDIR "${PROJECT_BINARY_DIR}/chrono_python")
 
 # Set SWIG flags.  Disable selected SWIG warnings 
-set(CHRONO_SWIG_FLAGS "-w302,362,389,401,509")
+set(CHRONO_SWIG_FLAGS "-w302,362,389,401,402,509")
 
 if(DBG_SCRIPT)
   message("SWIG_USE_FILE:      ${SWIG_USE_FILE}")
@@ -90,13 +90,58 @@ if(DBG_SCRIPT)
 endif()
 
 #-----------------------------------------------------------------------------
+# Set SWIG flags for optional modules
+#-----------------------------------------------------------------------------
+
+if(Python3_NumPy_FOUND)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_PYTHON_NUMPY")
+endif()
+
+if(CH_ENABLE_MODULE_VSG)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_VSG")
+endif()
+
+if(CH_ENABLE_MODULE_IRRLICHT)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_IRRLICHT")
+endif()
+
+if(CH_ENABLE_MODULE_FSI_SPH)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_FSI_SPH")
+endif()
+
+if(CH_ENABLE_MODULE_PARSERS)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_PARSERS")
+  if(CH_USE_URDF)
+    set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_HAS_URDF")
+  endif()
+endif()
+
+if(CH_ENABLE_MODULE_SENSOR)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_SENSOR")
+  if(CH_USE_SENSOR_OPTIX)
+    set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_HAS_OPTIX")
+  endif()
+endif()
+
+if(CH_ENABLE_MODULE_VEHICLE)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_VEHICLE")
+  if(CH_USE_OPENCRG)
+    set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_HAS_OPENCRG")
+  endif()
+endif()
+
+if(CH_ROS_HAS_INTERFACES)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_ROS_HAS_INTERFACES")
+endif()
+
+#-----------------------------------------------------------------------------
 # Generate init.py
 #-----------------------------------------------------------------------------
 
 # Prepare replacement variables for init.py
 set(ADD_CUDA_DLL "")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  if(CH_ENABLE_MODULE_SENSOR)
+  if(CH_ENABLE_MODULE_SENSOR AND CH_USE_SENSOR_OPTIX)
     set(ADD_CUDA_DLL "os.add_dll_directory('${CUDA_BINARY_DIR}')")
   endif()
   if(CH_ENABLE_MODULE_CASCADE)
@@ -107,8 +152,8 @@ endif()
 # ---------- Pychrono in BUILD tree
 
 # Path to Chrono data directory and Chrono::Sensor shaders (in BUILD tree)
-set(PYC_DATA_PATH "${CMAKE_BINARY_DIR}/bin/data/")
-set(PYC_SHADER_PATH "${CH_BUILD_SENSOR_SHADERS}")
+set(PYC_DATA_PATH "${CH_BUILD_DATA}/")
+set(PYC_SHADER_PATH "${CH_BUILD_SENSOR_SHADERS}/")
 
 # Generate the __init__.py file using substitution variables and place it in a temporary place
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py.local.in
@@ -128,7 +173,7 @@ if (CH_CONDA_INSTALL)
 else()
   # Path to Chrono data directory and Chrono::Sensor shaders (in local INSTALL tree)
   set(PYC_DATA_PATH "${CMAKE_INSTALL_PREFIX}/${CH_INSTALL_DATA}/")
-  set(PYC_SHADER_PATH "${CMAKE_INSTALL_PREFIX}/${CH_INSTALL_SENSOR_SHADERS}")
+  set(PYC_SHADER_PATH "${CMAKE_INSTALL_PREFIX}/${CH_INSTALL_SENSOR_SHADERS}/")
   
   # Generate the __init__.py file using substitution variables and place it in a temporary place
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py.local.in
@@ -175,6 +220,13 @@ endif()
 swig_add_library(${CHPY_CORE} LANGUAGE python SOURCES ${CHPY_CORE_MODULE_FILE})
 target_link_libraries(${CHPY_CORE} PRIVATE Python3::Python Chrono_core)
 
+# Numpy: enables to_numpy() and __array__ 
+if (Python3_NumPy_FOUND)
+  target_compile_definitions(${CHPY_CORE} PRIVATE CHRONO_PYTHON_NUMPY)
+  target_include_directories(${CHPY_CORE} PRIVATE ${Python3_NumPy_INCLUDE_DIRS})
+  target_link_libraries(${CHPY_CORE} PRIVATE Python3::NumPy)
+endif()
+
 # Disable additional warnings for generated C++ code TODO: are they all really needed for all targets?
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 elseif(MSVC)
@@ -186,6 +238,12 @@ elseif(MSVC)
 else()
    target_compile_options(${CHPY_CORE} PRIVATE "-Wno-unused-variable")
 endif()
+
+if(APPLE)
+  # See https://github.com/swig/swig/issues/3278
+  target_link_options(${CHPY_CORE} PRIVATE -flat_namespace -undefined dynamic_lookup)
+endif()
+
 
 # Ensure that the PYD library file is generated in the bin/ directory.
 set_target_properties(${CHPY_CORE} PROPERTIES
@@ -250,6 +308,11 @@ elseif(MSVC)
   target_compile_options(${CHPY_FEA} PRIVATE "/wd4706")  # assignment within conditional expression
 else()
   target_compile_options(${CHPY_FEA} PRIVATE "-Wno-unused-variable")
+endif()
+
+if(APPLE)
+  # See https://github.com/swig/swig/issues/3278
+  target_link_options(${CHPY_FEA} PRIVATE -flat_namespace -undefined dynamic_lookup)
 endif()
 
 # Ensure that the PYD library file is generated in the bin/ directory.
@@ -337,6 +400,11 @@ if(CH_ENABLE_MODULE_POSTPROCESS)
     target_compile_options(${CHPY_POSTPROCESS} PRIVATE "-Wno-unused-variable")
   endif()
 
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(${CHPY_POSTPROCESS} PRIVATE -flat_namespace -undefined dynamic_lookup)
+  endif()
+
   # Ensure that the PYD library file is generated in the bin/ directory.
   set_target_properties(${CHPY_POSTPROCESS} PROPERTIES
                         PROJECT_LABEL "Chrono_python_postprocess"
@@ -407,6 +475,11 @@ if(CH_ENABLE_MODULE_VSG)
     target_compile_options(${CHPY_VSG} PRIVATE "-Wno-unused-variable")
   endif()
 
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(${CHPY_VSG} PRIVATE -flat_namespace -undefined dynamic_lookup)
+  endif()
+
   # Ensure that the PYD library file is generated in the bin/ directory.
   set_target_properties(${CHPY_VSG} PROPERTIES
                         PROJECT_LABEL "Chrono_python_vsg"
@@ -446,7 +519,7 @@ endif()
 # MODULE for the fsi python wrapper.
 #-----------------------------------------------------------------------------
 
-if(CH_ENABLE_MODULE_FSI)
+if(CH_ENABLE_MODULE_FSI_SPH)
 
   message(STATUS "Add python FSI module")
 
@@ -463,13 +536,14 @@ if(CH_ENABLE_MODULE_FSI)
     set_source_files_properties(${CHPY_FSI_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SWIG_FLAGS})
   endif()
   
-  # Make sure CHRONO_VSG is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_VSG)
-    set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_VSG")
-  endif()
-
   swig_add_library(${CHPY_FSI} LANGUAGE python SOURCES ${CHPY_FSI_MODULE_FILE})
   target_link_libraries(${CHPY_FSI} PRIVATE Python3::Python Chrono_core  Chrono_fsi Chrono_fsisph)
+
+  if (Python3_NumPy_FOUND)
+    target_compile_definitions(${CHPY_FSI} PRIVATE CHRONO_PYTHON_NUMPY)
+    target_include_directories(${CHPY_FSI} PRIVATE ${Python3_NumPy_INCLUDE_DIRS})
+    target_link_libraries(${CHPY_FSI} PRIVATE Python3::NumPy)
+  endif()
   
   if (CH_ENABLE_MODULE_VSG)
     target_link_libraries(${CHPY_FSI} PRIVATE Chrono_vsg Chrono_fsisph_vsg)
@@ -486,6 +560,11 @@ if(CH_ENABLE_MODULE_FSI)
     target_compile_options(${CHPY_FSI} PRIVATE "/wd4706")  # assignment within conditional expression
   else()
     target_compile_options(${CHPY_FSI} PRIVATE "-Wno-unused-variable")
+  endif()
+
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(${CHPY_FSI} PRIVATE -flat_namespace -undefined dynamic_lookup)
   endif()
 
   # Ensure that the PYD library file is generated in the bin/ directory.
@@ -565,6 +644,11 @@ if(CH_ENABLE_MODULE_IRRLICHT)
     target_compile_options(${CHPY_IRRLICHT} PRIVATE "-Wno-unused-variable")
   endif()
 
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(${CHPY_IRRLICHT} PRIVATE -flat_namespace -undefined dynamic_lookup)
+  endif()
+
   # Ensure that the PYD library file is generated in the bin/ directory.
   set_target_properties(${CHPY_IRRLICHT} PROPERTIES
                         PROJECT_LABEL "Chrono_python_irrlicht"
@@ -635,6 +719,11 @@ if(CH_ENABLE_MODULE_PARDISO_MKL)
     target_compile_options(${CHPY_MKL} PRIVATE "/wd4706")  # assignment within conditional expression
   else()
     target_compile_options(${CHPY_MKL} PRIVATE "-Wno-unused-variable")
+  endif()
+
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(${CHPY_MKL} PRIVATE -flat_namespace -undefined dynamic_lookup)
   endif()
 
   # Ensure that the PYD library file is generated in the bin/ directory.
@@ -711,6 +800,11 @@ if(CH_ENABLE_MODULE_CASCADE)
     target_compile_options(cascade PRIVATE "-Wno-unused-variable")
   endif()
 
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(cascade PRIVATE -flat_namespace -undefined dynamic_lookup)
+  endif()
+
   #if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   #  set_target_properties(cascade PROPERTIES SWIG_COMPILE_OPTIONS "-D_WIN32 -DWNT")
   #endif()
@@ -768,23 +862,9 @@ if(CH_ENABLE_MODULE_VEHICLE AND CH_ENABLE_MODULE_VEHICLE_MODELS)
     set_source_files_properties(${CHPY_VEHICLE_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SWIG_FLAGS})
   endif()
 
-  # Make sure CHRONO_IRRLICHT is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_IRRLICHT)
-    set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_IRRLICHT")
-  endif()
-
-  # Make sure CHRONO_VSG is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_VSG)
-      set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_VSG")
-  endif()
-
-  # Make sure CHRONO_FSI is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_FSI)
-      set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_FSI")
-  endif()
-
   swig_add_library(${CHPY_VEHICLE} LANGUAGE python SOURCES ${CHPY_VEHICLE_MODULE_FILE})
   target_link_libraries(${CHPY_VEHICLE} PRIVATE Python3::Python Chrono_core Chrono_vehicle ChronoModels_vehicle)
+
   if(CH_ENABLE_MODULE_IRRLICHT)
     find_package(Irrlicht QUIET REQUIRED)
     target_link_libraries(${CHPY_VEHICLE} PRIVATE Chrono_vehicle_irrlicht Chrono_irrlicht Irrlicht::Irrlicht)
@@ -794,7 +874,7 @@ if(CH_ENABLE_MODULE_VEHICLE AND CH_ENABLE_MODULE_VEHICLE_MODELS)
       target_link_libraries(${CHPY_VEHICLE} PRIVATE Chrono_vehicle_vsg Chrono_vsg)
   endif()
 
-  if(CH_ENABLE_MODULE_FSI)
+  if(CH_ENABLE_MODULE_FSI_SPH)
     target_link_libraries(${CHPY_VEHICLE} PRIVATE Chrono_fsi Chrono_fsisph)
   endif()
 
@@ -816,6 +896,12 @@ if(CH_ENABLE_MODULE_VEHICLE AND CH_ENABLE_MODULE_VEHICLE_MODELS)
   else()
     target_compile_options(${CHPY_VEHICLE} PRIVATE "-Wno-unused-variable")
   endif()
+
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(${CHPY_VEHICLE} PRIVATE -flat_namespace -undefined dynamic_lookup)
+  endif()
+
 
   #if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   #  set_target_properties(${CHPY_VEHICLE} PROPERTIES SWIG_COMPILE_OPTIONS "-D_WIN32 -DWNT")
@@ -863,68 +949,81 @@ endif()
 #-----------------------------------------------------------------------------
 
 if(CH_ENABLE_MODULE_SENSOR)
-  if(Python3_NumPy_FOUND)
-    message(STATUS "Add python SENSOR module")
+  message(STATUS "Add python SENSOR module")
 
-    # Interface files
-    set(CHPY_SENSOR_MODULE_FILE ChModuleSensor_python.i)
+  set(CHPY_SENSOR sensor)
 
-    if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-      set_source_files_properties(${CHPY_SENSOR_MODULE_FILE} PROPERTIES COMPILE_FLAGS "-D_WIN32")
-    endif()
-    set_source_files_properties(${CHPY_SENSOR_MODULE_FILE} PROPERTIES CPLUSPLUS ON)
-    if(MSVC)
-      set_source_files_properties(${CHPY_SENSOR_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SWIG_FLAGS})
-    endif()
+  # Interface files
+  set(CHPY_SENSOR_MODULE_FILE ChModuleSensor_python.i)
 
-    swig_add_library(sensor LANGUAGE python SOURCES ${CHPY_SENSOR_MODULE_FILE})
-    target_link_libraries(sensor PRIVATE Python3::Python Python3::NumPy Chrono_core Chrono_sensor)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set_source_files_properties(${CHPY_SENSOR_MODULE_FILE} PROPERTIES COMPILE_FLAGS "-D_WIN32")
+  endif()
+  set_source_files_properties(${CHPY_SENSOR_MODULE_FILE} PROPERTIES CPLUSPLUS ON)
+  if(MSVC)
+    set_source_files_properties(${CHPY_SENSOR_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SWIG_FLAGS})
+  endif()
 
-    # Disable additional warnings for generated C++ code TODO: are they all really needed for all targets?
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    elseif(MSVC)
-      target_compile_options(sensor PRIVATE "/wd4189")  # local variable is initialized but not referenced
-      target_compile_options(sensor PRIVATE "/wd4275")  # non-DLL-interface class used as base for DLL-interface class
-      target_compile_options(sensor PRIVATE "/wd4456")  # declaration hides previous local declaration
-      target_compile_options(sensor PRIVATE "/wd4702")  # unreachable code
-      target_compile_options(sensor PRIVATE "/wd4706")  # assignment within conditional expression
-    else()
-      target_compile_options(sensor PRIVATE "-Wno-unused-variable")
-    endif()
+  swig_add_library(${CHPY_SENSOR} LANGUAGE python SOURCES ${CHPY_SENSOR_MODULE_FILE})
+  target_link_libraries(${CHPY_SENSOR} PRIVATE Python3::Python Chrono_core Chrono_sensor)
 
-    # Ensure that the PYD library file is generated in the bin/ directory.
-    set_target_properties(sensor PROPERTIES
-            PROJECT_LABEL "Chrono_python_sensor"
-            LIBRARY_OUTPUT_DIRECTORY "${CHPY_LIBRARY_OUTPUT_DIRECTORY}"
-            SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
-            )
-  
-    add_dependencies(sensor Chrono_core)
-    add_dependencies(sensor Chrono_sensor)
-    add_dependencies(sensor core)
-  
-    # Copy PY file in a package dir
-    set(CHPY_SENSOR_PY_FILE "${CMAKE_SWIG_OUTDIR}/sensor.py")
-    add_custom_command(TARGET sensor
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${CHPY_SENSOR_PY_FILE} ${CHPY_LIBRARY_OUTPUT_DIRECTORY})
+  if (Python3_NumPy_FOUND)
+    target_compile_definitions(${CHPY_SENSOR} PRIVATE CHRONO_PYTHON_NUMPY)
+    target_include_directories(${CHPY_SENSOR} PRIVATE ${Python3_NumPy_INCLUDE_DIRS})
+    target_link_libraries(${CHPY_SENSOR} PRIVATE Python3::NumPy)
+  endif()
 
-    # Install .pyd binary module (.so on linux)
-    install(TARGETS sensor
-            EXPORT ChronoTargets
-            RUNTIME DESTINATION "${CH_INSTALL_PYTHON}/pychrono"
-            LIBRARY DESTINATION "${CH_INSTALL_PYTHON}/pychrono"
-            ARCHIVE DESTINATION "${CH_INSTALL_PYTHON}/pychrono")
-    # Install .py module wrapper
-    install(FILES "${CHPY_SENSOR_PY_FILE}" DESTINATION "${CH_INSTALL_PYTHON}/pychrono")
 
-    if (DBG_SCRIPT)
-      message("Module name:     sensor")
-      message("PY file:         ${CHPY_SENSOR_PY_FILE}")
-    endif()
-
+  # Disable additional warnings for generated C++ code TODO: are they all really needed for all targets?
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  elseif(MSVC)
+    target_compile_options(${CHPY_SENSOR} PRIVATE "/wd4189")  # local variable is initialized but not referenced
+    target_compile_options(${CHPY_SENSOR} PRIVATE "/wd4275")  # non-DLL-interface class used as base for DLL-interface class
+    target_compile_options(${CHPY_SENSOR} PRIVATE "/wd4456")  # declaration hides previous local declaration
+    target_compile_options(${CHPY_SENSOR} PRIVATE "/wd4702")  # unreachable code
+    target_compile_options(${CHPY_SENSOR} PRIVATE "/wd4706")  # assignment within conditional expression
   else()
-    message(WARNING "NumPy cannot be found. PyChrono::Sensor module will not be built.")
+    target_compile_options(${CHPY_SENSOR} PRIVATE "-Wno-unused-variable")
+  endif()
+
+  if (CH_USE_SENSOR_OPTIX)
+    target_compile_definitions(${CHPY_SENSOR} PRIVATE "CHRONO_HAS_OPTIX")
+  endif()
+
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(${CHPY_SENSOR} PRIVATE -flat_namespace -undefined dynamic_lookup)
+  endif()
+
+  # Ensure that the PYD library file is generated in the bin/ directory.
+  set_target_properties(${CHPY_SENSOR} PROPERTIES
+          PROJECT_LABEL "Chrono_python_sensor"
+          LIBRARY_OUTPUT_DIRECTORY "${CHPY_LIBRARY_OUTPUT_DIRECTORY}"
+          SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
+          )
+
+  add_dependencies(${CHPY_SENSOR} Chrono_core)
+  add_dependencies(${CHPY_SENSOR} Chrono_sensor)
+  add_dependencies(${CHPY_SENSOR} core)
+
+  # Copy PY file in a package dir
+  set(CHPY_SENSOR_PY_FILE "${CMAKE_SWIG_OUTDIR}/${CHPY_SENSOR}.py")
+  add_custom_command(TARGET ${CHPY_SENSOR}
+          POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E copy ${CHPY_SENSOR_PY_FILE} ${CHPY_LIBRARY_OUTPUT_DIRECTORY})
+
+  # Install .pyd binary module (.so on linux)
+  install(TARGETS ${CHPY_SENSOR}
+          EXPORT ChronoTargets
+          RUNTIME DESTINATION "${CH_INSTALL_PYTHON}/pychrono"
+          LIBRARY DESTINATION "${CH_INSTALL_PYTHON}/pychrono"
+          ARCHIVE DESTINATION "${CH_INSTALL_PYTHON}/pychrono")
+  # Install .py module wrapper
+  install(FILES "${CHPY_SENSOR_PY_FILE}" DESTINATION "${CH_INSTALL_PYTHON}/pychrono")
+
+  if (DBG_SCRIPT)
+    message("Module name:     ${CHPY_SENSOR}")
+    message("PY file:         ${CHPY_SENSOR_PY_FILE}")
   endif()
 endif()
 
@@ -967,6 +1066,11 @@ endif()
     target_compile_options(${CHPY_RS} PRIVATE "-Wno-unused-variable")
   endif()
 
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(${CHPY_RS} PRIVATE -flat_namespace -undefined dynamic_lookup)
+  endif()
+
   #if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   #  set_target_properties(${CHPY_RS} PROPERTIES SWIG_COMPILE_OPTIONS "-D_WIN32 -DWNT")
   #endif()
@@ -1002,7 +1106,7 @@ endif()
 #-----------------------------------------------------------------------------
 
 # Only build if have URDF for now
-if(CH_ENABLE_MODULE_PARSERS AND HAVE_URDF)
+if(CH_ENABLE_MODULE_PARSERS AND CH_USE_URDF)
   message(STATUS "Add python PARSERS module")
 
   # Interface files
@@ -1033,6 +1137,11 @@ if(CH_ENABLE_MODULE_PARSERS AND HAVE_URDF)
     target_compile_options(parsers PRIVATE "/wd4706")  # assignment within conditional expression
   else()
     target_compile_options(parsers PRIVATE "-Wno-unused-variable")
+  endif()
+
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(parsers PRIVATE -flat_namespace -undefined dynamic_lookup)
   endif()
 
   # Ensure that the PYD library file is generated in the bin/ directory.
@@ -1086,20 +1195,8 @@ if(CH_ENABLE_MODULE_ROS)
 
   set_source_files_properties(${CHPY_ROS_MODULE_FILE} PROPERTIES CPLUSPLUS ON)
 
-  # Make sure CHRONO_PARSERS_URDF and/or CHRONO_SENSOR is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_PARSERS AND HAVE_URDF)
-    set(CHRONO_SENSOR_SWIG_FLAGS "${CHRONO_SWIG_FLAGS};-DCHRONO_PARSERS_URDF")
-  endif()
-  if (CH_ENABLE_MODULE_SENSOR)
-    set(CHRONO_SENSOR_SWIG_FLAGS "${CHRONO_SENSOR_SWIG_FLAGS};-DCHRONO_SENSOR")
-  endif()
-
-  if (CH_ROS_HAS_INTERFACES)
-    set(CHRONO_SENSOR_SWIG_FLAGS "${CHRONO_SENSOR_SWIG_FLAGS};-DCHRONO_ROS_HAS_INTERFACES")
-  endif()
-
   if(MSVC)
-    set_source_files_properties(${CHPY_ROS_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SENSOR_SWIG_FLAGS})
+    set_source_files_properties(${CHPY_ROS_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SWIG_FLAGS})
   endif()
 
   swig_add_library(ros LANGUAGE python SOURCES ${CHPY_ROS_MODULE_FILE})
@@ -1122,6 +1219,15 @@ if(CH_ENABLE_MODULE_ROS)
     target_compile_options(ros PRIVATE "/wd4706")  # assignment within conditional expression
   else()
     target_compile_options(ros PRIVATE "-Wno-unused-variable")
+  endif()
+
+  if (CH_USE_SENSOR_OPTIX)
+    target_compile_definitions(ros PRIVATE "CHRONO_HAS_OPTIX")
+  endif()
+
+  if(APPLE)
+    # See https://github.com/swig/swig/issues/3278
+    target_link_options(ros PRIVATE -flat_namespace -undefined dynamic_lookup)
   endif()
 
   # Ensure that the PYD library file is generated in the bin/ directory.

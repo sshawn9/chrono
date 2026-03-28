@@ -47,7 +47,7 @@ class ChApi ChContactContainerSMC : public ChContactContainer {
     virtual void BeginAddContact() override;
 
     /// Add a contact between two collision shapes, storing it into this container.
-    /// A compositecontact material is created from the two given materials.
+    /// A composite contact material is created from the two given materials.
     /// In this case, the collision info object may have null pointers to collision shapes.
     virtual void AddContact(const ChCollisionInfo& cinfo,
                             std::shared_ptr<ChContactMaterial> mat1,
@@ -68,7 +68,7 @@ class ChApi ChContactContainerSMC : public ChContactContainer {
 
     /// Update state of this contact container: compute jacobians, violations, etc.
     /// and store results in inner structures of contacts.
-    virtual void Update(double mtime, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 
     /// Compute contact forces on all contactable objects in this container.
     /// This function caches contact forces in a map.

@@ -1,51 +1,37 @@
 #=============================================================================
 # CMake configuration file for demos of various Chrono::Vehicle terrain models.
-# These example programs require Irrlicht run-time visualization.
 #=============================================================================
+
+if(NOT CH_ENABLE_MODULE_VSG)
+  return()
+endif()
 
 #--------------------------------------------------------------
 # List all demos
 
-set(DEMOS "")
-
-if(CH_ENABLE_MODULE_IRRLICHT OR CH_ENABLE_MODULE_VSG)
-    set(DEMOS ${DEMOS}
-        demo_VEH_RigidTerrain_WheeledVehicle
-        demo_VEH_RigidSCMTerrain_MixedPatches
-        demo_VEH_SCMTerrain_WheeledVehicle
-        demo_VEH_SCMTerrain_RigidTire
-        demo_VEH_SCMTerrain_TrackedVehicle
-    )
-endif()
-
-if(CH_ENABLE_MODULE_IRRLICHT)
-    set(DEMOS ${DEMOS}
-        demo_VEH_RigidTerrain_MovingPatch
-    )
-endif()
-
-if(HAVE_OPENCRG) 
-   if (CH_ENABLE_MODULE_IRRLICHT)
-      set(DEMOS ${DEMOS}
-          demo_VEH_CRGTerrain_IRR
-      )
-   endif()
-
-   if(CH_ENABLE_MODULE_VSG)
+set(DEMOS ${DEMOS}
+    demo_VEH_RigidTerrain_WheeledVehicle
+    demo_VEH_RigidSCMTerrain_MixedPatches
+    demo_VEH_SCMTerrain_WheeledVehicle
+    demo_VEH_SCMTerrain_RigidTire
+    demo_VEH_SCMTerrain_TrackedVehicle
+    demo_VEH_RigidTerrain_MovingPatch
+)
+ 
+if(CH_USE_OPENCRG) 
       set(DEMOS ${DEMOS}
           demo_VEH_CRGTerrain_VSG
     )
-   endif()
 endif()
 
-if(CH_ENABLE_MODULE_MULTICORE AND CH_ENABLE_MODULE_VSG)
+if(CH_ENABLE_MODULE_MULTICORE)
     set(DEMOS ${DEMOS}
         demo_VEH_GranularTerrain_RigidTire
         demo_VEH_GranularTerrain_MovingPatch
     )
 endif()
 
-if(CH_ENABLE_MODULE_FSI AND CH_ENABLE_MODULE_VSG)
+if(CH_ENABLE_MODULE_FSI_SPH)
     set(DEMOS ${DEMOS}
         demo_VEH_CRMTerrain_WheeledVehicle
         demo_VEH_CRMTerrain_TrackedVehicle
@@ -53,7 +39,7 @@ if(CH_ENABLE_MODULE_FSI AND CH_ENABLE_MODULE_VSG)
     )
 endif()
 
-if(CH_ENABLE_MODULE_PARDISO_MKL AND CH_ENABLE_MODULE_IRRLICHT)
+if(CH_ENABLE_MODULE_PARDISO_MKL)
     set(DEMOS ${DEMOS}
         demo_VEH_SCMTerrain_FEATire
     )
@@ -74,7 +60,7 @@ if(CH_ENABLE_MODULE_MULTICORE)
     list(APPEND LIBS "Chrono_multicore")
 endif()
 
-if(CH_ENABLE_MODULE_FSI)
+if(CH_ENABLE_MODULE_FSI_SPH)
     list(APPEND LIBS "Chrono_fsisph")
 endif()
 
@@ -91,13 +77,9 @@ if(CH_ENABLE_MODULE_POSTPROCESS)
     list(APPEND LIBS "Chrono_postprocess")
 endif()
 
-if(CH_ENABLE_MODULE_IRRLICHT)
-    list(APPEND LIBS "Chrono_vehicle_irrlicht")
-endif()
-
 if(CH_ENABLE_MODULE_VSG)
     list(APPEND LIBS "Chrono_vehicle_vsg")
-    if(CH_ENABLE_MODULE_FSI)
+    if(CH_ENABLE_MODULE_FSI_SPH)
       list(APPEND LIBS "Chrono_fsisph_vsg")
     endif()
 endif()

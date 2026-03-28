@@ -30,6 +30,7 @@ def main():
     # Create the system
     # -----------------
     mphysicalSystem = chrono.ChSystemNSC()
+    mphysicalSystem.SetGravityY()
 
     # ----------------------------------
     # add a mesh to be sensed by a lidar
@@ -209,10 +210,5 @@ chrono.SetChronoOutputPath("../DEMO_OUTPUT/")
 
 # Output directory
 out_dir = chrono.GetChronoOutputPath() + "Sensors_Lidar/"
-
-# The path to the Chrono data directory containing various assets (meshes, textures, data files)
-# is automatically set, relative to the default location of this demo.
-# If running from a different directory, you must change the path to the data directory with:
-# chrono.SetChronoDataPath('path/to/data')
 
 main()

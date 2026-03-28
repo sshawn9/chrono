@@ -206,8 +206,8 @@ void ChMarker::UpdateState() {
     m_abs_frame = GetBody()->TransformLocalToParent(*this);
 }
 
-void ChMarker::Update(double time, bool update_assets) {
-    ChObj::Update(time, update_assets);
+void ChMarker::Update(double time, UpdateFlags update_flags) {
+    ChObj::Update(time, update_flags);
 
     UpdateTime(time);
     UpdateState();
@@ -224,7 +224,7 @@ void ChMarker::UpdatedExternalTime(double prevtime, double mtime) {
     if (m_motion_type == MotionType::EXTERNAL)
         return;
 
-    // otherwise see if finite differencing is needed, beccause an external 3rd party is moving the marker
+    // otherwise see if finite differencing is needed, because an external 3rd party is moving the marker
     m_motion_type = MotionType::FUNCTIONS;
 
     // if POSITION or ROTATION ("rel_pos") has been changed in acceptable time step...

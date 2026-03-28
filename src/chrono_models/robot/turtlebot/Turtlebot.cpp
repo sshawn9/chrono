@@ -21,7 +21,7 @@
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/assets/ChVisualShapeTriangleMesh.h"
 
-#include "chrono/physics/ChInertiaUtils.h"
+#include "chrono/physics/ChMassProperties.h"
 
 #include "chrono_models/robot/turtlebot/Turtlebot.h"
 
@@ -156,7 +156,7 @@ Turtlebot_Part::Turtlebot_Part(const std::string& name,
     m_fixed = fixed;
 }
 
-// Create Visulization assets
+// Create Visualization assets
 void Turtlebot_Part::AddVisualizationAssets() {
     auto vis_mesh_file = GetChronoDataFile("robot/turtlebot/" + m_mesh_name + ".obj");
     auto trimesh = ChTriangleMeshConnected::CreateFromWavefrontFile(vis_mesh_file, true, true);
@@ -164,7 +164,6 @@ void Turtlebot_Part::AddVisualizationAssets() {
     auto trimesh_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
     trimesh_shape->SetMesh(trimesh);
     trimesh_shape->SetName(m_mesh_name);
-    trimesh_shape->SetMutable(false);
     m_body->AddVisualShape(trimesh_shape);
     return;
 }

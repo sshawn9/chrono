@@ -22,7 +22,7 @@ namespace chrono {
 /// Class for rigid bodies defined with respect to a non-centroidal reference frame.
 ///
 /// An auxiliary reference frame is added to the base ChBody class offering the flexibility of placing collision
-/// and visual shapes, as well as markers, relative to a potentially more conveniant frame than relative to the
+/// and visual shapes, as well as markers, relative to a potentially more convenient frame than relative to the
 /// centroidal reference frame. The caller is responsible for specifying the location and orientation of the
 /// centroidal frame at the body Center Of Mass (COM).
 ///
@@ -65,7 +65,7 @@ class ChApi ChBodyAuxRef : public ChBody {
 
     /// Update all auxiliary data of the rigid body and of
     /// its children (markers, forces..)
-    virtual void Update(double time, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 
     // SERIALIZATION
 

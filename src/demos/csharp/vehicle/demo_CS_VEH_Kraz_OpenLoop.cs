@@ -20,12 +20,27 @@
 using System;
 using static ChronoGlobals;
 using static chrono_vehicle;
+using static chrono;
 
 namespace ChronoDemo
 {
 
     internal class Program
     {
+        // Helper method to create vehicle visualisation system based on compiled modules
+        static ChVehicleVisualSystem CreateVehicleVisualizationSystem(ChWheeledVehicle vehicle)
+        {
+            ChWheeledVehicleVisualSystemVSG vis = new ChWheeledVehicleVisualSystemVSG();
+            chrono_vsg.CastToChVisualSystemVSG(vis).SetWindowTitle("Semi-trailer truck :: Open Loop");
+            vis.SetChaseCamera(new ChVector3d(-18, 0.0, 3.75), 5, 0.25);
+            chrono_vsg.CastToChVisualSystemVSG(vis).SetLightIntensity(1.0f);
+            chrono_vsg.CastToChVisualSystemVSG(vis).SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
+            chrono_vsg.CastToChVisualSystemVSG(vis).EnableSkyTexture(SkyMode.DOME);
+            chrono_vsg.CastToChVisualSystemVSG(vis).EnableShadows();
+            vis.AttachVehicle(vehicle);  // Must attach vehicle BEFORE Initialize()
+            vis.Initialize();
+            return vis;
+        }
 
         static void Main(string[] args)
         {
@@ -82,11 +97,10 @@ namespace ChronoDemo
             patch_mat.SetFriction(0.9f);
             patch_mat.SetRestitution(0.01f);
             var patch = terrain.AddPatch(patch_mat, chrono.CSYSNORM, terrainLength, terrainWidth);
-            patch.SetColor(new ChColor(0.5f, 0.5f, 1));
             patch.SetTexture(GetVehicleDataFile("terrain/textures/tile4.jpg"), 200, 200);
             terrain.Initialize();
 
-            // Create the interactive Irrlicht driver system
+            // Create the VSG vehicle interface
             ChInteractiveDriver driver = new ChInteractiveDriver(truck.GetTractor());
             double steering_time = 1.0;  // time to go from 0 to +1 (or from 0 to -1)
             double throttle_time = 1.0;  // time to go from 0 to +1
@@ -96,18 +110,11 @@ namespace ChronoDemo
             driver.SetBrakingDelta(render_step_size / braking_time);
             driver.Initialize();
 
-            // Create the vehicle Irrlicht interface
-            ChWheeledVehicleVisualSystemIrrlicht vis = new ChWheeledVehicleVisualSystemIrrlicht();
-            vis.SetWindowTitle("Semi-trailer truck :: Open Loop");
-            vis.SetChaseCamera(new ChVector3d(0.0, 0.0, 1.75), 6, 0.5);
-            vis.Initialize();
-            vis.AddLightDirectional();
-            vis.AddSkyBox();
-            vis.AddLogo();
-            vis.AttachVehicle(truck.GetTractor());
+            // Create the vehicle visualisation interface
+            ChVehicleVisualSystem vis = CreateVehicleVisualizationSystem(truck.GetTractor());
             vis.AttachDriver(driver);
 
-            // Number of simulation steps between two 3D view render frames
+            // Number of simulation steps between render frames
             int render_steps = (int)Math.Ceiling(render_step_size / step_size);
 
             // Initialize simulation frame counter
@@ -115,6 +122,10 @@ namespace ChronoDemo
 
 
             truck.GetTractor().EnableRealtime(true);
+            
+            // Cache system reference to avoid repeated GetSystem() calls
+            ChSystem sys = truck.GetSystem();
+            
             while (vis.Run())
             {
                 // Render scene
@@ -125,11 +136,11 @@ namespace ChronoDemo
                     vis.EndScene();
                 }
 
-                // Get driver inputs
+                // Get driver inputs and time once per step
                 DriverInputs driver_inputs = driver.GetInputs();
+                double time = sys.GetChTime();
 
                 // Update modules (process inputs from other modules)
-                double time = truck.GetSystem().GetChTime();
                 driver.Synchronize(time);
                 truck.Synchronize(time, driver_inputs, terrain);
                 terrain.Synchronize(time);
@@ -144,6 +155,8 @@ namespace ChronoDemo
                 // Increment frame number
                 step_number++;
             }
+            
+            // On exit with VSG, Win32 window destruction warning from VSG window is expected and is a garbage cleanup VSG issue
         }
 
     }

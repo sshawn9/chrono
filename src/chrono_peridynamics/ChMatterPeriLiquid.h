@@ -72,7 +72,7 @@ class ChApiPeridynamics ChMatterPeriLiquid : public ChMatterPeri<ChMatterDataLiq
 
     ChMatterPeriLiquid() {}
 
-    /// Add the peridynamics force to each node, as a summation of all the effects of neighbouring nodes.
+    /// Add the peridynamics force to each node, as a summation of all the effects of neighboring nodes.
     virtual void ComputeForces() override;
 };
 
@@ -82,7 +82,7 @@ class ChApiPeridynamics ChMatterPeriLiquid : public ChMatterPeri<ChMatterDataLiq
 /// This can be attached to ChPeridynamics with my_peridynamics->AddVisualShape(my_visual);
 class /*ChApiPeridynamics*/ ChVisualPeriLiquid : public ChGlyphs {
   public:
-    ChVisualPeriLiquid(std::shared_ptr<ChMatterPeriLiquid> amatter) : mmatter(amatter) { is_mutable = true; };
+    ChVisualPeriLiquid(std::shared_ptr<ChMatterPeriLiquid> amatter) : mmatter(amatter) { SetMutable(true); }
     virtual ~ChVisualPeriLiquid() {}
 
     // Attach velocity property. (ex for postprocessing in falsecolor or with vectors with the Blender add-on)

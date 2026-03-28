@@ -43,6 +43,7 @@ int main(int argc, char* argv[]) {
 
     // Create a physical system
     ChSystemNSC sys;
+    sys.SetGravityY();
     sys.SetCollisionSystemType(ChCollisionSystem::Type::BULLET);
 
     // Create all the rigid bodies.
@@ -170,7 +171,7 @@ int main(int argc, char* argv[]) {
             vis_vsg->SetWindowTitle("VSG Rolling Friction");
             vis_vsg->SetBackgroundColor(ChColor(0.8f, 0.85f, 0.9f));
             vis_vsg->SetOutputScreen(0);
-            vis_vsg->EnableSkyBox();
+            vis_vsg->EnableSkyTexture(SkyMode::BOX);
             vis_vsg->SetOutputScreen(0);
             vis_vsg->SetCameraVertical(CameraVerticalDir::Y);
             vis_vsg->AddCamera(ChVector3d(0, 14, -20));

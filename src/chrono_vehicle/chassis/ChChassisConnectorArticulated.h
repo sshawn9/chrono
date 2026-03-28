@@ -61,6 +61,8 @@ class CH_VEHICLE_API ChChassisConnectorArticulated : public ChChassisConnector {
     ///  the underlying rotational motor.
     virtual double GetMaxSteeringAngle() const = 0;
 
+    virtual void PopulateComponentList() override;
+
     std::shared_ptr<ChLinkMotorRotationAngle> m_motor;  ///< steering motor
 };
 

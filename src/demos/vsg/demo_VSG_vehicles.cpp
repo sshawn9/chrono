@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Demosntration of the Chrono::VSG run-time visualization system
+// Demonstration of the Chrono::VSG run-time visualization system
 //
 // =============================================================================
 
@@ -31,7 +31,6 @@ std::shared_ptr<ChVisualShapeTriangleMesh> CreateMeshShape(const std::string& fi
     auto trimesh_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
     trimesh_shape->SetMesh(trimesh);
     trimesh_shape->SetName(filesystem::path(filename).stem());
-    trimesh_shape->SetMutable(false);
 
     return trimesh_shape;
 }

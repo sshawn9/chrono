@@ -16,7 +16,7 @@
 //
 // =============================================================================
 
-#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/input_output/ChWriterCSV.h"
 
 #include "chrono_vehicle/ChVehicleDataPath.h"
 #include "chrono_vehicle/tracked_vehicle/test_rig/ChTrackTestRigInteractiveDriver.h"
@@ -26,22 +26,14 @@
 #include "chrono_models/vehicle/m113/track_assembly/M113_TrackAssemblyBandANCF.h"
 #include "chrono_models/vehicle/m113/track_assembly/M113_TrackAssemblyBandBushing.h"
 
+#include "chrono_vehicle/tracked_vehicle/test_rig/ChTrackTestRigVisualSystemVSG.h"
+
 #ifdef CHRONO_MUMPS
     #include "chrono_mumps/ChSolverMumps.h"
 #endif
 
 #ifdef CHRONO_PARDISO_MKL
     #include "chrono_pardisomkl/ChSolverPardisoMKL.h"
-#endif
-
-#ifdef CHRONO_IRRLICHT
-    #include "chrono_vehicle/tracked_vehicle/test_rig/ChTrackTestRigVisualSystemIRR.h"
-using namespace chrono::irrlicht;
-#endif
-
-#ifdef CHRONO_VSG
-    #include "chrono_vehicle/tracked_vehicle/test_rig/ChTrackTestRigVisualSystemVSG.h"
-using namespace chrono::vsg3d;
 #endif
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -57,15 +49,12 @@ using std::endl;
 // USER SETTINGS
 // =============================================================================
 
-// Run-time visualization system
-ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
-
 // Simulation step size
 double step_size = 1e-4;
 
 // Specification of test rig inputs:
 //   'true':  use driver inputs from file
-//   'false': use interactive Irrlicht driver
+//   'false': use interactive driver
 bool use_data_driver = true;
 std::string driver_file("M113/test_rig/TTR_inputs.dat");
 
@@ -235,44 +224,14 @@ int main(int argc, char* argv[]) {
     rig->Initialize();
 
     // ---------------------------------------
-    // Create the vehicle Irrlicht application
+    // Create the vehicle run-time application
     // ---------------------------------------
 
-#ifndef CHRONO_IRRLICHT
-    if (vis_type == ChVisualSystem::Type::IRRLICHT)
-        vis_type = ChVisualSystem::Type::VSG;
-#endif
-#ifndef CHRONO_VSG
-    if (vis_type == ChVisualSystem::Type::VSG)
-        vis_type = ChVisualSystem::Type::IRRLICHT;
-#endif
-
-    std::shared_ptr<ChVisualSystem> vis;
-    switch (vis_type) {
-        case ChVisualSystem::Type::IRRLICHT: {
-#ifdef CHRONO_IRRLICHT
-            auto vis_irr = chrono_types::make_shared<ChTrackTestRigVisualSystemIRR>();
-            vis_irr->SetWindowSize(1280, 1024);
-            vis_irr->SetWindowTitle("Continuous Band Track Test Rig");
-            vis_irr->AttachTTR(rig);
-            vis_irr->Initialize();
-            vis = vis_irr;
-#endif
-            break;
-        }
-        default:
-        case ChVisualSystem::Type::VSG: {
-#ifdef CHRONO_VSG
-            auto vis_vsg = chrono_types::make_shared<ChTrackTestRigVisualSystemVSG>();
-            vis_vsg->SetWindowSize(1280, 800);
-            vis_vsg->SetWindowTitle("Continuous Band Track Test Rig");
-            vis_vsg->AttachTTR(rig);
-            vis_vsg->Initialize();
-            vis = vis_vsg;
-#endif
-            break;
-        }
-    }
+    auto vis = chrono_types::make_shared<ChTrackTestRigVisualSystemVSG>();
+    vis->SetWindowSize(1280, 800);
+    vis->SetWindowTitle("Continuous Band Track Test Rig");
+    vis->AttachTTR(rig);
+    vis->Initialize();
 
     // ---------------------------------------
     // Contact reporter object (for debugging)
@@ -322,7 +281,7 @@ int main(int argc, char* argv[]) {
     integrator->SetMaxIters(50);
     integrator->SetAbsTolerances(1e-2, 1e2);
     integrator->SetStepControl(false);
-    integrator->SetModifiedNewton(true);
+    integrator->SetJacobianUpdateMethod(ChTimestepperImplicit::JacobianUpdate::EVERY_ITERATION);
     integrator->SetVerbose(verbose_integrator);
 
     // -----------------
@@ -391,7 +350,6 @@ int main(int argc, char* argv[]) {
 
         ////cout << "Step: " << step_number;
         ////cout << "   Time: " << time;
-        ////cout << "   Number of Iterations: " << integrator->GetNumIterations();
         ////cout << "   Step Time: " << step_timing;
         ////cout << "   Total Time: " << total_timing;
         ////cout << endl;

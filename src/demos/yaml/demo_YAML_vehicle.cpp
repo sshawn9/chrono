@@ -23,10 +23,6 @@
 
 #include "chrono_vehicle/driver/ChInteractiveDriver.h"
 
-#ifdef CHRONO_IRRLICHT
-    #include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
-    #include "chrono_vehicle/tracked_vehicle/ChTrackedVehicleVisualSystemIrrlicht.h"
-#endif
 #ifdef CHRONO_VSG
     #include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemVSG.h"
     #include "chrono_vehicle/tracked_vehicle/ChTrackedVehicleVisualSystemVSG.h"
@@ -42,29 +38,24 @@ using namespace chrono;
 int main(int argc, char* argv[]) {
     std::cout << "Copyright (c) 2025 projectchrono.org\nChrono version: " << CHRONO_VERSION << std::endl;
 
-    // Extract filenames from command-line arguments
-    std::string sim_yaml_filename = GetChronoDataFile("yaml/vehicle/simulation_vehicle.yaml");
-    std::string model_yaml_filename = GetChronoDataFile("yaml/vehicle/polaris.yaml");
-    ////std::string model_yaml_filename = GetChronoDataFile("yaml/vehicle/marder.yaml");
+    // Extract filename from command-line arguments
+    std::string yaml_filename = GetChronoDataFile("yaml/vehicle/vehicle.yaml");
 
     ChCLI cli(argv[0], "");
-    cli.AddOption<std::string>("", "m,model_file", "vehicle model specification YAML file", model_yaml_filename);
-    cli.AddOption<std::string>("", "s,sim_file", "simulation specification YAML file", sim_yaml_filename);
+    cli.AddOption<std::string>("", "s,simulation_file", "MBS simulation specification YAML file", yaml_filename);
     if (!cli.Parse(argc, argv, true))
         return 1;
     if (argc == 1) {
         cli.Help();
-        std::cout << "Using default YAML model and simulation specification" << std::endl;
+        std::cout << "Using default YAML simulation specification" << std::endl;
     }
-    model_yaml_filename = cli.GetAsType<std::string>("model_file");
-    sim_yaml_filename = cli.GetAsType<std::string>("sim_file");
+    yaml_filename = cli.GetAsType<std::string>("simulation_file");
 
     std::cout << std::endl;
-    std::cout << "Vehicle model YAML file: " << model_yaml_filename << std::endl;
-    std::cout << "Simulation YAML file:    " << sim_yaml_filename << std::endl;
+    std::cout << "Simulation YAML file: " << yaml_filename << std::endl;
 
     // Create the YAML parser object
-    parsers::ChParserVehicleYAML parser(model_yaml_filename, sim_yaml_filename, true);
+    parsers::ChParserVehicleYAML parser(yaml_filename, true);
 
     // Create Chrono system and vehicle model
     auto sys = parser.CreateSystem();
@@ -82,8 +73,6 @@ int main(int argc, char* argv[]) {
     bool render = parser.Render();
     double render_fps = parser.GetRenderFPS();
     bool enable_shadows = parser.EnableShadows();
-    bool output = parser.Output();
-    double output_fps = parser.GetOutputFPS();
 
     const ChVector3d& chassis_point = parser.GetChassisPoint();
     double chase_distance = parser.GetChaseDistance();
@@ -98,71 +87,37 @@ int main(int argc, char* argv[]) {
 
     // Create the vehicle run-time visualization interface and the interactive driver
     std::shared_ptr<vehicle::ChVehicleVisualSystem> vis;
-    if (render) {
-        ChVisualSystem::Type vis_type;
-
-#if defined(CHRONO_VSG)
-        vis_type = ChVisualSystem::Type::VSG;
-#elif defined(CHRONO_IRRLICHT)
-        vis_type = ChVisualSystem::Type::IRRLICHT;
-#else
-        std::cout << "No Chrono run-time visualization module enabled. Disabling visualization." << std::endl;
-        render = false;
-#endif
-
-        switch (vis_type) {
-            case ChVisualSystem::Type::IRRLICHT: {
-#ifdef CHRONO_IRRLICHT
-                std::shared_ptr<vehicle::ChVehicleVisualSystemIrrlicht> vis_irr;
-                if (vehicle_type == parsers::ChParserVehicleYAML::VehicleType::WHEELED)
-                    vis_irr = chrono_types::make_shared<vehicle::ChWheeledVehicleVisualSystemIrrlicht>();
-                else
-                    vis_irr = chrono_types::make_shared<vehicle::ChTrackedVehicleVisualSystemIrrlicht>();
-                vis_irr->SetWindowTitle("Vehicle YAML demo - " + model_name);
-                vis_irr->SetCameraVertical(CameraVerticalDir::Z);
-                vis_irr->SetChaseCamera(chassis_point, chase_distance, chase_height);
-                vis_irr->Initialize();
-                vis_irr->AddLightDirectional();
-                vis_irr->AddSkyBox();
-                vis_irr->AddLogo();
-                vis_irr->AttachVehicle(vehicle.get());
-                vis_irr->AttachDriver(driver.get());
-
-                vis = vis_irr;
-#endif
-                break;
-            }
-            default:
-            case ChVisualSystem::Type::VSG: {
 #ifdef CHRONO_VSG
-                std::shared_ptr<vehicle::ChVehicleVisualSystemVSG> vis_vsg;
-                if (vehicle_type == parsers::ChParserVehicleYAML::VehicleType::WHEELED)
-                    vis_vsg = chrono_types::make_shared<vehicle::ChWheeledVehicleVisualSystemVSG>();
-                else
-                    vis_vsg = chrono_types::make_shared<vehicle::ChTrackedVehicleVisualSystemVSG>();
-                vis_vsg->SetWindowTitle("Vehicle YAML demo - " + model_name);
-                vis_vsg->AttachVehicle(vehicle.get());
-                vis_vsg->AttachDriver(driver.get());
-                vis_vsg->SetCameraVertical(CameraVerticalDir::Z);
-                vis_vsg->SetChaseCamera(chassis_point, chase_distance, chase_height);
-                vis_vsg->SetWindowSize(1280, 800);
-                vis_vsg->SetWindowPosition(100, 100);
-                vis_vsg->EnableSkyBox();
-                vis_vsg->SetCameraAngleDeg(40);
-                vis_vsg->SetLightIntensity(1.0f);
-                vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
-                vis_vsg->EnableShadows(enable_shadows);
-                vis_vsg->Initialize();
+    if (render) {
+        std::shared_ptr<vehicle::ChVehicleVisualSystemVSG> vis_vsg;
+        if (vehicle_type == parsers::ChParserVehicleYAML::VehicleType::WHEELED)
+            vis_vsg = chrono_types::make_shared<vehicle::ChWheeledVehicleVisualSystemVSG>();
+        else
+            vis_vsg = chrono_types::make_shared<vehicle::ChTrackedVehicleVisualSystemVSG>();
+        vis_vsg->SetWindowTitle("Vehicle YAML demo - " + model_name);
+        vis_vsg->AttachVehicle(vehicle.get());
+        vis_vsg->AttachDriver(driver.get());
+        vis_vsg->SetCameraVertical(CameraVerticalDir::Z);
+        vis_vsg->SetChaseCamera(chassis_point, chase_distance, chase_height);
+        vis_vsg->SetWindowSize(1280, 800);
+        vis_vsg->SetWindowPosition(100, 100);
+        vis_vsg->EnableSkyTexture(SkyMode::BOX);
+        vis_vsg->SetCameraAngleDeg(40);
+        vis_vsg->SetLightIntensity(1.0f);
+        vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
+        vis_vsg->EnableShadows(enable_shadows);
+        vis_vsg->Initialize();
 
-                vis = vis_vsg;
-#endif
-                break;
-            }
-        }
+        vis = vis_vsg;
     }
+#else
+    if (render)
+        std::cout << "Chrono::VSG run-time visualization module not enabled. Disabling visualization." << std::endl;
+    render = false;
+#endif
 
     // Create output directory
-    if (output) {
+    if (parser.Output()) {
         std::string out_dir = GetChronoOutputPath() + "YAML_VEHICLE";
         if (!filesystem::create_directory(filesystem::path(out_dir))) {
             std::cout << "Error creating directory " << out_dir << std::endl;
@@ -175,9 +130,8 @@ int main(int argc, char* argv[]) {
         }
         parser.SetOutputDir(out_dir);
 
-        ////vehicle->SetSuspensionOutput(0, true);
-        ////vehicle->SetSuspensionOutput(1, true);
-        ////vehicle->SetOutput(ChOutput::Type::ASCII, ChOutput::Mode::FRAMES, out_dir, "output", 0.1);
+        double out_step = 1.0 / parser.GetOutputFPS();
+        vehicle->SetOutput(parser.GetOutputType(), parser.GetOutputMode(), out_dir, model_name, out_step);
     }
 
     // Simulation loop

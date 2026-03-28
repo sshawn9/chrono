@@ -67,14 +67,14 @@ class ChApi ChShaftsFreewheel : public ChShaftsCouple {
     bool IsModeRatcheting() { return !jamming_mode; }
 
     /// Shaft 1 free to rotate forward respect to shaft 2.
-    /// Viceversa, backward rotation of 1 respect to 2 is prevented and will generate a torque.
+    /// vice-versa, backward rotation of 1 respect to 2 is prevented and will generate a torque.
     void SetFreeForward();
 
     /// Shaft 1 free to rotate backward respect to shaft 2.
-    /// Viceversa, forward rotation of 1 respect to 2 is prevented and will generate a torque.
+    /// vice-versa, forward rotation of 1 respect to 2 is prevented and will generate a torque.
     void SetFreeBackward();
 
-    /// If true, shaft 1 is free to rotate forward respect to shaft 2 (default). Viceversa, if false.
+    /// If true, shaft 1 is free to rotate forward respect to shaft 2 (default). vice-versa, if false.
     /// Use SetFreeForward() or SetFreeBackward() to change this mode.
     bool IsFreeForward() const { return free_forward; }
 
@@ -128,7 +128,7 @@ class ChApi ChShaftsFreewheel : public ChShaftsCouple {
     /// default true: shaft 1 free to rotate forward respect to shaft 2. False: 1 free backward respect to 2
     bool free_forward;
 
-    virtual void Update(double time, bool update_assets) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 
     virtual void IntStateGatherReactions(const unsigned int off_L, ChVectorDynamic<>& L) override;
     virtual void IntStateScatterReactions(const unsigned int off_L, const ChVectorDynamic<>& L) override;

@@ -33,8 +33,6 @@ if(NOT CH_ENABLE_MODULE_VEHICLE_MODELS)
     return()
 endif()
 
-
-
 # ----------------------------------------------------------------------------
 # Create base library
 # ----------------------------------------------------------------------------
@@ -156,6 +154,8 @@ set(DEPENDENCIES_SYNCHRONO ${DEPENDENCIES_SYNCHRONO} PARENT_SCOPE)
 # Add the Chrono_synchrono library
 #-----------------------------------------------------------------------------
 
+set(SYN_CONFIG_FILE ${PROJECT_BINARY_DIR}/chrono_synchrono/SynConfig.h)
+
 add_library(Chrono_synchrono
     ${SYN_BASE_FILES}
     ${SYN_CONTROLLER_FILES}
@@ -163,6 +163,7 @@ add_library(Chrono_synchrono
     ${SYN_COMMUNICATION_FILES}
     ${SYN_FLATBUFFER_FILES}
     ${SYN_UTILS_FILES}
+	${SYN_CONFIG_FILE}
 )
 add_library(Chrono::synchrono ALIAS Chrono_synchrono)
 
@@ -196,21 +197,23 @@ target_include_directories(Chrono_synchrono PUBLIC
 
 # Add dependencies
 if (CH_ENABLE_MODULE_SENSOR)
-  target_link_libraries(Chrono_synchrono PUBLIC Chrono_sensor) # needs PUBLIC
-  find_package(OptiX REQUIRED)
-  target_link_libraries(Chrono_synchrono INTERFACE OptiX::OptiX) # needs INTERFACE
+  target_link_libraries(Chrono_synchrono PUBLIC Chrono_sensor)
+  if(CH_USE_SENSOR_OPTIX)
+    find_package(OptiX REQUIRED)
+    target_include_directories(Chrono_synchrono PUBLIC "${OptiX_INCLUDE}")
+  endif()
 endif()
   
 if (CH_ENABLE_MODULE_IRRLICHT)
   target_link_libraries(Chrono_synchrono PRIVATE Chrono_irrlicht)
-  target_link_libraries(Chrono_synchrono PUBLIC Chrono_vehicle_irrlicht) # needs PUBLIC because of IrrKlang
+  target_link_libraries(Chrono_synchrono PUBLIC Chrono_vehicle_irrlicht)
 endif()
 
 target_link_libraries(Chrono_synchrono PRIVATE Chrono_core)
-target_link_libraries(Chrono_synchrono PUBLIC Chrono_vehicle) # needs PUBLIC
+target_link_libraries(Chrono_synchrono PUBLIC Chrono_vehicle)
 target_link_libraries(Chrono_synchrono PRIVATE ChronoModels_vehicle)
 target_link_libraries(Chrono_synchrono PRIVATE ChronoModels_robot)
-target_link_libraries(Chrono_synchrono PUBLIC MPI::MPI_CXX) # needs PUBLIC
+target_link_libraries(Chrono_synchrono PUBLIC MPI::MPI_CXX)
 
 #-----------------------------------------------------------------------------
 # Find DDS (Optional)
@@ -218,16 +221,36 @@ target_link_libraries(Chrono_synchrono PUBLIC MPI::MPI_CXX) # needs PUBLIC
 
 message(STATUS "Synchrono configured with MPI backend")
 
-option(CH_USE_FAST_DDS "Enable the FastDDS interface for the SynChrono Module" OFF)
+option(CH_USE_SYNCHRONO_FASTDDS "Enable the FastDDS interface for the SynChrono Module" OFF)
 
 set(FASTDDS_FOUND FALSE)
 
-if (CH_USE_FAST_DDS)
+if (CH_USE_SYNCHRONO_FASTDDS)
 	set(FastDDS_ROOT "" CACHE PATH "Path to FastDDS install directory")
 
 	if (FastDDS_ROOT STREQUAL "")
+	  # When ROS 2 is sourced, cmake may silently find the ROS-bundled FastDDS
+	  # through CMAKE_PREFIX_PATH.  That copy is a different version and will
+	  # cause ABI conflicts at link or run time.  Require an explicit path.
+	  if (DEFINED ENV{AMENT_PREFIX_PATH})
+	    message(WARNING
+	      "CH_USE_SYNCHRONO_FASTDDS is ON but FastDDS_ROOT is empty while a "
+	      "ROS 2 environment is sourced.  Set FastDDS_ROOT to a standalone "
+	      "FastDDS installation to avoid picking up the ROS-bundled copy.")
+	  endif()
 	  set(FASTDDS_FOUND FALSE)
 	else()
+	  # Reject a FastDDS_ROOT that points inside a ROS 2 installation tree.
+	  # The ROS-bundled FastDDS/FastCDR is typically a different major version
+	  # and will cause ABI or discovery conflicts with SynChrono.
+	  string(TOLOWER "${FastDDS_ROOT}" _fastdds_root_lower)
+	  if (_fastdds_root_lower MATCHES "/opt/ros/" OR _fastdds_root_lower MATCHES "ament" OR _fastdds_root_lower MATCHES "colcon")
+	    message(FATAL_ERROR
+	      "FastDDS_ROOT (${FastDDS_ROOT}) appears to point into a ROS 2 "
+	      "installation.  SynChrono requires a standalone FastDDS build.  "
+	      "Please set FastDDS_ROOT to an independent FastDDS install prefix.")
+	  endif()
+
 	  message(STATUS "Find FastRTPS")
 	  find_package(fastrtps REQUIRED PATHS "${FastDDS_ROOT}/cmake" "${fastrtps}/share/fastrtps/cmake")
 	  
@@ -240,6 +263,25 @@ if (CH_USE_FAST_DDS)
 	  message(STATUS "  FooNathan found?      ${foonathan_memory_FOUND}")
 
 	  if (fastcdr_FOUND AND fastrtps_FOUND AND foonathan_memory_FOUND)
+        # Fast DDS package targets may be created in this directory scope only,
+        # but Chrono_synchrono exposes them through a PUBLIC link interface that
+        # is consumed from sibling demo directories.
+        set(FASTDDS_IMPORTED_TARGETS
+            fastrtps
+            fastcdr
+            foonathan_memory
+            foonathan_memory_node_size_debugger
+            eProsima_atomic
+            OpenSSL::SSL
+            OpenSSL::Crypto
+        )
+
+        foreach(dds_target IN LISTS FASTDDS_IMPORTED_TARGETS)
+          if(TARGET ${dds_target})
+            set_property(TARGET ${dds_target} PROPERTY IMPORTED_GLOBAL TRUE)
+          endif()
+        endforeach()
+
 		target_link_libraries(Chrono_synchrono PUBLIC fastrtps fastcdr)
 	    ##set(SYN_INCLUDES ${SYN_INCLUDES} ${fastrtps_INCLUDE_DIR} ${fastcdr_INCLUDE_DIR})
 		set(FASTDDS_FOUND TRUE)
@@ -269,17 +311,27 @@ if (CH_USE_FAST_DDS)
 	)
 	source_group("communication" FILES ${SYN_COMMUNICATION_FILES})
 	target_sources(Chrono_synchrono PRIVATE ${SYN_COMMUNICATION_FILES})
-	set(CHRONO_FASTDDS "#define CHRONO_FASTDDS")
+	set(CHRONO_SYNCHRONO_USE_FASTDDS "#define CHRONO_SYNCHRONO_USE_FASTDDS")
 
     message(STATUS "Synchrono configured with FastDDS backend")
 
 else()
-	set(CHRONO_FASTDDS "#undef CHRONO_FASTDDS")
+	set(CHRONO_SYNCHRONO_USE_FASTDDS "#undef CHRONO_SYNCHRONO_USE_FASTDDS")
 	message(STATUS "Synchrono configured without FastDDS backend")
 endif()
 
 # Set some variables to be visible outside this directory
 set(FASTDDS_FOUND "${FASTDDS_FOUND}" PARENT_SCOPE)
+
+#-----------------------------------------------------------------------------
+# Generate and install configuration file
+#-----------------------------------------------------------------------------
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/SynConfig.h.in ${SYN_CONFIG_FILE} @ONLY)
+
+source_group("" FILES ${SYN_CONFIG_FILE})
+
+install(FILES ${SYN_CONFIG_FILE} DESTINATION include/chrono_synchrono)
 
 
 install(TARGETS Chrono_synchrono
@@ -293,14 +345,7 @@ install(TARGETS Chrono_synchrono
 # Install files
 #-------------------------------------------------------------------------------
 
-# Generate the configuration header file using substitution variables.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/SynConfig.h.in
-			   ${PROJECT_BINARY_DIR}/chrono_synchrono/SynConfig.h)
-
 # Old way (install headers preserving directory structure)
-install(FILES "${PROJECT_BINARY_DIR}/chrono_synchrono/SynConfig.h"
-		DESTINATION include/chrono_synchrono)
-
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
         DESTINATION include/chrono_synchrono
         FILES_MATCHING PATTERN "*.h" PATTERN "fbs" EXCLUDE)

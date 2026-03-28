@@ -18,7 +18,7 @@
 //
 // DeDion axles are lightweight solid axles
 // There are two guiding joints
-//  - longitudinal: spherejoint
+//  - longitudinal: spherical joint
 //  - lateral:      Watt linkage (center pivot arm, two side rods)
 //
 // Example cars with DeDion axle(s)
@@ -260,9 +260,7 @@ class CH_VEHICLE_API ChDeDionAxle : public ChSuspension {
                                      double radius,
                                      const ChColor& color);
 
-    virtual void ExportComponentList(rapidjson::Document& jsonDocument) const override;
-
-    virtual void Output(ChOutput& database) const override;
+    virtual void PopulateComponentList() override;
 
     static const std::string m_pointNames[NUM_POINTS];
 };
