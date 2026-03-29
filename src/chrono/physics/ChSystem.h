@@ -429,6 +429,9 @@ class ChApi ChSystem : public ChIntegrableIIorder {
     /// Get the number of meshes.
     virtual unsigned int GetNumMeshes() const { return assembly.GetNumMeshes(); }
 
+    /// Get the number of SOA mobilized bodies (in all SOA assemblies).
+    virtual unsigned int GetNumSOABodies() const { return assembly.GetNumSOABodies(); }
+
     /// Get the number of other physics items (including non active).
     virtual unsigned int GetNumOtherPhysicsItems() const { return assembly.GetNumOtherPhysicsItems(); }
 

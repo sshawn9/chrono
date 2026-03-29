@@ -114,6 +114,13 @@ void ChBaseGuiComponentVSG::render(vsg::CommandBuffer& cb) {
         ImGui::TableNextRow();
 
         ImGui::TableNextColumn();
+        ImGui::TextUnformatted("Num. SOA mbodies:");
+        ImGui::TableNextColumn();
+        ImGui::Text("%8d", m_app->GetNumSOABodies());
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
         ImGui::TextUnformatted("Num. contacts:");
         ImGui::TableNextColumn();
         ImGui::Text("%8d", m_app->GetNumContacts());

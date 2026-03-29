@@ -170,6 +170,9 @@ class ChApi ChAssembly : public ChPhysicsItem {
     /// Get the number of meshes.
     unsigned int GetNumMeshes() const { return m_num_meshes; }
 
+    /// Get the number of SOA mobilized bodies (in all SOA assemblies).
+    unsigned int GetNumSOABodies() const;
+
     /// Get the number of other active physics items (including non active).
     unsigned int GetNumOtherPhysicsItems() const { return (unsigned int)otherphysicslist.size(); }
 

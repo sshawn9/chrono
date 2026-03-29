@@ -121,6 +121,14 @@ unsigned int ChVisualSystem::GetNumShafts() const {
     return count;
 }
 
+unsigned int ChVisualSystem::GetNumSOABodies() const {
+    unsigned int count = 0;
+    for (const auto& sys : m_systems)
+        count += sys->GetNumSOABodies();
+
+    return count;
+}
+
 unsigned int ChVisualSystem::GetNumStates() const {
     unsigned int count = 0;
     for (const auto& sys : m_systems)

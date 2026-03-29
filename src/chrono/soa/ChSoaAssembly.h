@@ -43,6 +43,7 @@ class ChApi ChSoaAssembly : public ChExternalDynamicsDAE {
 
     std::shared_ptr<ChGroundBody> getGroundBody() const { return m_ground_body; }
     std::vector<std::shared_ptr<ChSoaMobilizedBody>> getBodies() const { return m_bodies; }
+    unsigned int getNumBodies() const { return (unsigned int)m_bodies.size(); }
 
     std::shared_ptr<ChSoaMobilizedBody> findBody(const std::string& name) const;
 

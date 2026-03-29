@@ -18,6 +18,7 @@
 #include "chrono/core/ChDataPath.h"
 #include "chrono/physics/ChAssembly.h"
 #include "chrono/physics/ChSystem.h"
+#include "chrono/soa/ChSoaAssembly.h"
 
 namespace chrono {
 
@@ -420,6 +421,17 @@ std::shared_ptr<ChMarker> ChAssembly::SearchMarker(int id) const {
     }
 
     return nullptr;  // not found
+}
+
+// -----------------------------------------------------------------------------
+
+unsigned int ChAssembly::GetNumSOABodies() const {
+    unsigned int count = 0;
+    for (const auto& item : otherphysicslist) {
+        if (const auto& soa = std::dynamic_pointer_cast<soa::ChSoaAssembly>(item))
+            count += soa->getNumBodies();
+    }
+    return count;
 }
 
 // -----------------------------------------------------------------------------

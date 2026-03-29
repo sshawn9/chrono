@@ -202,6 +202,9 @@ class ChApi ChVisualSystem {
     /// Get the number of shafts  (across all visualized systems).
     unsigned int GetNumShafts() const;
 
+    /// Get the number of SOA mobilized bodies (across all visualized systems).
+    unsigned int GetNumSOABodies() const;
+
     /// Get the number of coordinates at the velocity level (across all visualized systems).
     unsigned int GetNumStates() const;
 
