@@ -19,7 +19,7 @@
 // operations on a multibody tree that are not dependent on the actual number of
 // degrees of freedom.
 // Classes derived from ChSoaMobilizedBody include:
-//	- ChSoaMobilizedBodyT, a class templatized by the number of DOFs (i.e. the
+//	- ChSoaMobilizedBodyT, a class templated by the number of DOFs (i.e. the
 //    number of generalized velocities), used as base class for the various
 //    concrete mobilized body classes with number of DOFs from 1 to 6.
 //	- ChWeldBody, the special case of an articulated body with zero DFOs.
@@ -71,8 +71,6 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
     bool isTerminal() const { return m_children.empty(); }
 
     void lock(bool val);
-
-    const std::string& getName() const { return m_name; }
 
     const ChFramed& getRelPos() const { return m_X_FM; }
     const ChVector3d& getRelLoc() const { return m_X_FM.GetPos(); }
@@ -174,11 +172,7 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
         std::shared_ptr<ChSoaMobilityForce> force;
     };
 
-    ChSoaMobilizedBody(std::shared_ptr<ChSoaMobilizedBody> parent,
-                       const ChSoaMassProperties& mpropsB,
-                       const ChFramed& X_PF,
-                       const ChFramed& X_BM,
-                       const std::string& name = "");
+    ChSoaMobilizedBody(std::shared_ptr<ChSoaMobilizedBody> parent, const ChSoaMassProperties& mpropsB, const ChFramed& X_PF, const ChFramed& X_BM, const std::string& name);
 
     ChSoaMobilizedBody(const ChSoaMobilizedBody& other);
 
@@ -208,7 +202,7 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
     /// absolute position and all position-dependent kinematic quantities. It assumes that the same function has already
     /// been called for the parent body.
     /// A concrete mobilizer is supposed to implement its own version of this method which first performs the
-    /// appropriate operations for that mobilizer, *after* which it muct call this generic method in order to allow its
+    /// appropriate operations for that mobilizer, *after* which it must call this generic method in order to allow its
     /// children to perform the same calculations.
     virtual void orProcPosFD(const ChVectorDynamic<>& y);
 
@@ -216,7 +210,7 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
     /// absolute body velocity. It assumes that a tree traversal to calculate position-level quantities has been
     /// performed and that this same function has already been called for the parent body.
     /// A concrete mobilizer is supposed to implement its own version of this method which first performs the
-    /// appropriate operations for that mobilizer, *after* which it muct call this generic method in order to allow its
+    /// appropriate operations for that mobilizer, *after* which it must call this generic method in order to allow its
     /// children to perform the same calculations.
     virtual void orProcVelFD(const ChVectorDynamic<>& yd);
 
@@ -225,7 +219,7 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
     /// and velocity-related quantities required for further dynamic analysis. It  assumes that the same function has
     /// already been called for the parent body.
     /// A concrete mobilizer is supposed to implement its own version of this method which first performs the
-    /// appropriate operations for that mobilizer, *after* which it muct call this generic method in order to allow its
+    /// appropriate operations for that mobilizer, *after* which it must call this generic method in order to allow its
     /// children to perform the same calculations.
     virtual void orProcPosAndVelFD(const ChVectorDynamic<>& y, const ChVectorDynamic<>& yd);
 
@@ -233,7 +227,7 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
     /// traversal of the multibody tree, to calculate the absolute body acceleration and set the derivative of the state
     /// vector.
     /// A concrete mobilizer is supposed to implement its own version of this method which first performs the
-    /// appropriate operations for that mobilizer, *after* which it muct call this generic method in order to allow its
+    /// appropriate operations for that mobilizer, *after* which it must call this generic method in order to allow its
     /// children to perform the same calculations.
     virtual void orProcAccFD(const ChVectorDynamic<>& y, const ChVectorDynamic<>& yd, ChVectorDynamic<>& ydd);
 
@@ -243,11 +237,9 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
     /// traversal of the multibody tree, to calculate the absolute body position, velocity, and acceleration. It assumes
     /// that the same function has already been called for the parent body.
     /// A concrete mobilizer is supposed to implement its own version of this method which first performs the
-    /// appropriate operations for that mobilizer, *after* which it muct call this generic method in order to allow its
+    /// appropriate operations for that mobilizer, *after* which it must call this generic method in order to allow its
     /// children to perform the same calculations.
-    virtual void orProcPosVelAccID(const ChVectorDynamic<>& y,
-                                   const ChVectorDynamic<>& yd,
-                                   const ChVectorDynamic<>& ydd);
+    virtual void orProcPosVelAccID(const ChVectorDynamic<>& y, const ChVectorDynamic<>& yd, const ChVectorDynamic<>& ydd);
 
     // Inward recursive functions
     // --------------------------
@@ -350,8 +342,6 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
 
     // Body properties
 
-    std::string m_name;
-
     ChSoaMassProperties m_mpropsB;
     ChMatrix33d m_inertiaOB_G;
 
@@ -412,9 +402,7 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
 
     virtual bool IsContactActive() override { return true; }
 
-    virtual ChVector3d GetContactPointSpeed(const ChVector3d& abs_point) override {
-        return getAbsLinVel() + Vcross(getAbsAngVel(), abs_point - m_absPos.GetPos());
-    }
+    virtual ChVector3d GetContactPointSpeed(const ChVector3d& abs_point) override { return getAbsLinVel() + Vcross(getAbsAngVel(), abs_point - m_absPos.GetPos()); }
 
     virtual double GetContactableMass() override { return m_mpropsB.mass(); }
 
@@ -445,9 +433,7 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
     /// Get the absolute speed of a local point attached to the contactable.
     /// The given point is assumed to be expressed in the local frame of this object.
     /// This function must use the provided states.
-    virtual ChVector3d GetContactPointSpeed(const ChVector3d& loc_point,
-                                            const ChState& state_x,
-                                            const ChStateDelta& state_w) override {
+    virtual ChVector3d GetContactPointSpeed(const ChVector3d& loc_point, const ChState& state_x, const ChStateDelta& state_w) override {
         std::cerr << "GetContactPointSpeed not yet implemented" << std::endl;
         throw std::runtime_error("Not yet implemented");
     }
@@ -458,25 +444,17 @@ class ChApi ChSoaMobilizedBody : public ChObj, public ChContactable {
 
     /// Apply the force & torque expressed in absolute reference, applied in pos, to the
     /// coordinates of the variables. Force for example could come from a penalty model.
-    virtual void ContactForceLoadResidual_F(const ChVector3d& F,
-                                            const ChVector3d& T,
-                                            const ChVector3d& abs_point,
-                                            ChVectorDynamic<>& R) override {
+    virtual void ContactForceLoadResidual_F(const ChVector3d& F, const ChVector3d& T, const ChVector3d& abs_point, ChVectorDynamic<>& R) override {
         std::cerr << "ContactForceLoadResidual_F not yet implemented" << std::endl;
         throw std::runtime_error("Not yet implemented");
     }
 
     /// Compute a contiguous vector of generalized forces Q from a given force & torque at the given point.
-    /// Used for computing stiffness matrix (square force jacobian) by backward differentiation.
+    /// Used for computing stiffness matrix (square force Jacobian) by backward differentiation.
     /// The force and its application point are specified in the global frame.
     /// Each object must set the entries in Q corresponding to its variables, starting at the specified offset.
     /// If needed, the object states must be extracted from the provided state position.
-    virtual void ContactComputeQ(const ChVector3d& F,
-                                 const ChVector3d& T,
-                                 const ChVector3d& point,
-                                 const ChState& state_x,
-                                 ChVectorDynamic<>& Q,
-                                 int offset) override {
+    virtual void ContactComputeQ(const ChVector3d& F, const ChVector3d& T, const ChVector3d& point, const ChState& state_x, ChVectorDynamic<>& Q, int offset) override {
         std::cerr << "ContactComputeQ not yet implemented" << std::endl;
         throw std::runtime_error("Not yet implemented");
     }

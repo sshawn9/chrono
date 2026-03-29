@@ -17,7 +17,11 @@
 
 namespace chrono {
 
-ChObj::ChObj() : m_tag(-1), ChTime(0) {
+ChObj::ChObj() : ChTime(0), m_name(""), m_tag(-1) {
+    m_identifier = GenerateUniqueIdentifier();
+}
+
+ChObj::ChObj(const std::string& name) : ChTime(0), m_name(name), m_tag(-1) {
     m_identifier = GenerateUniqueIdentifier();
 }
 

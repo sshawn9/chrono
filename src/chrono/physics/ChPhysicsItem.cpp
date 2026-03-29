@@ -19,16 +19,19 @@ namespace chrono {
 // Register into the object factory, to enable run-time dynamic creation and persistence
 CH_FACTORY_REGISTER(ChPhysicsItem)
 
+ChPhysicsItem::ChPhysicsItem() : system(nullptr), offset_x(0), offset_w(0), offset_L(0) {}
+
 ChPhysicsItem::ChPhysicsItem(const ChPhysicsItem& other) : ChObj(other) {
     // Do not copy the system; this is initialized at insertion time
-    system = NULL;
+    system = nullptr;
     offset_x = other.offset_x;
     offset_w = other.offset_w;
     offset_L = other.offset_L;
 }
 
 ChPhysicsItem::~ChPhysicsItem() {
-    SetSystem(NULL);  // note that this might remove collision model from system
+    // Note that this might remove collision model from system
+    SetSystem(nullptr);
 }
 
 void ChPhysicsItem::SetSystem(ChSystem* m_system) {

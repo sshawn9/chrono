@@ -19,10 +19,10 @@ namespace chrono {
 namespace soa {
 
 ChSoaRevoluteBody::ChSoaRevoluteBody(std::shared_ptr<ChSoaMobilizedBody> parent,
-                               const ChSoaMassProperties& mprops,
-                               const ChFramed& inbFrame,
-                               const ChFramed& outbFrame,
-                               const std::string& name)
+                                     const ChSoaMassProperties& mprops,
+                                     const ChFramed& inbFrame,
+                                     const ChFramed& outbFrame,
+                                     const std::string& name)
     : ChSoaMobilizedBodyT<1>(parent, mprops, inbFrame, outbFrame, name), m_q0(0), m_u0(0) {
     m_H_FM.ang().col(0) = ChVector3d(0, 0, 1).eigen();
     m_H_FM.lin().col(0) = ChVector3d(0, 0, 0).eigen();
@@ -32,7 +32,7 @@ ChSoaRevoluteBody::ChSoaRevoluteBody(std::shared_ptr<ChSoaMobilizedBody> parent,
 }
 
 ChSoaRevoluteBody::ChSoaRevoluteBody(const ChSoaRevoluteBody& other) : ChSoaMobilizedBodyT<1>(other) {
-  //// TODO
+    //// TODO
 }
 
 // Mobilizer-specific setters for generalized coordinates, velocities, and acceleration
@@ -79,7 +79,7 @@ void ChSoaRevoluteBody::setRelAngAcc(const ChVector3d& relAngAcc) {
         setUdot(0, relAngAcc.z());
 }
 
-// Mobilizer-specific getters for state and derivatives
+// Mobilizer-specific accessor methods for state and derivatives
 
 double ChSoaRevoluteBody::getQ0(int dof) const {
     assert(dof == 0);
@@ -102,7 +102,7 @@ void ChSoaRevoluteBody::setJointTransform(const ChVectorDynamic<>& y) {
 }
 
 void ChSoaRevoluteBody::prepSim() {
-//// NEEDED?!?
+    //// NEEDED?!?
 }
 
 }  // namespace soa

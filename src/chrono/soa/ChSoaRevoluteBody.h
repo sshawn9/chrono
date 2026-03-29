@@ -40,11 +40,12 @@ class ChApi ChSoaRevoluteBody : public ChSoaMobilizedBodyT<1> {
     /// The generalized speed is the angular velocity of M in the F frame, about F's z-axis, expressed in F. (This axis
     /// is also constant in M.) For this mobilizer the velocity Jacobian H_FM is constant (and set at construction) and
     /// thus its derivative is zero (also set at construction).
-    ChSoaRevoluteBody(std::shared_ptr<ChSoaMobilizedBody> parent,
-                   const ChSoaMassProperties& mprops,
-                   const ChFramed& inbFrame,
-                   const ChFramed& outbFrame,
-                   const std::string& name = "");
+    ChSoaRevoluteBody(std::shared_ptr<ChSoaMobilizedBody> parent,  ///< parent body
+                      const ChSoaMassProperties& mprops,           ///< mobilized body mass properties
+                      const ChFramed& inbFrame,                    ///< X_PF (parent to fixed frame transform)
+                      const ChFramed& outbFrame,                   ///< X_BM (body to moving frame transform)
+                      const std::string& name = ""                 ///< mobilized body name
+    );
 
     ChSoaRevoluteBody(const ChSoaRevoluteBody& other);
 

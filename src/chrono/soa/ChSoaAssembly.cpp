@@ -45,8 +45,7 @@ void ChSoaAssembly::RemoveBody(std::shared_ptr<ChSoaMobilizedBody> body) {
 }
 
 std::shared_ptr<ChSoaMobilizedBody> ChSoaAssembly::findBody(const std::string& name) const {
-    auto body = std::find_if(std::begin(m_bodies), std::end(m_bodies),
-                             [name](std::shared_ptr<ChSoaMobilizedBody> body) { return body->getName() == name; });
+    auto body = std::find_if(std::begin(m_bodies), std::end(m_bodies), [name](std::shared_ptr<ChSoaMobilizedBody> body) { return body->GetName() == name; });
     return (body != std::end(m_bodies)) ? *body : nullptr;
 }
 
@@ -201,7 +200,7 @@ void ChSoaAssembly::calcAcc(const ChVectorDynamic<>& y, const ChVectorDynamic<>&
 }
 
 void ChSoaAssembly::calcCSMatrix() {
-  //// TODO
+    //// TODO
 }
 
 void ChSoaAssembly::calcCSForces() {
@@ -215,8 +214,6 @@ void ChSoaAssembly::calcCSPosJacobian() {
 void ChSoaAssembly::calcCSVelJacobian() {
     //// TODO
 }
-
-
 
 // -----------------------------------------------------------------------------
 

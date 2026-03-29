@@ -28,13 +28,7 @@ ChSoaMobilizedBody::ChSoaMobilizedBody(std::shared_ptr<ChSoaMobilizedBody> paren
                                        const ChFramed& X_PF,
                                        const ChFramed& X_BM,
                                        const std::string& name)
-    : m_mpropsB(mpropsB),
-      m_parent(parent),
-      m_X_PF(X_PF),
-      m_X_BM(X_BM),
-      m_name(name),
-      m_locked(false),
-      m_assembly(nullptr) {
+    : ChObj(name), m_mpropsB(mpropsB), m_parent(parent), m_X_PF(X_PF), m_X_BM(X_BM), m_locked(false), m_assembly(nullptr) {
     if (m_parent)
         m_parent->m_children.push_back(this);
 }
@@ -206,9 +200,7 @@ void ChSoaMobilizedBody::orProcMiF_passTwo(double* ud) {
         getChild(i)->orProcMiF_passTwo(ud);
 }
 
-void ChSoaMobilizedBody::orProcPosVelAccID(const ChVectorDynamic<>& y,
-                                           const ChVectorDynamic<>& yd,
-                                           const ChVectorDynamic<>& ydd) {
+void ChSoaMobilizedBody::orProcPosVelAccID(const ChVectorDynamic<>& y, const ChVectorDynamic<>& yd, const ChVectorDynamic<>& ydd) {
     for (int i = 0; i < getNumChildren(); i++)
         getChild(i)->orProcPosVelAccID(y, yd, ydd);
 }
@@ -240,9 +232,7 @@ void ChSoaMobilizedBody::irProcMiF_passOne() {
         getChild(i)->irProcMiF_passOne();
 }
 
-void ChSoaMobilizedBody::irProcForcesID(const ChVectorDynamic<>& y,
-                                        const ChVectorDynamic<>& yd,
-                                        const ChVectorDynamic<>& ydd) {
+void ChSoaMobilizedBody::irProcForcesID(const ChVectorDynamic<>& y, const ChVectorDynamic<>& yd, const ChVectorDynamic<>& ydd) {
     for (int i = 0; i < getNumChildren(); i++)
         getChild(i)->irProcForcesID(y, yd, ydd);
 }
@@ -255,15 +245,13 @@ void ChSoaMobilizedBody::setQDot(const ChVectorDynamic<>& y, ChVectorDynamic<>& 
     yd.segment(m_qIdx, getNumU()) = y.segment(m_uIdx, getNumU());
 }
 
-void ChSoaMobilizedBody::setQDotDot(const ChVectorDynamic<>& y,
-                                    const ChVectorDynamic<>& yd,
-                                    ChVectorDynamic<>& ydd) const {
+void ChSoaMobilizedBody::setQDotDot(const ChVectorDynamic<>& y, const ChVectorDynamic<>& yd, ChVectorDynamic<>& ydd) const {
     ydd.segment(m_qIdx, getNumU()) = yd.segment(m_uIdx, getNumU());
 }
 
 // =============================================================================
 
-ChGroundBody::ChGroundBody() : ChSoaMobilizedBody(nullptr, ChSoaMassProperties(), ChFramed(), ChFramed(), "ground") {
+ChGroundBody::ChGroundBody() : ChSoaMobilizedBody(nullptr, ChSoaMassProperties(), ChFramed(), ChFramed(), "soa_ground") {
     m_V_FM.setZero();
     m_absVel.setZero();
     m_absAcc.setZero();

@@ -37,8 +37,6 @@ namespace chrono {
 /// Each object receives a unique identifier and can be named and/or tagged.
 class ChApi ChObj {
   public:
-    ChObj();
-    ChObj(const ChObj& other);
     virtual ~ChObj() {}
 
     /// "Virtual" copy constructor.
@@ -133,6 +131,10 @@ class ChApi ChObj {
     virtual std::string& ArchiveContainerName() { return m_name; }
 
   protected:
+    ChObj();
+    ChObj(const std::string& name);
+    ChObj(const ChObj& other);
+
     double ChTime;       ///< object simulation time
     std::string m_name;  ///< object name
     int m_identifier;    ///< object unique identifier

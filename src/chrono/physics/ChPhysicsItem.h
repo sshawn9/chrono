@@ -32,12 +32,11 @@ namespace modal {
 class ChModalAssembly;
 }
 
-
 /// Base class for physics items that are part of a simulation.
 /// Such items (e.g., rigid bodies, joints, FEM meshes, etc.) can contain ChVariables or ChConstraints objects.
 class ChApi ChPhysicsItem : public ChObj {
   public:
-    ChPhysicsItem() : system(NULL), offset_x(0), offset_w(0), offset_L(0) {}
+    ChPhysicsItem();
     ChPhysicsItem(const ChPhysicsItem& other);
     virtual ~ChPhysicsItem();
 
@@ -56,8 +55,6 @@ class ChApi ChPhysicsItem : public ChObj {
 
     /// Return true if the object is active and included in dynamics.
     virtual bool IsActive() const { return true; }
-
-    // Collisions - override these in child classes if needed
 
     /// Tell if the object is subject to collision.
     /// Only for interface; child classes may override this, using internal flags.
@@ -79,7 +76,7 @@ class ChApi ChPhysicsItem : public ChObj {
     /// By default, returns an infinite AABB.
     virtual ChAABB GetTotalAABB() const;
 
-    /// Get a symbolic 'center' of the object. 
+    /// Get a symbolic 'center' of the object.
     /// By default this function returns the center of the AABB.
     /// Derived classes may override this, but must always return a point inside the AABB.
     virtual ChVector3d GetCenter() const;
@@ -163,7 +160,7 @@ class ChApi ChPhysicsItem : public ChObj {
 
     /// From global acceleration vector to item's state acceleration
     virtual void IntStateScatterAcceleration(const unsigned int off_a,  ///< offset in a accel. vector
-                                             const ChStateDelta& a  ///< acceleration part of state vector derivative
+                                             const ChStateDelta& a      ///< acceleration part of state vector derivative
     ) {}
 
     /// From item's reaction forces to global reaction vector
@@ -223,9 +220,9 @@ class ChApi ChPhysicsItem : public ChObj {
     /// If mass lumping is impossible or approximate, adds scalar error to "error" parameter.
     ///    Md += c*diag(M)
     virtual void IntLoadLumpedMass_Md(const unsigned int off,  ///< offset in Md vector
-                                      ChVectorDynamic<>& Md,  ///< result: Md vector, diagonal of the lumped mass matrix
-                                      double& err,    ///< result: not touched if lumping does not introduce errors
-                                      const double c  ///< a scaling factor
+                                      ChVectorDynamic<>& Md,   ///< result: Md vector, diagonal of the lumped mass matrix
+                                      double& err,             ///< result: not touched if lumping does not introduce errors
+                                      const double c           ///< a scaling factor
     ) {}
 
     /// Takes the term Cq'*L, scale and adds to R at given offset:
@@ -253,21 +250,19 @@ class ChApi ChPhysicsItem : public ChObj {
     ) {}
 
     /// Prepare variables and constraints to accommodate a solution:
-    virtual void IntToDescriptor(
-        const unsigned int off_v,    ///< offset for \e v and \e R
-        const ChStateDelta& v,       ///< vector copied into the \e q 'unknowns' term of the variables
-        const ChVectorDynamic<>& R,  ///< vector copied into the \e F 'force' term of the variables
-        const unsigned int off_L,    ///< offset for \e L and \e Qc
-        const ChVectorDynamic<>& L,  ///< vector copied into the \e L 'lagrangian ' term of the constraints
-        const ChVectorDynamic<>& Qc  ///< vector copied into the \e Qb 'constraint' term of the constraints
+    virtual void IntToDescriptor(const unsigned int off_v,    ///< offset for \e v and \e R
+                                 const ChStateDelta& v,       ///< vector copied into the \e q 'unknowns' term of the variables
+                                 const ChVectorDynamic<>& R,  ///< vector copied into the \e F 'force' term of the variables
+                                 const unsigned int off_L,    ///< offset for \e L and \e Qc
+                                 const ChVectorDynamic<>& L,  ///< vector copied into the \e L 'lagrangian ' term of the constraints
+                                 const ChVectorDynamic<>& Qc  ///< vector copied into the \e Qb 'constraint' term of the constraints
     ) {}
 
     /// After a solver solution, fetch values from variables and constraints into vectors:
-    virtual void IntFromDescriptor(
-        const unsigned int off_v,  ///< offset for \e v
-        ChStateDelta& v,           ///< vector to where the \e q 'unknowns' term of the variables will be copied
-        const unsigned int off_L,  ///< offset for \e L
-        ChVectorDynamic<>& L       ///< vector to where \e L 'lagrangian ' term of the constraints will be copied
+    virtual void IntFromDescriptor(const unsigned int off_v,  ///< offset for \e v
+                                   ChStateDelta& v,           ///< vector to where the \e q 'unknowns' term of the variables will be copied
+                                   const unsigned int off_L,  ///< offset for \e L
+                                   ChVectorDynamic<>& L       ///< vector to where \e L 'lagrangian ' term of the constraints will be copied
     ) {}
 
     // SOLVER SYSTEM FUNCTIONS
