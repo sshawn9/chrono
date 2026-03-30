@@ -253,8 +253,8 @@ void MBTireModel::CalculateNormal(int ir, int id, ChVector3d& normal, double& ar
 // Jacobian matrices are linear combination of the form:
 //    Kfactor * [K] + Rfactor * [R]
 // where
-// - [K] is the partial derivative wrt position-level states ("stiffness")
-// - [R] is the partial derivative wrt velocity-level states ("damping")
+// - [K] is the partial derivative w.r.t. position-level states ("stiffness")
+// - [R] is the partial derivative w.r.t. velocity-level states ("damping")
 
 // Constant threshold for checking zero length vectors
 static constexpr double zero_length = 1e-6;
@@ -346,7 +346,7 @@ void MBTireModel::NodePressure::CalculateJacobianFD(double Kfactor, double Rfact
     CalculateForce();
     auto force_0 = force;
 
-    // node states (columms 1,2,3)
+    // node states (columns 1,2,3)
     for (int i = 0; i < 3; i++) {
         pos[i] += FD_step;
         node->SetPos(pos);
@@ -356,7 +356,7 @@ void MBTireModel::NodePressure::CalculateJacobianFD(double Kfactor, double Rfact
         node->SetPos(pos);
     }
 
-    // wheel states (columms 3,4,5)
+    // wheel states (columns 3,4,5)
     for (int i = 0; i < 3; i++) {
         w_pos[i] += FD_step;
         wheel->SetPos(w_pos);
@@ -677,7 +677,7 @@ void MBTireModel::EdgeSpring2::CalculateJacobianFD(double Kfactor, double Rfacto
         node1->SetPosDt(wheel->PointSpeedLocalToParent(local_pos));
     }
 
-    // node2 states and state derivatives (columms 6,7,8 in K and R)
+    // node2 states and state derivatives (columns 6,7,8 in K and R)
     for (int i = 0; i < 3; i++) {
         pos2[i] += FD_step;
         node2->SetPos(pos2);
@@ -766,7 +766,7 @@ void MBTireModel::Spring3::CalculateForce() {
     double length_cross = cross.Length();
     if (length_cross > zero_length) {
         cross /= length_cross;
-    } else {  // colinear points
+    } else {  // collinear points
         cross = wheel->TransformDirectionLocalToParent(t0);
     }
 
@@ -1152,7 +1152,7 @@ void MBTireModel::Construct(ChTire::ContactSurfaceType surface_type, double surf
 
     m_node_mass = m_tire->GetMass() / m_num_nodes;
 
-    // Create the visualization shape and get accessors to the underling trimesh
+    // Create the visualization shape and get access to the underling trimesh
     m_trimesh_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
     auto trimesh = m_trimesh_shape->GetMesh();
     auto& vertices = trimesh->GetCoordsVertices();

@@ -111,7 +111,7 @@ void ChTireStaticTestRig::Initialize(Mode mode) {
     auto tire_radius = m_tire->GetRadius();
 
     const double dim = 0.1;                     // base dimension
-    double post_offset = 3 * dim;               // in y direciton
+    double post_offset = 3 * dim;               // in y direction
     double spindle_height = tire_radius + 0.1;  // initial spindle/wheel height
     double plate_dim = 1.5;                     // plate width and length
     double plate_thickness = 0.1;               // plate thickness
