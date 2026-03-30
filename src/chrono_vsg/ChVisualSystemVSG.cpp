@@ -341,7 +341,7 @@ ChVisualSystemVSG::ChVisualSystemVSG(int num_divs)
       m_label_font_path("vsg/fonts/OpenSans-Bold.vsgb"),
       m_show_body_labels(false),
       m_show_link_labels(false),
-      m_body_labels_color(ChColor(0.8f, 0.1f, 0.1f)),
+      m_body_labels_color(ChColor(0.1f, 0.8f, 0.1f)),
       m_link_labels_color(ChColor(0.1f, 0.1f, 0.8f)),
       m_body_labels_scale(1),
       m_link_labels_scale(1),
@@ -1084,7 +1084,6 @@ void ChVisualSystemVSG::Render() {
         std::vector<ChVector3d> c_pos;
         for (auto sys : m_systems)
             CollectLinkFramePositions(sys->GetAssembly(), c_pos);
-        assert(!c_pos.empty());
 
         for (size_t iPos = 0; iPos < c_pos.size(); iPos++) {
             m_link_labels_layout[iPos]->horizontal = vsg::vec3(label_size, 0, 0);
