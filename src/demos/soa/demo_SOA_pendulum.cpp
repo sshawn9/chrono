@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Demo for a 3D simple pendulum modeled using SOA relative coordinates
+// Demo for a 3D triple pendulum modeled using SOA relative coordinates
 //
 // =============================================================================
 
@@ -51,24 +51,27 @@ int main(int argc, char* argv[]) {
     std::cout << "Copyright (c) 2025 projectchrono.org\nChrono version: " << CHRONO_VERSION << std::endl;
 
     ChSystemNSC sys;
-    sys.SetGravitationalAcceleration(ChVector3d(0, 0, 0));
+    sys.SetGravitationalAcceleration(ChVector3d(0, -1, 0));
 
-    // Create an SOA assembly with a double pnedulum
+    // Create an SOA assembly with a triple pendulum
     // ---------------------------------------------
 
     auto soa = chrono_types::make_shared<ChSoaAssembly>();
     std::shared_ptr<ChSoaRevoluteBody> pendulum1;
     std::shared_ptr<ChSoaRevoluteBody> pendulum2;
+    std::shared_ptr<ChSoaRevoluteBody> pendulum3;
     double L1 = 2;
     double L2 = 1;
-    double init1 = CH_PI_4;
-    double init2 = CH_PI_2;
+    double L3 = 1;
+    double init1 = 45 * CH_DEG_TO_RAD;
+    double init2 = 55 * CH_DEG_TO_RAD;
+    double init3 = 30 * CH_DEG_TO_RAD;
 
     // Create a contact material (shared by all objects)
-    ChContactMaterialData material_data;
-    material_data.cr = 0.1f;
-    material_data.mu = 0.5f;
-    auto material = material_data.CreateMaterial(sys.GetContactMethod());
+    ////ChContactMaterialData material_data;
+    ////material_data.cr = 0.1f;
+    ////material_data.mu = 0.5f;
+    ////auto material = material_data.CreateMaterial(sys.GetContactMethod());
 
     // First pendulum (with reference frame at inboard joint)
     {
@@ -76,15 +79,15 @@ int main(int argc, char* argv[]) {
         ChMatrix33d inertia1(ChVector3d(0.01, mass1 * L1 * L1 / 12, mass1 * L1 * L1 / 12));
         ChSoaMassProperties pendulum1_mprops(mass1, ChVector3d(L1 / 2, 0, 0), inertia1);
         pendulum1 = chrono_types::make_shared<ChSoaRevoluteBody>(soa->getGroundBody(), pendulum1_mprops,  //
-                                                              ChFramed(VNULL, Q_ROTATE_Z_TO_Y),        //
-                                                              ChFramed(VNULL, Q_ROTATE_Z_TO_Y),        //
-                                                              "pendulum1");
+                                                                 ChFramed(VNULL, Q_ROTATE_Z_TO_Y),        // X_PF
+                                                                 ChFramed(VNULL, Q_ROTATE_Z_TO_Y),        // X_BM
+                                                                 "pendulum1");                            //
         auto vis_shape = chrono_types::make_shared<ChVisualShapeBox>(L1, 0.1, 0.1);
-        vis_shape->SetColor(ChColor(0, 0, 0.6f));
+        vis_shape->SetColor(ChColor(0.6f, 0, 0));
         pendulum1->AddVisualShape(vis_shape, ChFramed(ChVector3d(L1 / 2, 0, 0), QUNIT));
 
-        auto coll_shape = chrono_types::make_shared<ChCollisionShapeBox>(material, L1, 0.1, 0.1);
-        pendulum1->AddCollisionShape(coll_shape, ChFramed(ChVector3d(L1 / 2, 0, 0), QUNIT));
+        ////auto coll_shape = chrono_types::make_shared<ChCollisionShapeBox>(material, L1, 0.1, 0.1);
+        ////pendulum1->AddCollisionShape(coll_shape, ChFramed(ChVector3d(L1 / 2, 0, 0), QUNIT));
 
         pendulum1->setRelPos(init1);
         pendulum1->setRelVel(0.5);
@@ -97,16 +100,34 @@ int main(int argc, char* argv[]) {
         ChMatrix33d inertia2(ChVector3d(0.01, mass2 * L2 * L2 / 12, mass2 * L2 * L2 / 12));
         ChSoaMassProperties pendulum2_mprops(mass2, ChVector3d(L2 / 2, 0, 0), inertia2);
         pendulum2 = chrono_types::make_shared<ChSoaRevoluteBody>(pendulum1, pendulum2_mprops,             //
-                                                              ChFramed(ChVector3d(+L1, 0, 0), QUNIT),  //
-                                                              ChFramed(VNULL, QUNIT),                  //
-                                                              "pendulum2");
+                                                                 ChFramed(ChVector3d(+L1, 0, 0), QUNIT),  // X_PF
+                                                                 ChFramed(VNULL, QUNIT),                  // X_BM
+                                                                 "pendulum2");                            //
         auto vis_shape = chrono_types::make_shared<ChVisualShapeBox>(L2, 0.1, 0.1);
-        vis_shape->SetColor(ChColor(0.6f, 0, 0));
+        vis_shape->SetColor(ChColor(0, 0.6f, 0));
         pendulum2->AddVisualShape(vis_shape, ChFramed(ChVector3d(L2 / 2, 0, 0), QUNIT));
 
         pendulum2->setRelPos(init2);
         pendulum2->setRelVel(0.1);
         soa->AddBody(pendulum2);
+    }
+
+    // Third pendulum (with reference frame at inboard joint)
+    {
+        double mass3 = 1;
+        ChMatrix33d inertia3(ChVector3d(0.01, mass3 * L3 * L3 / 12, mass3 * L3 * L3 / 12));
+        ChSoaMassProperties pendulum3_mprops(mass3, ChVector3d(L3 / 2, 0, 0), inertia3);
+        pendulum3 = chrono_types::make_shared<ChSoaRevoluteBody>(pendulum2, pendulum3_mprops,             //
+                                                                 ChFramed(ChVector3d(+L2, 0, 0), QUNIT),  // X_PF
+                                                                 ChFramed(VNULL, QUNIT),                  // X_BM
+                                                                 "pendulum3");                            //
+        auto vis_shape = chrono_types::make_shared<ChVisualShapeBox>(L3, 0.1, 0.1);
+        vis_shape->SetColor(ChColor(0, 0, 0.6f));
+        pendulum3->AddVisualShape(vis_shape, ChFramed(ChVector3d(L3 / 2, 0, 0), QUNIT));
+
+        pendulum3->setRelPos(init3);
+        pendulum3->setRelVel(0.1);
+        soa->AddBody(pendulum3);
     }
 
     // Attach SOA assembly to Chrono system
@@ -118,7 +139,7 @@ int main(int argc, char* argv[]) {
     // Traverse bodies in assembly and print their absolute position, orientation, and velocities
     cout << "Traverse SOA bodies" << endl;
     for (const auto& b : soa->getBodies()) {
-        cout << "  " << b->getName() << endl;
+        cout << "  " << b->GetName() << endl;
         cout << "           p: " << b->getAbsLoc() << " | q: " << b->getAbsQuat() << endl;
         cout << "           v: " << b->getAbsLinVel() << " | o: " << b->getAbsAngVel() << endl;
         cout << "     COM   p: " << b->getAbsCOMLoc() << " | v: " << b->getAbsCOMVel() << endl;
@@ -127,8 +148,10 @@ int main(int argc, char* argv[]) {
     cout << "Find SOA bodies by name" << endl;
     auto p1 = soa->findBody("pendulum1");
     auto p2 = soa->findBody("pendulum2");
+    auto p3 = soa->findBody("pendulum2");
     cout << "  pendulum1 " << (p1 ? " found" : " not found") << endl;
     cout << "  pendulum2 " << (p2 ? " found" : " not found") << endl;
+    cout << "  pendulum3 " << (p3 ? " found" : " not found") << endl;
 
     // Create the run-time visualization system
     // ----------------------------------------
@@ -149,7 +172,7 @@ int main(int argc, char* argv[]) {
             auto vis_irr = chrono_types::make_shared<ChVisualSystemIrrlicht>();
             vis_irr->AttachSystem(&sys);
             vis_irr->SetWindowSize(800, 600);
-            vis_irr->SetWindowTitle("SOA double pendulum demo");
+            vis_irr->SetWindowTitle("SOA triple pendulum demo");
             vis_irr->Initialize();
             vis_irr->AddLogo();
             vis_irr->AddSkyBox();
@@ -168,7 +191,7 @@ int main(int argc, char* argv[]) {
             vis_vsg->SetCameraVertical(CameraVerticalDir::Z);
             vis_vsg->SetWindowSize(ChVector2i(1200, 800));
             vis_vsg->SetWindowPosition(ChVector2i(100, 300));
-            vis_vsg->SetWindowTitle("SOA double pendulum demo");
+            vis_vsg->SetWindowTitle("SOA triple pendulum demo");
             vis_vsg->AddCamera(ChVector3d(5, -6, 2));
             vis_vsg->SetCameraAngleDeg(40);
             vis_vsg->SetLightIntensity(1.0f);
@@ -190,6 +213,7 @@ int main(int argc, char* argv[]) {
 
     ChFunctionSine dof1(CH_PI, 1 / 4.0, 0.0);
     ChFunctionSine dof2(CH_PI_2, 1 / 2.0, 0.0);
+    ChFunctionSine dof3(CH_PI_2, 1 / 2.0, 0.0);
 
     ChRealtimeStepTimer rt_timer;
 
@@ -200,13 +224,11 @@ int main(int argc, char* argv[]) {
 
         double angle1 = init1 + dof1(time);
         double angle2 = init2 + dof2(time);
+        double angle3 = init3 + dof3(time);
 
         pendulum1->setRelPos(angle1);
         pendulum2->setRelPos(angle2);
-
-        ////std::cout << "t: " << time << "  a1: " << angle1 << "  a2: " << angle2 << std::endl;
-        ////std::cout << "  pendulum1: " << pendulum1->getAbsLoc() << std::endl;
-        ////std::cout << "  pendulum2: " << pendulum2->getAbsLoc() << std::endl;
+        pendulum3->setRelPos(angle3);
 
         soa->DoForwardKinematics();
         rt_timer.Spin(step);

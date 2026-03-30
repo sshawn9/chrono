@@ -3,12 +3,12 @@ set(TESTS
     btest_CH_joints
     btest_CH_pendulums
     btest_CH_mixerNSC
-    )
+)
 
 if(CH_ENABLE_MODULE_PARDISO_MKL OR CH_ENABLE_MODULE_MUMPS)
   set(TESTS ${TESTS}
       btest_CH_HHT
-      )
+  )
 endif()
 
 # ------------------------------------------------------------------------------
@@ -17,6 +17,10 @@ list(APPEND LIBS Chrono_core)
 
 if(CH_ENABLE_MODULE_IRRLICHT)
   list(APPEND LIBS "Chrono_irrlicht")
+endif()
+
+if(CH_ENABLE_MODULE_VSG)
+  list(APPEND LIBS "Chrono_vsg")
 endif()
 
 if(CH_ENABLE_MODULE_PARDISO_MKL)
