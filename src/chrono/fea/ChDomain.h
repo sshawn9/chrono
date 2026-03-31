@@ -494,9 +494,12 @@ public:
     /// This is called per each material point per each element.
     /// This may happen less frequently than a full Update. 
     virtual void PointUpdateEndStep(std::shared_ptr<ChFieldElement> melement,
-        DataPerElement& data,
-        const int i_point,
-        const double time) = 0;
+                                    DataPerElement& data,
+                                    const int i_point,
+                                    const double time) {
+        // DO NOTHING by default. You can override this in your domain if you need to do some updates at the end of the
+        // time step, ex. for plasticity, etc.
+    }
     
 
     // INTERFACE to ChPhysicsItem
