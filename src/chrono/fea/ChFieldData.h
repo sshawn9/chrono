@@ -218,6 +218,7 @@ public:
         state.setZero();
         state_dt.setZero();
         F.setZero();
+        mvariables.GetMass().setZero();
     }
 
     virtual ChVectorRef State() override { return state; }
@@ -319,6 +320,7 @@ public:
         pos_dt.setZero();
         pos_dtdt.setZero();
         F.setZero();
+        mvariables.SetNodeMass(0);
     }
     
     // Custom properties, helpers etc.
