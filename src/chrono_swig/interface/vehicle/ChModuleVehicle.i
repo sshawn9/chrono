@@ -66,6 +66,7 @@
 #include "chrono/physics/ChLinkRSDA.h"
 #include "chrono/physics/ChLoadsBody.h"
 #include "chrono/physics/ChLoadsNodeXYZ.h"
+#include "chrono/physics/ChLoadHydrodynamics.h"
 #include "chrono/physics/ChPhysicsItem.h"
 
 #include "chrono/geometry/ChTriangleMeshConnected.h"
@@ -281,8 +282,8 @@ using namespace chrono::vehicle::m113;
 %import(module = "pychrono.vsg3d") "chrono_swig/interface/vsg/ChVisualSystemVSG.i"
 #endif
 
-
-#ifdef CHRONO_IRRLICHT
+// disconnect Vehicle Csharp module from irrlicht and stop the preprocessor from trying to include irrlicht headers
+#if defined(CHRONO_IRRLICHT) && !defined(SWIGCSHARP)
 #define ChApiIrr 
 %import(module = "pychrono.irrlicht") "dimension2d.h"
 %import(module = "pychrono.irrlicht") "../irrlicht/ChVisualSystemIrrlicht.i"
@@ -449,7 +450,7 @@ Before adding a shared_ptr, mark as shared ptr all its inheritance tree in the m
 
 %include "../../../chrono_vehicle/ChVehicleVisualSystem.h" 
 
-#ifdef CHRONO_IRRLICHT
+#if defined(CHRONO_IRRLICHT) && !defined(SWIGCSHARP)
   #define ChApiIrr 
   #define IRRLICHT_API
   #define _IRR_DEPRECATED_
