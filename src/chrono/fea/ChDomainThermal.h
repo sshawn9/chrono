@@ -161,7 +161,7 @@ public:
         // K  matrix (jacobian of:    c dT/dt + div [C] grad T = f )  
         // K = sum (dNdX' * [k] * dNdX * w * |J|)
 
-        if (Rpfactor) {
+        if (Kpfactor) {
             ChMatrix33d tangent_conductivity;
             this->material->ComputeTangentModulus(tangent_conductivity,
                 VNULL, T,
