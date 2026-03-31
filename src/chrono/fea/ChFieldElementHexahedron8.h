@@ -43,12 +43,16 @@ public:
     // Tetrahedron-specific
     // 
 
-    /// Return the specified tetrahedron node (0 <= n <= 8).
+    /// Return the specified hexahedron node (0 <= n <= 8).
     virtual std::shared_ptr<ChNodeFEAfieldXYZ> GetTetrahedronNode(unsigned int n) { return nodes[n]; }
 
-    /// Set the nodes used by this tetrahedron.
+    /// Set the nodes used by this hexahedron.
     virtual void SetNodes(std::array<std::shared_ptr<ChNodeFEAfieldXYZ>, 8> mynodes) {
         nodes = mynodes;
+    }
+    /// Get the nodes used by this hexahedron.
+    virtual std::array<std::shared_ptr<ChNodeFEAfieldXYZ>, 8>& GetNodes() {
+        return nodes;
     }
 
     //

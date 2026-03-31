@@ -46,7 +46,7 @@ namespace fea {
     }
 
     // Compute shape function material derivatives dN/d\eta at eta parametric coordinates.
-    // Write shape functions dN_j(\eta)/d\eta_i in dNde, a matrix with 4 columns, and 3 rows. 
+    // Write shape functions dN_j(\eta)/d\eta_i in dNde, a matrix with 8 columns, and 3 rows. 
 
     void ChFieldElementHexahedron8::ComputedNde(const ChVector3d eta, ChMatrixDynamic<>& dNde) {
         dNde.setZero(GetManifoldDimensions(), GetNumNodes());
