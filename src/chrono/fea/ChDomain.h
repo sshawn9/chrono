@@ -285,7 +285,7 @@ public:
         for (auto& mel : this->element_datamap) {
 
             // setup array of quadrature data
-            if (!this->GetMaterial()->CreateMaterialPointData()) {
+            if (!this->GetMaterial() || !this->GetMaterial()->CreateMaterialPointData()) {
                 mel.second.matpoints_data.resize(0); // optimization to avoid wasting memory if NO material-specific data at point 
             }
             else {
