@@ -40,17 +40,20 @@ public:
     virtual ~ChFieldElementHexahedron8() {}
 
     //
-    // Tetrahedron-specific
+    // Hexahedron-specific
     // 
 
     /// Return the specified hexahedron node (0 <= n <= 8).
-    virtual std::shared_ptr<ChNodeFEAfieldXYZ> GetTetrahedronNode(unsigned int n) { return nodes[n]; }
+    virtual std::shared_ptr<ChNodeFEAfieldXYZ> GetHexahedronNode(unsigned int n) { return nodes[n]; }
+
+    /// Set the specified hexahedron node (0 <= n <= 8).
+    virtual void SetHexahedronNode(unsigned int n, std::shared_ptr<ChNodeFEAfieldXYZ> mnode) { nodes[n] = mnode; }
 
     /// Set the nodes used by this hexahedron.
     virtual void SetNodes(std::array<std::shared_ptr<ChNodeFEAfieldXYZ>, 8> mynodes) {
         nodes = mynodes;
     }
-    /// Get the nodes used by this hexahedron.
+    /// Get all nodes used by this hexahedron.
     virtual std::array<std::shared_ptr<ChNodeFEAfieldXYZ>, 8>& GetNodes() {
         return nodes;
     }

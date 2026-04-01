@@ -47,6 +47,9 @@ public:
     /// Return the specified tetrahedron node (0 <= n <= 3).
     virtual std::shared_ptr<ChNodeFEAfieldXYZ> GetTetrahedronNode(unsigned int n) { return nodes[n]; }
 
+    /// Set the specified tetrahedron node (0 <= n <= 3).
+    virtual void SetTetrahedronNode(unsigned int n, std::shared_ptr<ChNodeFEAfieldXYZ> mnode) { nodes[n] = mnode; }
+
     /// Set the nodes used by this tetrahedron.
     virtual void SetNodes(std::shared_ptr<ChNodeFEAfieldXYZ> nodeA,
         std::shared_ptr<ChNodeFEAfieldXYZ> nodeB,
