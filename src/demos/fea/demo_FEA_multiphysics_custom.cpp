@@ -85,7 +85,13 @@ int main(int argc, char* argv[]) {
 
     class ChFieldDataChemicalConcentration : public ChFieldDataScalar {
       public:
-        double& Concentration_foo() { return State()[0]; }
+        /// Most ChFieldDataState are meant for 2nd order ODE, i.e. they use both State() and StateDt(), 
+        /// ex.{pos, dpos/dt}. In this demo, however, the Fick law is 1st order ODE: so we do this:
+        /// concentration will be the StateDt(), and State() is just a dummy variable to provide
+        /// compatibility with 2nd order integrators of chrono. Note: we must flag this as 1st order via this:
+        static bool IsFirstOrder() { return true; }
+
+        double& _dummy_()       { return State()[0]; }  // dummy variable, not used
         double& Concentration() { return StateDt()[0]; }
     };
 
@@ -148,9 +154,11 @@ int main(int argc, char* argv[]) {
             ChMatrixDynamic<> dNdX;
             melement->ComputedNdX(eta, dNdX);
 
-            // Compute the vector  c_h = [c_1, c_2, .. c_n] with discrete values of chemical concentrations at nodes
+            // Compute the vector  c_h = [c_1, c_2, .. c_n] with discrete values of chemical concentrations at nodes.
+            // Note: we use GetFieldStateBlockDt (note the ..Dt!) not the usual GetFieldStateBlock because 1st order ODE, 
+            // where "c" is assumed in StateDt(), and State() is just a dummy variable.
             ChVectorDynamic<> c_h;
-            this->GetFieldStateBlockDt(melement, c_h, 0);
+            this->GetFieldStateBlockDt(melement, c_h, 0); 
 
             // Gradient of concentration at material point 
             ChVector3d c_grad = dNdX * c_h;  //  = \nabla_x c(x)
@@ -182,7 +190,7 @@ int main(int argc, char* argv[]) {
             ChMatrixDynamic<> dNdX;
             melement->ComputedNdX(eta, dNdX);
 
-            // R  matrix (jacobian of:    dc/dt + div [D] grad c = f )
+            // R  matrix (for the 1st order ODE, so d/dc jacobian of: dc/dt + div [D] grad c = f )
             // R = sum (dNdX' * [D] * dNdX * w * |J|)
             if (Rpfactor) {
                 ChMatrix33d tangent_diffusivity;
@@ -191,10 +199,18 @@ int main(int argc, char* argv[]) {
                 H += Rpfactor * (dNdX.transpose() * tangent_diffusivity * dNdX);  // H += Kpfactor * (B' * [D] * B)
             }
 
-            // M  matrix : (jacobian d / d\dot(c) of:    dc/dt + div [D]*grad c = f)
+            // M  matrix : (for the 1st order ODE, so jacobian d/d\dot(c) of: dc/dt + div [D]*grad c = f)
             // M = sum ( N' * N * w * |J|)
             if (Mpfactor) {
-                H += Mpfactor * (N.transpose() * N);  // H += Rpfactor  * (N' * N) 
+                ChMatrixDynamic<> Hi;
+                Hi = Mpfactor * (N.transpose() * N);  // H += Rpfactor  * (N' * N) 
+               
+                // for diffusion, mass matrix is more realistic if a linear combination of lumped and consistent
+                // H = theta * Hi + (1 - theta) * diag(lumped_diag)
+                double theta = 0.5;  
+                ChVectorDynamic<> lumped_diag = Hi.rowwise().sum();
+                H += theta * Hi;
+                H.diagonal() += (1.0 - theta) * lumped_diag;
             }
         }
  
@@ -374,8 +390,6 @@ int main(int argc, char* argv[]) {
                 int i_matpoint = 0;  // we have only one material point, so index is 0
                 double c_1 = ((ChFieldDataChemicalConcentration*)data.nodes_data[0][i_field])->Concentration();
                 double c_2 = ((ChFieldDataChemicalConcentration*)data.nodes_data[1][i_field])->Concentration();
-                // ->State()[0];
-                //double c_2 = data.nodes_data[1][i_field]->State()[0];
                 double dc_dx = (c_2 - c_1) / length;
                 double J = material->ComputeMolarFlux1D(dc_dx, (data.matpoints_data.size()? data.matpoints_data[i_matpoint].get() : nullptr));
                 Fi(0) = -J;   // load at node A
@@ -403,8 +417,8 @@ int main(int argc, char* argv[]) {
                 H(1, 0) = Rfactor * -material->diffusivity * invL;  // -dFi(1)/dc(0)
                 H(1, 1) = Rfactor * material->diffusivity * invL;   // -dFi(1)/dc(1)
                 // capacity (diagonal, lumped)
-                H(0, 0) += Mfactor * 0.5 * length;   
-                H(1, 1) += Mfactor * 0.5 * length;  
+                H(0, 0) += Mfactor * 0.5 * length;// * length;   
+                H(1, 1) += Mfactor * 0.5 * length;//* length;  
             }
         }
 
@@ -547,29 +561,30 @@ int main(int argc, char* argv[]) {
         // How to set some fixed node:
         //chemical_field->NodeData(node2).SetFixed(true);  // fixed concentration (the initial zero) at node 2
 
-        // Set some fixed node with a time-varying concentration:
-        auto sine_concentr = chrono_types::make_shared<ChFunctionSine>(1.5, 0.008, 0.0, 1.5);  // sin(t) concentration
+        // How to constraint node, ex. with harmonic time-varying  concentration=A*sin(2pi*freq*t+phase)+shift:
+        auto sine_concentr = chrono_types::make_shared<ChFunctionSine>(1.5, 0.1, 0.0, 1.5);  // A,freq,phase,shift
         auto constraint_c2 = chrono_types::make_shared<ChLinkField>();
         constraint_c2->Initialize(node2, chemical_field);
         constraint_c2->SetOffset(sine_concentr);
         sys.Add(constraint_c2);
         
-        // Just for testing, add also a 3D domain with volume elements, working together with 1D domain because
-        // they'll share the same field and elements will share one node.
-        //auto chemical_domain3d = chrono_types::make_shared<ChDomainChemical3D>(chemical_field);
-        //chemical_domain3d->diffusivity = 0.01;
-        //sys.Add(chemical_domain3d);
+ 
+        // Just for testing, add also the 3D ChDomainChemical3D with volume elements, working together with
+        // the 1D domain ChDomainChemical1D because they'll share the same field, and elements will share one node.
+        auto chemical_domain3d = chrono_types::make_shared<ChDomainChemical3D>(chemical_field);
+        chemical_domain3d->diffusivity = 0.01;
+        sys.Add(chemical_domain3d);
 
-        //ChBuilderVolumeBox builder;
-        //builder.BuildVolume(ChFrame<>(ChVector3d(0.1,-0.02,0)), 5, 1, 1,  // N of elements in x,y,z direction
-        //                    0.1, 0.02, 0.02);      // width in x,y,z direction
-        //for (auto& created_element : builder.elements.list())
-        //    chemical_domain3d->AddElement(created_element);
-        //for (auto& created_node : builder.nodes.list())
-        //    chemical_field->AddNode(created_node);
-        //chemical_field->RemoveNode((*builder.elements.list().begin())->GetTetrahedronNode(3));
-        //(*builder.elements.list().begin())->GetTetrahedronNode(3) = node2;  // make one hexahedron use the same node created before, for 1D  
-        
+        ChBuilderVolumeBox builder;                                         // this helps creating grids of ChFieldElementHexahedron8 elements
+        builder.BuildVolume(ChFrame<>(ChVector3d(0.1, -0.02, 0)), 4, 1, 1,  // N of elements in x,y,z direction
+                            0.1, 0.02, 0.04);                               // width in x,y,z direction
+        for (auto& created_element : builder.elements.list())
+            chemical_domain3d->AddElement(created_element);
+        for (auto& created_node : builder.nodes.list())
+            chemical_field->AddNode(created_node);
+        // make a ChFieldElementHexahedron8 element share "node2" created before for ChFieldElementChemicalEdge:
+        chemical_field->RemoveNode((*builder.elements.list().begin())->GetHexahedronNode(3));
+        (*builder.elements.list().begin())->SetHexahedronNode(3, node2);  
 
 
         // POSTPROCESSING & VISUALIZATION (optional)
@@ -584,17 +599,16 @@ int main(int argc, char* argv[]) {
         auto visual_mesh = chrono_types::make_shared<ChVisualDomainMesh>(chemical_domain1d);
         visual_mesh->GetElementDispatcher().RegisterDrawer<ChFieldElementChemicalEdge>(std::make_unique<ChDrawerChemicalEdge>());
         visual_mesh->AddPositionExtractor(ExtractPos());
-        //visual_mesh->AddPropertyExtractor(ExtractConcentration(), 0.0, 3.0, "Concentration");
-        visual_mesh->AddPropertyExtractor(ExtractMolarFlux(), -4.0, 4.0, "Molar flux");
+        visual_mesh->AddPropertyExtractor(ExtractMolarFlux(), -0.3, 0.3, "Molar flux");
         visual_mesh->SetColormap(ChColormap(ChColormap::Type::JET));  // ChColor(0, 1, 0));
         visual_mesh->SetWireframe(true);
         chemical_domain1d->AddVisualShape(visual_mesh);
      
-        //auto visual_meshv = chrono_types::make_shared<ChVisualDomainMesh>(chemical_domain3d);
-        //visual_meshv->AddPositionExtractor(ExtractPos());
-        //visual_meshv->AddPropertyExtractor(ExtractConcentration(), 0.0, 3.0, "Concentration");
-        //visual_meshv->SetColormap(ChColormap(ChColormap::Type::JET));  
-        //chemical_domain3d->AddVisualShape(visual_meshv);
+        auto visual_meshv = chrono_types::make_shared<ChVisualDomainMesh>(chemical_domain3d);
+        visual_meshv->AddPositionExtractor(ExtractPos());
+        visual_meshv->AddPropertyExtractor(ExtractConcentration(), 0.0, 3.0, "Concentration");
+        visual_meshv->SetColormap(ChColormap(ChColormap::Type::JET));  
+        chemical_domain3d->AddVisualShape(visual_meshv);
 
         // Create the Irrlicht visualization system
         auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
@@ -674,8 +688,8 @@ int main(int argc, char* argv[]) {
         // A property: damage multiplier, how much damage is generated by a flow > max_flow threshold
         double damage_multiplier = 0.5;
 
-        // Override the constitutive equation: the Fick law  in 1D but with a capping to max_flow. 
-        // Chemical flow exceeding max_flow will generate damage, as in plasticity.
+        // Override the constitutive equation: the Fick law  in 1D but with a "capping to max_flow". 
+        // Chemical flow exceeding max_flow will generate damage, somehow like in plasticity. Just as example.
         double ComputeMolarFlux1D(double dc_dx, ChFieldData* mat_point_data) override { 
             // use base class to compute the flux,
             double J = ChMaterialChemicalDiffusion::ComputeMolarFlux1D(dc_dx, mat_point_data);
@@ -748,8 +762,8 @@ int main(int argc, char* argv[]) {
         auto chemical_material = chrono_types::make_shared<ChMaterialChemicalDiffusionDamaged>();
         chemical_domain1d->material = chemical_material;  // set the material in domain
         chemical_material->diffusivity = 0.01;
-        chemical_material->max_flow = 700;  // NEW SETTING! cap the flow to this, if beyond, damage will accumulate
-        chemical_material->damage_multiplier = 0.2;  // NEW SETTING! how much damage is generated by a flow > max_flow threshold
+        chemical_material->max_flow = 0.02;  // NEW SETTING! cap the flow to this, if beyond, damage will accumulate
+        chemical_material->damage_multiplier = 4;  // NEW SETTING! how much damage is generated by a flow > max_flow threshold
 
         // CREATE SOME FINITE ELEMENTS AND NODES
 
@@ -777,8 +791,7 @@ int main(int argc, char* argv[]) {
         //chemical_field->NodeData(node1).Concentration() = 4.0;  // initial concentration = 4 mole per m^3 at node 1
 
         // Set some fixed node with a time-varying concentration:
-        auto sine_concentr =
-            chrono_types::make_shared<ChFunctionSine>(1.5, 0.008, 0.0, 1.5);  // sinusoidal concentration
+        auto sine_concentr = chrono_types::make_shared<ChFunctionSine>(1.5, 0.02, 0.0, 1.5);  // ampl,freq,phase,shift
         auto constraint_c2 = chrono_types::make_shared<ChLinkField>();
         constraint_c2->Initialize(node2, chemical_field);
         constraint_c2->SetOffset(sine_concentr);
@@ -795,8 +808,7 @@ int main(int argc, char* argv[]) {
         visual_mesh->GetElementDispatcher().RegisterDrawer<ChFieldElementChemicalEdge>(
             std::make_unique<ChDrawerChemicalEdge>());
         visual_mesh->AddPositionExtractor(ExtractPos());
-        // visual_mesh->AddPropertyExtractor(ExtractConcentration(), 0.0, 3.0, "Concentration");
-        visual_mesh->AddPropertyExtractor(ExtractMolarFlux(), -4.0, 4.0, "Molar flux");
+        //visual_mesh->AddPropertyExtractor(ExtractMolarFlux(), -3.0, 3.0, "Molar flux");
         visual_mesh->AddPropertyExtractor(ExtractChemicalDamage(), 0.0, 6.0, "Damage");
         visual_mesh->SetColormap(ChColormap(ChColormap::Type::JET));  // ChColor(0, 1, 0));
         visual_mesh->SetWireframe(true);

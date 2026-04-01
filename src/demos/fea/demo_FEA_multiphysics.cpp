@@ -441,7 +441,7 @@ int main(int argc, char* argv[]) {
 
         auto thermal_material = chrono_types::make_shared<ChMaterial3DThermalNonlinear>();
         thermal_material->SetDensity(1000);
-        thermal_material->SetSpecificHeatCapacity(1.11);
+        thermal_material->SetSpecificHeatCapacity(30);
         auto c_T = chrono_types::make_shared<ChFunctionInterp>();
         c_T->AddPoint(0, 0.16);
         c_T->AddPoint(250, 0.17);
@@ -457,7 +457,7 @@ int main(int argc, char* argv[]) {
 
         domain->material_thermalstress->material_stress = elastic_material;
 
-        domain->material_thermalstress->SetThermalExpansionCoefficient(230 * 10e-6);
+        domain->material_thermalstress->SetThermalExpansionCoefficient(20 * 10e-6);
 
         // CREATE FINITE ELEMENTS AND NODES
         // 
@@ -476,11 +476,6 @@ int main(int argc, char* argv[]) {
             displacement_field->AddNode(created_node);
         }
 
-
-        // EXAMPLE INITIAL CONDITIONS (initial temperature of some nodes)
-
-        temperature_field->NodeData(builder.nodes.at(0, 0, 4)).T() = 400;
-        temperature_field->NodeData(builder.nodes.at(0, 1, 4)).T() = 400;
 
         // EXAMPLE DIRICHLET CONDITIONS (fixed positions of some nodes)
         for (auto mnode : builder.nodes.list()) {
@@ -503,7 +498,7 @@ int main(int argc, char* argv[]) {
         auto exa_face_loadable = chrono_types::make_shared <ChFieldElementLoadableSurface>(exa_face, temperature_field);
 
         auto heat_flux = chrono_types::make_shared<ChLoaderHeatFlux>(exa_face_loadable);
-        heat_flux->SetSurfaceHeatFlux(100); // the surface flux: heat in W/m^2
+        heat_flux->SetSurfaceHeatFlux(24000); // the surface flux: heat in W/m^2
         load_container->Add(heat_flux);
 
         // - IMPOSED CONVECTION ON THE ENTIRE BOUNDARY OF VOLUME
@@ -514,7 +509,7 @@ int main(int argc, char* argv[]) {
         for (auto msurf : outer_surface->GetFaces()) {
             auto exa_iface_loadable = chrono_types::make_shared <ChFieldElementLoadableSurface>(msurf, temperature_field);
             auto heat_iconvection = chrono_types::make_shared<ChLoaderHeatConvection>(exa_iface_loadable, temperature_field);
-            heat_iconvection->SetSurfaceConvectionCoeff(10);
+            heat_iconvection->SetSurfaceConvectionCoeff(5);
             heat_iconvection->SetFluidTemperature(0);
             load_container->Add(heat_iconvection);
         }
@@ -528,13 +523,13 @@ int main(int argc, char* argv[]) {
         visual_nodes->SetColormap(ChColormap(ChColormap::Type::JET));
         domain->AddVisualShape(visual_nodes);
 
-        auto visual_matpoints = chrono_types::make_shared<ChVisualDomainGlyphs>(domain);
-        visual_matpoints->SetGlyphsSize(0.1);
-        visual_matpoints->glyph_scalelenght = 0.01;
-        visual_matpoints->AddPositionExtractor(::ExtractPos());
-        visual_matpoints->AddPropertyExtractor(ChDomainThermoDeformation::ExtractHeatFlux(), 0.0, 50, "q flux");
-        visual_matpoints->SetColormap(ChColormap(ChColormap::Type::JET));
-        domain->AddVisualShape(visual_matpoints);
+        //auto visual_matpoints = chrono_types::make_shared<ChVisualDomainGlyphs>(domain);
+        //visual_matpoints->SetGlyphsSize(0.1);
+        //visual_matpoints->glyph_scalelenght = 0.01;
+        //visual_matpoints->AddPositionExtractor(::ExtractPos());
+        //visual_matpoints->AddPropertyExtractor(ChDomainThermoDeformation::ExtractHeatFlux(), 0.0, 50, "q flux");
+        //visual_matpoints->SetColormap(ChColormap(ChColormap::Type::JET));
+        //domain->AddVisualShape(visual_matpoints);
 
         auto visual_mesh = chrono_types::make_shared<ChVisualDomainMesh>(domain);
         visual_mesh->AddPositionExtractor(ExtractPos());
