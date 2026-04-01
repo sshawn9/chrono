@@ -20,7 +20,6 @@
 namespace chrono {
 namespace fea {
 
-
 // Register into the object factory, to enable run-time dynamic creation and persistence
 CH_FACTORY_REGISTER(ChLinkField)
 
@@ -34,10 +33,8 @@ ChLinkField::ChLinkField(const ChLinkField& other) : ChLinkBase(other) {
     offset_function = other.offset_function;
 }
 
-int ChLinkField::Initialize(
-    std::shared_ptr<ChNodeFEAbase> node,  ///< node 1, associated to some scalar field state
-    std::shared_ptr<ChFieldBase> field
-) {
+int ChLinkField::Initialize(std::shared_ptr<ChNodeFEAbase> node,  ///< node 1, associated to some scalar field state
+                            std::shared_ptr<ChFieldBase> field) {
     assert(node);
     assert(field);
     assert(field->IsNodeAdded(node));
@@ -71,7 +68,17 @@ void ChLinkField::Update(double time, UpdateFlags update_flags) {
 }
 
 ChVectorDynamic<> ChLinkField::GetConstraintViolation() const {
-    double res = m_field->GetNodeDataPointer(m_node)->State()(0) - this->offset_function->GetVal(this->ChTime);
+
+    double res = 0;
+
+    if (m_field->IsFirstOrderField()) {
+        // for 1st order fields, the constraint is at speed level, so use c_vel as scaling factor
+        res = m_field->GetNodeDataPointer(m_node)->StateDt()(0) - this->offset_function->GetVal(this->ChTime);
+    } else {
+        // for 2nd order fields, the constraint is at position level, so use c as scaling factor
+        res = m_field->GetNodeDataPointer(m_node)->State()(0) - this->offset_function->GetVal(this->ChTime);
+    }
+
     ChVectorN<double, 1> C;
     C(0) = res;
     return C;
@@ -88,9 +95,9 @@ void ChLinkField::IntStateScatterReactions(const unsigned int off_L, const ChVec
 }
 
 void ChLinkField::IntLoadResidual_CqL(const unsigned int off_L,    // offset in L multipliers
-                                           ChVectorDynamic<>& R,        // result: the R residual, R += c*Cq'*L
-                                           const ChVectorDynamic<>& L,  // the L vector
-                                           const double c               // a scaling factor
+                                      ChVectorDynamic<>& R,        // result: the R residual, R += c*Cq'*L
+                                      const ChVectorDynamic<>& L,  // the L vector
+                                      const double c               // a scaling factor
 ) {
     if (!IsActive())
         return;
@@ -99,29 +106,56 @@ void ChLinkField::IntLoadResidual_CqL(const unsigned int off_L,    // offset in 
 }
 
 void ChLinkField::IntLoadConstraint_C(const unsigned int off_L,  // offset in Qc residual
-                                           ChVectorDynamic<>& Qc,     // result: the Qc residual, Qc += c*C
-                                           const double c,            // a scaling factor
-                                           bool do_clamp,             // apply clamping to c*C?
-                                           double recovery_clamp      // value for min/max clamping of c*C
+                                      ChVectorDynamic<>& Qc,     // result: the Qc residual, Qc += c*C
+                                      const double c,            // a scaling factor
+                                      const double c_vel,        // the scaling factor if the constraint is at speed level
+                                      bool do_clamp,             // apply clamping to c*C?
+                                      double recovery_clamp      // value for min/max clamping of c*C
 ) {
     if (!IsActive())
         return;
 
-    double res = m_field->GetNodeDataPointer(m_node)->State()(0) - this->offset_function->GetVal(this->ChTime);
-    double cres = res * c;
+    double cres = 0;
 
-    if (do_clamp) {
-        cres = std::min(std::max(cres, -recovery_clamp), recovery_clamp);
+    if (m_field->IsFirstOrderField()) {
+        // for 1st order fields, the constraint is at speed level, so use c_vel as scaling factor
+        double res = m_field->GetNodeDataPointer(m_node)->StateDt()(0) - this->offset_function->GetVal(this->ChTime);
+        cres = res * c_vel;
+    } else {
+        // for 2nd order fields, the constraint is at position level, so use c as scaling factor
+        double res = m_field->GetNodeDataPointer(m_node)->State()(0) - this->offset_function->GetVal(this->ChTime);
+        cres = res * c;
     }
+
+    //if (do_clamp) {
+    //    cres = std::min(std::max(cres, -recovery_clamp), recovery_clamp);
+    //}
     Qc(off_L + 0) += cres;
 }
 
+void ChLinkField::IntLoadConstraint_Ct(const unsigned int off_L, 
+    ChVectorDynamic<>& Qc, 
+    const double c, 
+    const double c_vel) {
+    
+    double mCt = -offset_function->GetDer(this->GetChTime());
+
+    if (m_field->IsFirstOrderField()) {
+        // for 1st order fields, the constraint is at speed level, so use c_vel as scaling factor
+        Qc(off_L) += c_vel * mCt;
+    } else {
+        // for 2nd order fields, the constraint is at position level, so use c as scaling factor
+        Qc(off_L) += c * mCt;
+    }
+
+}
+
 void ChLinkField::IntToDescriptor(const unsigned int off_v,
-                                       const ChStateDelta& v,
-                                       const ChVectorDynamic<>& R,
-                                       const unsigned int off_L,
-                                       const ChVectorDynamic<>& L,
-                                       const ChVectorDynamic<>& Qc) {
+                                  const ChStateDelta& v,
+                                  const ChVectorDynamic<>& R,
+                                  const unsigned int off_L,
+                                  const ChVectorDynamic<>& L,
+                                  const ChVectorDynamic<>& Qc) {
     if (!IsActive())
         return;
 
@@ -130,10 +164,7 @@ void ChLinkField::IntToDescriptor(const unsigned int off_v,
     m_constraint1.SetRightHandSide(Qc(off_L + 0));
 }
 
-void ChLinkField::IntFromDescriptor(const unsigned int off_v,
-                                         ChStateDelta& v,
-                                         const unsigned int off_L,
-                                         ChVectorDynamic<>& L) {
+void ChLinkField::IntFromDescriptor(const unsigned int off_v, ChStateDelta& v, const unsigned int off_L, ChVectorDynamic<>& L) {
     if (!IsActive())
         return;
 
@@ -153,17 +184,20 @@ void ChLinkField::ConstraintsBiReset() {
     m_constraint1.SetRightHandSide(0.);
 }
 
+// OBSOLETE***
 void ChLinkField::ConstraintsBiLoad_C(double factor, double recovery_clamp, bool do_clamp) {
-    double res = m_field->GetNodeDataPointer(m_node)->State()(0) - this->offset_function->GetVal(this->ChTime);
-
+    if (!IsActive())
+        return;
+    double res = this->GetConstraintViolation()(0);
     m_constraint1.SetRightHandSide(m_constraint1.GetRightHandSide() + factor * res);
 }
 
+// OBSOLETE***
 void ChLinkField::ConstraintsBiLoad_Ct(double factor) {
-    // if (!IsActive())
-    //	return;
-
-    // nothing
+    if (!IsActive())
+        return;
+    double mCt = -offset_function->GetDer(this->GetChTime());
+    m_constraint1.SetRightHandSide(m_constraint1.GetRightHandSide() + factor * mCt);
 }
 
 void ChLinkField::LoadConstraintJacobians() {
@@ -187,9 +221,7 @@ void ChLinkField::ArchiveIn(ChArchiveIn& archive_in) {
     //// TODO
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 // Register into the object factory, to enable run-time dynamic creation and persistence
 CH_FACTORY_REGISTER(ChLinkFieldField)
@@ -204,10 +236,10 @@ ChLinkFieldField::ChLinkFieldField(const ChLinkFieldField& other) : ChLinkBase(o
     offset_function = other.offset_function;
 }
 
-int ChLinkFieldField::Initialize        (std::shared_ptr<ChNodeFEAbase> node1,   ///< node 1, associated to some scalar field state
-                                         std::shared_ptr<ChFieldBase> field1, ///< scalar field with the 1st field state to constrain (must contain node 1).
-                                         std::shared_ptr<ChNodeFEAbase> node2,  ///< node 2, associated to some scalar field state
-                                         std::shared_ptr<ChFieldBase> field2 ///< scalar field with the 2nd field state to constrain (must contain node 2).
+int ChLinkFieldField::Initialize(std::shared_ptr<ChNodeFEAbase> node1,  ///< node 1, associated to some scalar field state
+                                 std::shared_ptr<ChFieldBase> field1,   ///< scalar field with the 1st field state to constrain (must contain node 1).
+                                 std::shared_ptr<ChNodeFEAbase> node2,  ///< node 2, associated to some scalar field state
+                                 std::shared_ptr<ChFieldBase> field2    ///< scalar field with the 2nd field state to constrain (must contain node 2).
 ) {
     assert(node1 && node2);
     assert(field1 && field2);
@@ -219,12 +251,10 @@ int ChLinkFieldField::Initialize        (std::shared_ptr<ChNodeFEAbase> node1,  
     m_field_1 = field1;
     m_field_2 = field2;
 
-    m_constraint1.SetVariables(&(field1->GetNodeDataPointer(node1)->GetVariable()),
-                               &(field2->GetNodeDataPointer(node2)->GetVariable()));
+    m_constraint1.SetVariables(&(field1->GetNodeDataPointer(node1)->GetVariable()), &(field2->GetNodeDataPointer(node2)->GetVariable()));
 
     return true;
 }
-
 
 void ChLinkFieldField::SetOffset(double offset) {
     auto mfun = chrono_types::make_shared<ChFunctionConst>(offset);
@@ -244,8 +274,14 @@ void ChLinkFieldField::Update(double time, UpdateFlags update_flags) {
 }
 
 ChVectorDynamic<> ChLinkFieldField::GetConstraintViolation() const {
-    double res = m_field_1->GetNodeDataPointer(m_node1)->State()(0) - m_field_2->GetNodeDataPointer(m_node2)->State()(0) -
-                 this->offset_function->GetVal(this->ChTime);
+    double res = this->offset_function->GetVal(this->ChTime);
+
+    if (this->m_field_1->IsFirstOrderField() && this->m_field_2->IsFirstOrderField()) {
+        res += m_field_1->GetNodeDataPointer(m_node1)->StateDt()(0) - m_field_2->GetNodeDataPointer(m_node2)->StateDt()(0);
+    } else {
+        res += m_field_1->GetNodeDataPointer(m_node1)->State()(0) - m_field_2->GetNodeDataPointer(m_node2)->State()(0);
+    }
+
     ChVectorN<double, 1> C;
     C(0) = res;
     return C;
@@ -262,9 +298,9 @@ void ChLinkFieldField::IntStateScatterReactions(const unsigned int off_L, const 
 }
 
 void ChLinkFieldField::IntLoadResidual_CqL(const unsigned int off_L,    // offset in L multipliers
-                                         ChVectorDynamic<>& R,        // result: the R residual, R += c*Cq'*L
-                                         const ChVectorDynamic<>& L,  // the L vector
-                                         const double c               // a scaling factor
+                                           ChVectorDynamic<>& R,        // result: the R residual, R += c*Cq'*L
+                                           const ChVectorDynamic<>& L,  // the L vector
+                                           const double c               // a scaling factor
 ) {
     if (!IsActive())
         return;
@@ -273,18 +309,25 @@ void ChLinkFieldField::IntLoadResidual_CqL(const unsigned int off_L,    // offse
 }
 
 void ChLinkFieldField::IntLoadConstraint_C(const unsigned int off_L,  // offset in Qc residual
-                                         ChVectorDynamic<>& Qc,     // result: the Qc residual, Qc += c*C
-                                         const double c,            // a scaling factor
-                                         bool do_clamp,             // apply clamping to c*C?
-                                         double recovery_clamp      // value for min/max clamping of c*C
+                                           ChVectorDynamic<>& Qc,     // result: the Qc residual, Qc += c*C
+                                           const double c,            // a scaling factor
+                                           const double c_vel,        // the scaling factor if the constraint is at speed level
+                                           bool do_clamp,             // apply clamping to c*C?
+                                           double recovery_clamp      // value for min/max clamping of c*C
 ) {
     if (!IsActive())
         return;
 
-    double res = m_field_1->GetNodeDataPointer(m_node1)->State()(0) -
-                 m_field_2->GetNodeDataPointer(m_node2)->State()(0) -
-                 this->offset_function->GetVal(this->ChTime);
-    double cres = res * c;
+    double res = - this->offset_function->GetVal(this->ChTime);
+    double cres = 0;
+
+    if (this->m_field_1->IsFirstOrderField() && this->m_field_2->IsFirstOrderField()) {
+        res += m_field_1->GetNodeDataPointer(m_node1)->StateDt()(0) - m_field_2->GetNodeDataPointer(m_node2)->StateDt()(0);
+        cres = res * c_vel;
+    } else {
+        res += m_field_1->GetNodeDataPointer(m_node1)->State()(0) - m_field_2->GetNodeDataPointer(m_node2)->State()(0);
+        cres = res * c;
+    }
 
     if (do_clamp) {
         cres = std::min(std::max(cres, -recovery_clamp), recovery_clamp);
@@ -292,12 +335,29 @@ void ChLinkFieldField::IntLoadConstraint_C(const unsigned int off_L,  // offset 
     Qc(off_L + 0) += cres;
 }
 
+void ChLinkFieldField::IntLoadConstraint_Ct(const unsigned int off_L, 
+    ChVectorDynamic<>& Qc, 
+    const double c, 
+    const double c_vel) {
+
+    double mCt = -offset_function->GetDer(this->GetChTime());
+
+    if (this->m_field_1->IsFirstOrderField() && this->m_field_2->IsFirstOrderField()) {
+        // for 1st order fields, the constraint is at speed level, so use c_vel as scaling factor
+        Qc(off_L) += c_vel * mCt;
+    } else {
+        // for 2nd order fields, the constraint is at position level, so use c as scaling factor
+        Qc(off_L) += c * mCt;
+    }
+
+}
+
 void ChLinkFieldField::IntToDescriptor(const unsigned int off_v,
-                                     const ChStateDelta& v,
-                                     const ChVectorDynamic<>& R,
-                                     const unsigned int off_L,
-                                     const ChVectorDynamic<>& L,
-                                     const ChVectorDynamic<>& Qc) {
+                                       const ChStateDelta& v,
+                                       const ChVectorDynamic<>& R,
+                                       const unsigned int off_L,
+                                       const ChVectorDynamic<>& L,
+                                       const ChVectorDynamic<>& Qc) {
     if (!IsActive())
         return;
 
@@ -306,10 +366,7 @@ void ChLinkFieldField::IntToDescriptor(const unsigned int off_v,
     m_constraint1.SetRightHandSide(Qc(off_L + 0));
 }
 
-void ChLinkFieldField::IntFromDescriptor(const unsigned int off_v,
-                                       ChStateDelta& v,
-                                       const unsigned int off_L,
-                                       ChVectorDynamic<>& L) {
+void ChLinkFieldField::IntFromDescriptor(const unsigned int off_v, ChStateDelta& v, const unsigned int off_L, ChVectorDynamic<>& L) {
     if (!IsActive())
         return;
 
@@ -329,19 +386,20 @@ void ChLinkFieldField::ConstraintsBiReset() {
     m_constraint1.SetRightHandSide(0.);
 }
 
+// OBSOLETE***
 void ChLinkFieldField::ConstraintsBiLoad_C(double factor, double recovery_clamp, bool do_clamp) {
-    double res = m_field_1->GetNodeDataPointer(m_node1)->State()(0) -
-                 m_field_2->GetNodeDataPointer(m_node2)->State()(0) -
-                 this->offset_function->GetVal(this->ChTime);
-
+    if (!IsActive())
+        return;
+    double res = this->GetConstraintViolation()[0];
     m_constraint1.SetRightHandSide(m_constraint1.GetRightHandSide() + factor * res);
 }
 
+// OBSOLETE***
 void ChLinkFieldField::ConstraintsBiLoad_Ct(double factor) {
-    // if (!IsActive())
-    //	return;
-
-    // nothing
+    if (!IsActive())
+        return;
+    double mCt = -offset_function->GetDer(this->GetChTime());
+    m_constraint1.SetRightHandSide(m_constraint1.GetRightHandSide() + factor * mCt);
 }
 
 void ChLinkFieldField::LoadConstraintJacobians() {
