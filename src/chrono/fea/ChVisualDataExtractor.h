@@ -407,11 +407,11 @@ class ExtractTemperature : public ChVisualDataExtractorScalar<ExtractTemperature
     }
 };
 
-class ExtractTemperatureDt : public ChVisualDataExtractorScalar<ExtractTemperatureDt, ChFieldDataTemperature, DataAtNode> {
-    virtual double ExtractImpl(const ChFieldDataTemperature* fdata)  const override {
-        return const_cast<ChFieldDataTemperature*>(fdata)->T_dt();
-    }
-};
+//class ExtractTemperatureDt : public ChVisualDataExtractorScalar<ExtractTemperatureDt, ChFieldDataTemperature, DataAtNode> {
+//    virtual double ExtractImpl(const ChFieldDataTemperature* fdata)  const override {
+//        return const_cast<ChFieldDataTemperature*>(fdata)->T_dt();
+//    }
+//};
 
 class ExtractElectricPotential : public ChVisualDataExtractorScalar<ExtractElectricPotential, ChFieldDataElectricPotential, DataAtNode> {
     virtual double ExtractImpl(const ChFieldDataElectricPotential* fdata)  const override {

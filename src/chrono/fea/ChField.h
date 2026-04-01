@@ -62,6 +62,11 @@ public:
     };
     virtual std::unique_ptr<IteratorOnNodes> CreateIteratorOnNodes() = 0;
 
+    /// Tells if this represents a field for 1st order ODE, ex. temperature T. 
+    /// In this casem the ChFieldDataState is assumed to contain T in StateDt, and
+    /// an unused dummy variable for State (to be compatible with all 2nd order integrators of chrono).
+    virtual bool IsFirstOrderField() const = 0;
+
     unsigned int n_dofs;    ///< total degrees of freedom
     unsigned int n_dofs_w;  ///< total degrees of freedom, derivative (Lie algebra)
 };
@@ -101,8 +106,8 @@ public:
         return (unsigned int)node_data.size();
     }
 
-    virtual unsigned int GetNumFieldCoordsPosLevel() const { return T_data_per_node::StaticGetNumCoordsPosLevel(); }
-    virtual unsigned int GetNumFieldCoordsVelLevel() const { return T_data_per_node::StaticGetNumCoordsVelLevel(); }
+    virtual unsigned int GetNumFieldCoordsPosLevel() const override { return T_data_per_node::StaticGetNumCoordsPosLevel(); }
+    virtual unsigned int GetNumFieldCoordsVelLevel() const override { return T_data_per_node::StaticGetNumCoordsVelLevel(); }
 
     /// Iterator for iterating on ChField nodes (virtual iterator, to be preferred to GetNodeDataPointer() 
     /// because the latter will be slower if iterating on all nodes, passing through hash map)

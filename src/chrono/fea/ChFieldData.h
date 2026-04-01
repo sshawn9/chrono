@@ -124,6 +124,12 @@ public:
 
 class ChFieldDataState : public ChFieldData {
 public:
+    /// By default all ChFieldDataState are ment for 2nd order ODE, i.e. they have both 
+    /// state and state derivative, ex.{pos, dpos/dt}. In some cases, however, they might be used for 1st order ODE, 
+    /// ex for temperature T, in which case  T is the StateDt() and State() is just a dummy variable to provide
+    /// compatibility with 2nd order integrators of chrono. 
+    static bool IsFirstOrder() { return false; }
+
     // Access state at node
     virtual ChVectorRef State() = 0;
 
@@ -323,6 +329,8 @@ public:
         mvariables.SetNodeMass(0);
     }
     
+    static bool IsFirstOrderState() { return false; }
+
     // Custom properties, helpers etc.
 
     virtual ChVector3d GetPos() const { return ChVector3d(this->pos); }
@@ -438,14 +446,18 @@ class ChFieldDataVector : public ChFieldDataGeneric<3> {};
 
 class ChFieldDataTemperature : public ChFieldDataScalar {
 public:
-    double& T() { return State()[0]; }
-    double& T_dt() { return StateDt()[0]; }
+    static bool IsFirstOrder() { return true; }
+
+    double& _dummy_() { return State()[0]; }
+    double& T() { return StateDt()[0]; }
 };
 
 class ChFieldDataElectricPotential : public ChFieldDataScalar {
 public:
-    double& V() { return State()[0]; }
-    double& V_dt() { return StateDt()[0]; }
+    static bool IsFirstOrder() { return true; }
+
+    double& _dummy_() { return State()[0]; }
+    double& V() { return StateDt()[0]; }
 };
 
 

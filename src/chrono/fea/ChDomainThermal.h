@@ -94,8 +94,10 @@ public:
         melement->ComputeN(eta, N);
 
         // Compute the vector  T_h = [T_1, T_2, .. T_n] with discrete values of temperatures at nodes
+        // Note: we use GetFieldStateBlockDt (note the ..Dt!) not the usual GetFieldStateBlock because 1st order ODE,
+        // where "T" is assumed in StateDt(), and State() is just a dummy variable.
         ChVectorDynamic<> T_h;
-        this->GetFieldStateBlock(melement, T_h, 0);
+        this->GetFieldStateBlockDt(melement, T_h, 0);
 
         // B = dNdX // lucky case of thermal problem: no need to build B in \nabla_x T(x) = B * T_h because B is simply dNdX
 
@@ -151,36 +153,38 @@ public:
         melement->ComputeN(eta, N);
 
         // Temperature at point (might be needed by nonlinear ChMaterial3DThermal materials with dependence on T)
-        // Compute the vector  T_h = [T_1, T_2, .. T_n] with discrete values of temperatures at nodes
+        // Compute the vector  T_h = [T_1, T_2, .. T_n] with discrete values of temperatures at nodes.
+        // Note: we use GetFieldStateBlockDt (note the ..Dt!) not the usual GetFieldStateBlock because 1st order ODE,
+        // where "c" is assumed in StateDt(), and State() is just a dummy variable.
         ChVectorDynamic<> T_h;
-        this->GetFieldStateBlock(melement, T_h, 0);
+        this->GetFieldStateBlockDt(melement, T_h, 0);
         double T = N * T_h;
 
         // B = dNdX // in the lucky case of thermal problem, no need to build B because B is simply dNdX
 
-        // K  matrix (jacobian of:    c dT/dt + div [C] grad T = f )  
-        // K = sum (dNdX' * [k] * dNdX * w * |J|)
+        // R  matrix (for the 1st order ODE, so d/dT jacobian of: dT/dt + div [k] grad T = f )
+        // R = sum (dNdX' * [k] * dNdX * w * |J|)
 
-        if (Kpfactor) {
+        if (Rpfactor) {
             ChMatrix33d tangent_conductivity;
             this->material->ComputeTangentModulus(tangent_conductivity,
                 VNULL, T,
                 data.matpoints_data.size() ? data.matpoints_data[i_point].get() : nullptr,
                 &data.element_data);
 
-            H += Kpfactor * (dNdX.transpose() * tangent_conductivity * dNdX); // H += Kpfactor * (B' * [k] * B)
+            H += Rpfactor * (dNdX.transpose() * tangent_conductivity * dNdX); // H += Kpfactor * (B' * [k] * B)
         }
 
-        // R  matrix : (jacobian d / d\dot(T) of:    (c*rho) * dT/dt + div [C]*grad T = f)
-        // R = sum ( N' * N * (c*rho) * w * |J|)
+        // M  matrix : (for the 1st order ODE, so jacobian d/d\dot(T) of: dT/dt + div [k]*grad T = f)
+        // M = sum ( N' * (c*rho) * N * w * |J|)
 
-        if (Rpfactor) {
+        if (Mpfactor) {
             double c_rho;
             this->material->ComputeDtMultiplier(c_rho,
                 T,
                 data.matpoints_data.size() ? data.matpoints_data[i_point].get() : nullptr,
                 &data.element_data);
-            H += Rpfactor * c_rho * (N.transpose() * N); // H += Rpfactor  * (N' * N) * (c*rho)
+            H += Mpfactor * c_rho * (N.transpose() * N); // H += Rpfactor  * (N' * N) * (c*rho)
         }
     }
 

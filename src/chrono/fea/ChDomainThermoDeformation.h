@@ -112,9 +112,11 @@ public:
         melement->ComputedNdX(eta, dNdX);
         melement->ComputeN(eta, N);
 
-        // Compute the vector  T_h = [T_1, T_2, .. T_n] with discrete values of temperatures at nodes
+        // Compute the vector  T_h = [T_1, T_2, .. T_n] with discrete values of temperatures at nodes.
+        // Note: we use GetFieldPackedStateBlockDt not the usual GetFieldPackedStateBlock because heat 
+        // is 1st order ODE, where "T" is assumed in StateDt()
         ChMatrixDynamic<> T_hm;
-        this->GetFieldPackedStateBlock(melement, data, T_hm, i_field_temp);
+        this->GetFieldPackedStateBlockDt(melement, data, T_hm, i_field_temp);
         ChRowVectorDynamic<> T_h(T_hm.row(0));
 
         // Temperature at point  T = T_h * N'
@@ -230,18 +232,18 @@ public:
 
         // NOTE: the tangent matrices of the coupled thermo-deformation problem, for a finite element,
         // and with our assumption that states are ordered as [x_1; x_2; ... T_1, T_2], has a block structure
-        // like the following:
-        //   [ K_therm-therm | K_therm-def   ]
+        // like the following, for H as tangent mass/damping/stiffness:
+        //   [ H_therm-therm | H_therm-def   ]
         //   [ --------------|---------------]
-        //   [ K_def_therm   | K_def-def     ]
+        //   [ H_def_therm   | H_def-def     ]
         // When written in this ordering in the H matrix of the ChKRMBlock of the element, bookkepping will
-        // be automatic when spreading K values to the system-level matrices.
+        // be automatic when spreading H values to the system-level matrices.
         //  In this case,
-        //  - the K_def-def  block has a size of 3*n_nodes x 3*n_nodes and
-        // corresponds to the same K matrix of the ChDomainDeformation problem.
-        //  - the K_therm-therm  block has a size of 1*n_nodes x 1*n_nodes and
-        // corresponds to the same K matrix of the ChDomainThermal problem.
-        //  - the K_def_therm is 3*n_nodes x 1*n_nodes and K_therm-def is 1*n_nodes x 3*n_nodes and
+        //  - the H_def-def  block has a size of 3*n_nodes x 3*n_nodes and
+        // corresponds to the same H matrix of the ChDomainDeformation problem.
+        //  - the H_therm-therm  block has a size of 1*n_nodes x 1*n_nodes and
+        // corresponds to the same H matrix of the ChDomainThermal problem.
+        //  - the H_def_therm is 3*n_nodes x 1*n_nodes and H_therm-def is 1*n_nodes x 3*n_nodes and
         // represent the coupling between temp and deformation in implicit iterations, but these are ignored 
         // for simplicity, and not computed here.
         // So, proceed as with a staggered solver:
@@ -250,7 +252,7 @@ public:
         //--- DEFORMATION PROBLEM ---
 
         ChVectorDynamic<> T_h;
-        this->GetFieldStateBlock(melement, T_h, i_field_temp);
+        this->GetFieldStateBlockDt(melement, T_h, i_field_temp); // note ..Dt as heat is 1st order ODE
         double T = N * T_h;
 
         // Compute the matrix  x_hh = [x1|x2|x3|x4..] with discrete values of spatial positions at nodes
@@ -338,8 +340,8 @@ public:
         // Temperature at point (might be needed by nonlinear ChMaterial3DThermal materials with dependence on T)
 
 
-        // K_thermo-thermo = sum (dNdX' * [k] * dNdX * w * |J|)
-        if (Kpfactor) {
+        // R_thermo-thermo = sum (dNdX' * [k] * dNdX * w * |J|)
+        if (Rpfactor) {
 
             ChMatrix33d tangent_conductivity;
             this->material_thermalstress->material_thermal->ComputeTangentModulus(tangent_conductivity,
@@ -348,11 +350,11 @@ public:
                 &data.element_data);
 
             // upper left block of K 
-            H.block(0, 0, n_ele_coords_thermal, n_ele_coords_thermal) += Kpfactor * (dNdX.transpose() * tangent_conductivity * dNdX); // H += Kpfactor * (B' * [k] * B)
+            H.block(0, 0, n_ele_coords_thermal, n_ele_coords_thermal) += Rpfactor * (dNdX.transpose() * tangent_conductivity * dNdX); // H += Rpfactor * (B' * [k] * B)
         }
 
-        // R_thermo-thermo = sum ( N' * N * (c*rho) * w * |J|)
-        if (Rpfactor) {
+        // M_thermo-thermo = sum ( N' * N * (c*rho) * w * |J|)
+        if (Mpfactor) {
             double c_rho;
             this->material_thermalstress->material_thermal->ComputeDtMultiplier(c_rho,
                 T,
@@ -360,7 +362,7 @@ public:
                 &data.element_data);
 
             // upper left block of K 
-            H.block(0, 0, n_ele_coords_thermal, n_ele_coords_thermal) += Rpfactor * c_rho * (N.transpose() * N); // H += Rpfactor  * (N' * N) * (c*rho)
+            H.block(0, 0, n_ele_coords_thermal, n_ele_coords_thermal) += Mpfactor * c_rho * (N.transpose() * N); // H += Rpfactor  * (N' * N) * (c*rho)
         }
     }
 
