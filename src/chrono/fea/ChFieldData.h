@@ -364,7 +364,7 @@ public:
                                     ChState& x,
                                     const unsigned int off_v,
                                     ChStateDelta& v,
-                                    double& T) {
+                                    double& T) override {
         x.segment(off_x, 3) = pos;
         v.segment(off_v, 3) = pos_dt;
     }
@@ -373,48 +373,48 @@ public:
                                     const ChState& x,
                                     const unsigned int off_v,
                                     const ChStateDelta& v,
-                                    const double T) {
+                                    const double T) override {
         pos = x.segment(off_x, 3);
         pos_dt = v.segment(off_v, 3);
     }
 
-    virtual void DataIntStateGatherAcceleration(const unsigned int off_a, ChStateDelta& a) {
+    virtual void DataIntStateGatherAcceleration(const unsigned int off_a, ChStateDelta& a) override {
         a.segment(off_a, 3) = pos_dtdt;
     }
-    virtual void DataIntStateScatterAcceleration(const unsigned int off_a, const ChStateDelta& a) {
+    virtual void DataIntStateScatterAcceleration(const unsigned int off_a, const ChStateDelta& a) override {
         pos_dtdt = a.segment(off_a, 3);
     }
 
-    virtual void DataIntLoadResidual_F(const unsigned int off, ChVectorDynamic<>& R, const double c) {
+    virtual void DataIntLoadResidual_F(const unsigned int off, ChVectorDynamic<>& R, const double c) override {
         R.segment(off, 3) += c * F;
     }
 
     virtual void DataIntLoadResidual_Mv(const unsigned int off,
                                         ChVectorDynamic<>& R,
-                                        const ChVectorDynamic<>& w,
-                                        const double c) {
+                                        const ChVectorDynamic<>& w, 
+                                        const double c) override {
         R.segment(off, 3) += c * mvariables.GetNodeMass() * w.segment(off, 3);
     }
 
     virtual void DataIntLoadLumpedMass_Md(const unsigned int off,
                                         ChVectorDynamic<>& Md,
-                                        double& error,
-                                        const double c) {
+                                        double& error, 
+                                        const double c) override {
         for (int i = 0; i < 3; ++i) {
             Md(off + i) += c * mvariables.GetNodeMass();
         }
     }
 
-    virtual void DataIntToDescriptor(const unsigned int off_v, const ChStateDelta& v, const ChVectorDynamic<>& R) {
+    virtual void DataIntToDescriptor(const unsigned int off_v, const ChStateDelta& v, const ChVectorDynamic<>& R) override {
         mvariables.State() = v.segment(off_v, 3);
         mvariables.Force() = R.segment(off_v, 3);
     }
 
-    virtual void DataIntFromDescriptor(const unsigned int off_v, ChStateDelta& v) {
+    virtual void DataIntFromDescriptor(const unsigned int off_v, ChStateDelta& v) override {
         v.segment(off_v, 3) = mvariables.State();
     }
 
-    virtual void InjectVariables(ChSystemDescriptor& descriptor) {
+    virtual void InjectVariables(ChSystemDescriptor& descriptor) override {
         descriptor.InsertVariables(&mvariables);
     }
 

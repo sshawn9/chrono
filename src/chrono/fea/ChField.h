@@ -130,6 +130,11 @@ public:
         return std::make_unique<IteratorOnNodes>(node_data.begin(), node_data.end());
     }
 
+    /// Tells if this represents a field for 1st order ODE, ex. temperature T.
+    /// In this casem the ChFieldDataState is assumed to contain T in StateDt, and
+    /// an unused dummy variable for State (to be compatible with all 2nd order integrators of chrono).
+    virtual bool IsFirstOrderField() const override { return T_nodefield::IsFirstOrder(); };
+
 
     // Fast, but only if type of ChField<...> is known
 
@@ -184,7 +189,7 @@ public:
         const unsigned int off_v,  ///< offset in v state vector
         ChStateDelta& v,           ///< state vector, speed part
         double& T                  ///< time
-    ) {
+    ) override {
         unsigned int local_off_x = 0;
         unsigned int local_off_v = 0;
         for (auto& node : this->node_data) {
@@ -204,7 +209,7 @@ public:
         const ChStateDelta& v,     ///< state vector, speed part
         const double T,            ///< time
         UpdateFlags update_flags   ///< perform complete update, or exclude visual assets, etc.
-    ) {
+    ) override {
         unsigned int local_off_x = 0;
         unsigned int local_off_v = 0;
         for (auto& node : this->node_data) {
@@ -220,7 +225,7 @@ public:
     /// From item's state acceleration to global acceleration vector
     virtual void IntStateGatherAcceleration(const unsigned int off_a,  ///< offset in a accel. vector
         ChStateDelta& a            ///< acceleration part of state vector derivative
-    ) {
+    ) override {
         unsigned int local_off_a = 0;
         for (auto& node : this->node_data) {
             if (!node.second.IsFixed()) {
@@ -233,7 +238,7 @@ public:
     /// From global acceleration vector to item's state acceleration
     virtual void IntStateScatterAcceleration(const unsigned int off_a,  ///< offset in a accel. vector
         const ChStateDelta& a  ///< acceleration part of state vector derivative
-    ) {
+    ) override {
         unsigned int local_off_a = 0;
         for (auto& node : this->node_data) {
             if (!node.second.IsFixed()) {
@@ -251,7 +256,7 @@ public:
         const ChState& x,          ///< state vector, initial position part
         const unsigned int off_v,  ///< offset in v state vector
         const ChStateDelta& Dv     ///< state vector, increment
-    ) {
+    ) override {
         unsigned int local_off_x = 0;
         unsigned int local_off_v = 0;
         for (auto& node : this->node_data) {
@@ -271,7 +276,7 @@ public:
         const ChState& x,          ///< state vector, initial position part
         const unsigned int off_v,  ///< offset in v state vector
         ChStateDelta& Dv           ///< state vector, increment. Here gets the result
-    ) {
+    ) override {
         unsigned int local_off_x = 0;
         unsigned int local_off_v = 0;
         for (auto& node : this->node_data) {
@@ -288,7 +293,7 @@ public:
     virtual void IntLoadResidual_F(const unsigned int off,  ///< offset in R residual
         ChVectorDynamic<>& R,    ///< result: the R residual, R += c*F
         const double c           ///< a scaling factor
-    ) {
+    ) override {
         // nodes applied forces
         unsigned int local_off_v = 0;
         for (auto& node : this->node_data) {
@@ -305,7 +310,7 @@ public:
         ChVectorDynamic<>& R,        ///< result: the R residual, R += c*M*v
         const ChVectorDynamic<>& w,  ///< the w vector
         const double c               ///< a scaling factor
-    ) {
+    ) override {
         // nodal masses
         unsigned int local_off_v = 0;
         for (auto& node : this->node_data) {
@@ -323,7 +328,7 @@ public:
         ChVectorDynamic<>& Md,  ///< result: Md vector, diagonal of the lumped mass matrix
         double& err,    ///< result: not touched if lumping does not introduce errors
         const double c  ///< a scaling factor
-    ) {
+    ) override {
         // nodal masses
         unsigned int local_off_v = 0;
         for (auto& node : this->node_data) {
@@ -342,7 +347,7 @@ public:
         const unsigned int off_L,    ///< offset for \e L and \e Qc
         const ChVectorDynamic<>& L,  ///< vector copied into the \e L 'lagrangian ' term of the constraints
         const ChVectorDynamic<>& Qc  ///< vector copied into the \e Qb 'constraint' term of the constraints
-    ) {
+    ) override {
         unsigned int local_off_v = 0;
         for (auto& node : this->node_data) {
             if (!node.second.IsFixed()) {
@@ -358,7 +363,7 @@ public:
         ChStateDelta& v,           ///< vector to where the \e q 'unknowns' term of the variables will be copied
         const unsigned int off_L,  ///< offset for \e L
         ChVectorDynamic<>& L       ///< vector to where \e L 'lagrangian ' term of the constraints will be copied
-    ) {
+    ) override {
         unsigned int local_off_v = 0;
         for (auto& node : this->node_data) {
             if (!node.second.IsFixed()) {
