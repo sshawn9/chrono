@@ -56,7 +56,7 @@ void ChStaticLinearAnalysis::StaticAnalysis() {
     //     [ Cq        0   ] [  l  ] = [-C]
 
     integrable->LoadResidual_F(R, 1.0);
-    integrable->LoadConstraint_C(Qc, 1.0);  //  C  (sign flipped later in StateSolveCorrection)
+    integrable->LoadConstraint_C(Qc, 1.0, 0.0);  //  C  (sign flipped later in StateSolveCorrection)
 
     integrable->StateSolveCorrection(       //
         Dx, L, R, Qc,                       //
@@ -138,8 +138,8 @@ void ChStaticNonLinearAnalysis::StaticAnalysis() {
         integrable->LoadResidual_F(R, 1.0);
         // integrable->LoadResidual_Mv(R, V, 1.0); // V is zero
         integrable->LoadResidual_CqL(R, L, 1.0);  // update the reaction forces
-        integrable->LoadConstraint_C(Qc, 1.0);    // Qc=C (sign flipped later in StateSolveCorrection)
-        // integrable->LoadConstraint_Ct(Qc, 1.0); // do not consider the rheonomic excitation because it constrains the
+        integrable->LoadConstraint_C(Qc, 1.0, 0.0);    // Qc=C (sign flipped later in StateSolveCorrection)
+        // integrable->LoadConstraint_Ct(Qc, 1.0, 0.0); // do not consider the rheonomic excitation because it constrains the
         // DOFs
 
         if (!m_use_correction_test) {
@@ -308,7 +308,7 @@ void ChStaticNonLinearRheonomicAnalysis::StaticAnalysis() {
 
             R.setZero(integrable->GetNumCoordsVelLevel());
             Qc.setZero(integrable->GetNumConstraints());
-            integrable->LoadConstraint_Ct(Qc, 1.0);  // Ct  (sign flipped later in StateSolveCorrection)
+            integrable->LoadConstraint_Ct(Qc, 1.0, 0.0);  // Ct  (sign flipped later in StateSolveCorrection)
 
             // Solve linear system for correction
             integrable->StateSolveCorrection(       //
@@ -387,7 +387,7 @@ void ChStaticNonLinearRheonomicAnalysis::StaticAnalysis() {
         integrable->LoadResidual_F(R, 1.0);
         integrable->LoadResidual_CqL(R, L, 1.0);
         integrable->LoadResidual_Mv(R, A, -1.0);
-        integrable->LoadConstraint_C(Qc, 1.0);  // C   (sign flipped later in StateSolveCorrection)
+        integrable->LoadConstraint_C(Qc, 1.0, 0.0);  // C   (sign flipped later in StateSolveCorrection)
 
         if (!m_use_correction_test) {
             // Evaluate residual norms
@@ -477,8 +477,8 @@ void ChStaticNonLinearRheonomicAnalysis::StaticAnalysis() {
             integrable->LoadResidual_F(R, 1.0);
             integrable->LoadResidual_CqL(R, L, 1.0);
             integrable->LoadResidual_Mv(R, A, -1.0);
-            // integrable->LoadConstraint_C(Qc, 1.0);  // C  (sign flipped later in StateSolveCorrection)
-            integrable->LoadConstraint_Ct(Qc, 1.0);  // Ct  (sign flipped later in StateSolveCorrection)
+            // integrable->LoadConstraint_C(Qc, 1.0, 0.0);  // C  (sign flipped later in StateSolveCorrection)
+            integrable->LoadConstraint_Ct(Qc, 1.0, 0.0);  // Ct  (sign flipped later in StateSolveCorrection)
 
             // Solve linear system for correction
             integrable->StateSolveCorrection(       //
@@ -503,7 +503,7 @@ void ChStaticNonLinearRheonomicAnalysis::StaticAnalysis() {
         R.setZero(integrable->GetNumCoordsVelLevel());
         Qc.setZero(integrable->GetNumConstraints());
         L_v.setZero(integrable->GetNumConstraints());
-        integrable->LoadConstraint_Ct(Qc, 1.0);  // Ct   (sign flipped later in StateSolveCorrection)
+        integrable->LoadConstraint_Ct(Qc, 1.0, 0.0);  // Ct   (sign flipped later in StateSolveCorrection)
 
         // Solve linear system for correction
         integrable->StateSolveCorrection(       //
@@ -645,7 +645,7 @@ void ChStaticNonLinearAnalysisIncremental::StaticAnalysis() {
             Qc.setZero();
             integrable->LoadResidual_F(R, 1.0);       // put the F term in RHS  (where F = F_in + scaled_F_ext )
             integrable->LoadResidual_CqL(R, L, 1.0);  // put the Cq*L term in RHS
-            integrable->LoadConstraint_C(Qc, 1.0);    // put the C term in RHS
+            integrable->LoadConstraint_C(Qc, 1.0, 0.0); // put the C term in RHS
 
             // Evaluate residual norms
             double R_norm = R.lpNorm<Eigen::Infinity>();

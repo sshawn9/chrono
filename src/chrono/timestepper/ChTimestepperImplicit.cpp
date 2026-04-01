@@ -392,8 +392,8 @@ void ChTimestepperEulerImplicit::OnAdvance(double dt) {
         integrable->LoadResidual_F(R, dt);                // R  = dt*f
         integrable->LoadResidual_Mv(R, (V - Vnew), 1.0);  // R += M*(v_old - v_new)
         integrable->LoadResidual_CqL(R, L, dt);           // R += dt*Cq'*l
-        integrable->LoadConstraint_C(Qc, 1.0 / dt, Qc_do_clamp,
-                                     Qc_clamping);  // Qc= C/dt  (sign flipped later in StateSolveCorrection)
+        integrable->LoadConstraint_C(Qc, 1.0 / dt, 1.0, Qc_do_clamp,
+                                     Qc_clamping);  // Qc= C/dt  (sign flipped later in StateSolveCorrection), for vel constraints Qc= C 
 
         if (verbose)
             cout << " Euler iteration=" << iteration << "  |R|=" << R.lpNorm<Eigen::Infinity>()
@@ -494,9 +494,9 @@ void ChTimestepperEulerImplicitLinearized::OnAdvance(double dt) {
 
     integrable->LoadResidual_F(R, dt);       // R  = df*f
     integrable->LoadResidual_Mv(R, V, 1.0);  // R += M*(v_old)
-    integrable->LoadConstraint_C(Qc, 1.0 / dt, Qc_do_clamp,
-                                 Qc_clamping);  // Qc = C/dt  (sign will be flipped later in StateSolveCorrection)
-    integrable->LoadConstraint_Ct(Qc, 1.0);     // Qc += Ct  (sign will be flipped later in StateSolveCorrection)
+    integrable->LoadConstraint_C(Qc, 1.0 / dt, 1.0, Qc_do_clamp,
+                                 Qc_clamping);  // Qc = C/dt  (sign will be flipped later in StateSolveCorrection) (for vel constr. Qc = C)
+    integrable->LoadConstraint_Ct(Qc, 1.0, dt); // Qc += Ct  (sign will be flipped later in StateSolveCorrection) (for vel constr. Qc += Ct*h)
 
     integrable->StateSolveCorrection(       //
         V, L, R, Qc,                        //
@@ -571,8 +571,8 @@ void ChTimestepperEulerImplicitProjected::OnAdvance(double dt) {
 
     integrable->LoadResidual_F(R, dt);                           // R  = dt*f
     integrable->LoadResidual_Mv(R, V, 1.0);                      // R += M*(v_old)
-    integrable->LoadConstraint_C(Qc, 1.0 / dt, Qc_do_clamp, 0);  // Qc = C/dt  ...may be avoided...
-    integrable->LoadConstraint_Ct(Qc, 1.0);  // Qc += Ct    (sign will be flipped later by StateSolveCorrection)
+    integrable->LoadConstraint_C(Qc, 1.0 / dt, 1.0, Qc_do_clamp, 0);  // Qc = C/dt  ...may be avoided...
+    integrable->LoadConstraint_Ct(Qc, 1.0, dt);  // Qc += Ct    (sign will be flipped later by StateSolveCorrection)
 
     integrable->StateSolveCorrection(       //
         V, L, R, Qc,                        //
@@ -609,7 +609,7 @@ void ChTimestepperEulerImplicitProjected::OnAdvance(double dt) {
     // [ M       Cq' ] [ dpos ] = [  0 ]
     // [ Cq       0  ] [ -l   ] = [ -C ]
 
-    integrable->LoadConstraint_C(Qc, 1.0, false, 0);
+    integrable->LoadConstraint_C(Qc, 1.0, 0.0, false, 0);
 
     integrable->StateSolveCorrection(       //
         Vold, L, R, Qc,                     //
@@ -700,7 +700,7 @@ void ChTimestepperTrapezoidal::OnAdvance(double dt) {
         integrable->LoadResidual_F(R, dt * 0.5);       // + dt/2*f_new
         integrable->LoadResidual_Mv(R, Vnew, -1.0);    // - M*v_new
         integrable->LoadResidual_CqL(R, L, dt * 0.5);  // + dt/2*Cq*l_new
-        integrable->LoadConstraint_C(Qc, 1.0 / dt, Qc_do_clamp,
+        integrable->LoadConstraint_C(Qc, 1.0 / dt, 1.0, Qc_do_clamp,
                                      Qc_clamping);  // Qc= C/dt  (sign will be flipped later in StateSolveCorrection)
         if (verbose)
             cout << " Trapezoidal iteration=" << iteration << "  |R|=" << R.lpNorm<Eigen::Infinity>()
@@ -807,7 +807,7 @@ void ChTimestepperTrapezoidalLinearized::OnAdvance(double dt) {
     integrable->LoadResidual_F(R, dt * 0.5);     // + dt/2*f_new
     integrable->LoadResidual_Mv(R, Vnew, -1.0);  // - M*v_new
     // integrable->LoadResidual_CqL(R, L, dt*0.5); // + dt/2*Cq*l_new  assume l_old = 0;
-    integrable->LoadConstraint_C(Qc, 1.0 / dt, Qc_do_clamp,
+    integrable->LoadConstraint_C(Qc, 1.0 / dt, 1.0, Qc_do_clamp,
                                  Qc_clamping);  // Qc= C/dt  (sign will be flipped later in StateSolveCorrection)
 
     integrable->StateSolveCorrection(       //
@@ -927,7 +927,10 @@ void ChTimestepperNewmark::OnAdvance(double dt) {
         integrable->LoadResidual_CqL(R, L, 1.0);     //   Cq'*l_new
         integrable->LoadResidual_Mv(R, Anew, -1.0);  //  - M*a_new
         integrable->LoadConstraint_C(
-            Qc, (1.0 / (beta * dt * dt)), Qc_do_clamp,
+            Qc, 
+            (1.0 / (beta * dt * dt)),   // for position constraints (almost all)
+            (1.0 / (gamma * dt)),       // for speed constraints, if any
+            Qc_do_clamp,
             Qc_clamping);  //  Qc = 1/(beta*dt^2)*C  (sign will be flipped later in StateSolveCorrection)
 
         if (verbose)
