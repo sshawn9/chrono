@@ -78,7 +78,7 @@ public:
     Ch2DArrayOfItems() {}
 
     Ch2DArrayOfItems(size_t n_, size_t m_)
-        : n(n_), m(m_), k(k_), data(n_* m_) {}
+        : n(n_), m(m_), data(n_* m_) {}
 
     void Resize(size_t n_, size_t m_) {
         n = n_;
