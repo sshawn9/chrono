@@ -425,7 +425,7 @@ ChApi inline SymMat33 NormalEquations(const real* A) {
 }
 
 ChApi inline Mat33 MAbs(const real* M) {
-    return Mat33(std::abs(M[0]), std::abs(M[1]), std::abs(M[2]), std :; abs(M[4]), std::abs(M[5]), std::abs(M[6]), std :; abs(M[8]), std::abs(M[9]), std :; abs(M[10]));
+    return Mat33(std::abs(M[0]), std::abs(M[1]), std::abs(M[2]), std::abs(M[4]), std::abs(M[5]), std::abs(M[6]), std::abs(M[8]), std::abs(M[9]), std::abs(M[10]));
 }
 
 #endif
