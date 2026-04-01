@@ -8,6 +8,7 @@ option(CH_ENABLE_MODULE_SENSOR "Enable the Chrono Sensor module" OFF)
 
 if(NOT CH_ENABLE_MODULE_SENSOR)
   mark_as_advanced(FORCE CH_USE_SENSOR_OPTIX)
+  mark_as_advanced(FORCE CH_USE_SENSOR_OPENEXR)
 
   mark_as_advanced(FORCE CH_USE_SENSOR_NVDB)
   mark_as_advanced(FORCE CH_USE_SENSOR_NVRTC)
@@ -18,7 +19,9 @@ if(NOT CH_ENABLE_MODULE_SENSOR)
 
   set(CH_USE_SENSOR_OPTIX FALSE)
   set(CH_USE_SENSOR_OPTIX ${CH_USE_SENSOR_OPTIX} PARENT_SCOPE)
-  mark_as_advanced(FORCE CH_USE_SENSOR_OPTIX)
+
+  set(CH_USE_SENSOR_OPENEXR FALSE)
+  set(CH_USE_SENSOR_OPENEXR ${CH_USE_SENSOR_OPENEXR} PARENT_SCOPE)
 
   return()
 endif()
@@ -79,6 +82,23 @@ else()
 
   set(CHRONO_HAS_OPTIX "#undef CHRONO_HAS_OPTIX")
 
+endif()
+
+#-----------------------------------------------------------------------------
+# Check OpenEXR
+#-----------------------------------------------------------------------------
+
+set(CH_USE_SENSOR_OPENEXR TRUE CACHE BOOL "Enable OpenEXR-dependent Chrono::Sensor features")
+
+if(CH_USE_SENSOR_OPENEXR)
+  message(STATUS "Looking for OpenEXR")
+  find_package(OpenEXR)
+  if(NOT DEFINED OpenEXR_FOUND)
+    message(STATUS "WARNING: OpenEXR was not found; OpenEXR support disabled in Chrono::Sensor.")
+    set(CH_USE_SENSOR_OPENEXR FALSE CACHE BOOL "Enable OpenEXR-dependent Chrono::Sensor features" FORCE)
+  endif()
+else()
+  message(STATUS "OpenEXR support disabled in Chrono::Sensor.")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -431,10 +451,6 @@ set(SENSOR_TINYOBJ_FILES
 )
 source_group("utils\\tinyobjloader" FILES ${SENSOR_TINYOBJ_FILES})
 
-#-----------------------------------------------------------------------------
-# Copy shader sources to build tree
-#-----------------------------------------------------------------------------
-
 if(CH_USE_SENSOR_OPTIX)
   message(STATUS "Shader directory in BUILD tree: ${CH_BUILD_SENSOR_SHADERS}")
   if(CH_USE_SENSOR_NVRTC)
@@ -517,6 +533,10 @@ if(CH_USE_SENSOR_OPTIX)
     target_link_libraries(Chrono_sensor PRIVATE OpenVDB::nanovdb)
   endif()
 
+endif()
+
+if(CH_USE_SENSOR_OPENEXR)
+  target_link_libraries(Chrono_sensor PUBLIC OpenEXR::OpenEXR)
 endif()
 
 # print cxx compiler flags\
