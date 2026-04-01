@@ -440,14 +440,13 @@ ChApi Mat33 operator*(const Mat33& N, const real scale) {
 ChApi Mat33 operator*(const Mat33& M, const Mat33& N) {
     return MulMM(M.array, N.array);
 }
+
 ChApi Mat33 operator+(const Mat33& M, const Mat33& N) {
-    return Mat33(M[0] + N[0], M[1] + N[1], M[2] + N[2], M[4] + N[4], M[5] + N[5], M[6] + N[6], M[8] + N[8], M[9] + N[9],
-                 M[10] + N[10]);
+    return Mat33(M[0] + N[0], M[1] + N[1], M[2] + N[2], M[4] + N[4], M[5] + N[5], M[6] + N[6], M[8] + N[8], M[9] + N[9], M[10] + N[10]);
 }
 
 ChApi Mat33 operator-(const Mat33& M, const Mat33& N) {
-    return Mat33(M[0] - N[0], M[1] - N[1], M[2] - N[2], M[4] - N[4], M[5] - N[5], M[6] - N[6], M[8] - N[8], M[9] - N[9],
-                 M[10] - N[10]);
+    return Mat33(M[0] - N[0], M[1] - N[1], M[2] - N[2], M[4] - N[4], M[5] - N[5], M[6] - N[6], M[8] - N[8], M[9] - N[9], M[10] - N[10]);
 }
 
 ChApi OPERATOR_EQUALSALT(*, real, Mat33)       //
@@ -463,15 +462,19 @@ ChApi OPERATOR_EQUALSALT(*, real, Mat33)       //
 ChApi Mat33 operator*(const real s, const Mat33& a) {
     return a * s;
 }
+
 ChApi Mat33 Abs(const Mat33& m) {
     return MAbs(m.array);
 }
+
 ChApi Mat33 SkewSymmetric(const real3& r) {
     return Mat33(0, r[2], -r[1], -r[2], 0, r[0], r[1], -r[0], 0);
 }
+
 ChApi Mat33 SkewSymmetricAlt(const real3& r) {
     return Mat33(0, r[2], r[1], r[2], 0, r[0], r[1], r[0], 0);
 }
+
 ChApi Mat33 MultTranspose(const Mat33& M, const Mat33& N) {
     // Not a clean way to write this in AVX, might as well transpose first and then multiply
     return M * Transpose(N);
@@ -564,7 +567,7 @@ ChApi Mat33 InverseTransposeUnsafe(const Mat33& A) {
     return AdjointTranspose(A) * real(1.0 / s);
 }
 ChApi real Norm(const Mat33& A) {
-    return Sqrt(Trace(A * Transpose(A)));
+    return std::sqrt(Trace(A * Transpose(A)));
 }
 ChApi real NormSq(const Mat33& A) {
     return Trace(A * Transpose(A));

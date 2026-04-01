@@ -168,8 +168,7 @@ ChApi OPERATOR_EQUALSALT_PROTO(*, real, Mat33)       //
     ChApi OPERATOR_EQUALSALT_PROTO(+, Mat33, Mat33)  //
     ChApi OPERATOR_EQUALSALT_PROTO(-, Mat33, Mat33)  //
 
-    ChApi Mat33
-    operator-(const Mat33& M);
+    ChApi Mat33 operator-(const Mat33& M);
 ChApi Mat33 operator*(const real s, const Mat33& a);
 
 ChApi Mat33 SkewSymmetric(const real3& r);
