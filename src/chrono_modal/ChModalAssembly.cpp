@@ -2725,28 +2725,29 @@ void ChModalAssembly::IntLoadResidual_CqL(const unsigned int off_L,    // offset
 void ChModalAssembly::IntLoadConstraint_C(const unsigned int off_L,  // offset in Qc residual
                                           ChVectorDynamic<>& Qc,     // result: the Qc residual, Qc += c*C
                                           const double c,            // a scaling factor
+                                          const double c_vel,        ///< the scaling factor if the constraint is at speed level
                                           bool do_clamp,             // apply clamping to c*C?
                                           double recovery_clamp      // value for min/max clamping of c*C
 ) {
-    ChAssembly::IntLoadConstraint_C(off_L, Qc, c, do_clamp, recovery_clamp);  // parent
+    ChAssembly::IntLoadConstraint_C(off_L, Qc, c, c_vel, do_clamp, recovery_clamp);  // parent
 
     unsigned int displ_L = off_L - this->offset_L;
 
     if (!m_is_model_reduced) {
         for (auto& body : internal_bodylist) {
             if (body->IsActive())
-                body->IntLoadConstraint_C(displ_L + body->GetOffset_L(), Qc, c, do_clamp, recovery_clamp);
+                body->IntLoadConstraint_C(displ_L + body->GetOffset_L(), Qc, c, c_vel, do_clamp, recovery_clamp);
         }
         for (auto& link : internal_linklist) {
             if (link->IsActive())
-                link->IntLoadConstraint_C(displ_L + link->GetOffset_L(), Qc, c, do_clamp, recovery_clamp);
+                link->IntLoadConstraint_C(displ_L + link->GetOffset_L(), Qc, c, c_vel, do_clamp, recovery_clamp);
         }
         for (auto& mesh : internal_meshlist) {
-            mesh->IntLoadConstraint_C(displ_L + mesh->GetOffset_L(), Qc, c, do_clamp, recovery_clamp);
+            mesh->IntLoadConstraint_C(displ_L + mesh->GetOffset_L(), Qc, c, c_vel, do_clamp, recovery_clamp);
         }
         for (auto& item : internal_otherphysicslist) {
             if (item->IsActive())
-                item->IntLoadConstraint_C(displ_L + item->GetOffset_L(), Qc, c, do_clamp, recovery_clamp);
+                item->IntLoadConstraint_C(displ_L + item->GetOffset_L(), Qc, c, c_vel, do_clamp, recovery_clamp);
         }
     } else {
         // todo:
@@ -2756,27 +2757,28 @@ void ChModalAssembly::IntLoadConstraint_C(const unsigned int off_L,  // offset i
 
 void ChModalAssembly::IntLoadConstraint_Ct(const unsigned int off_L,  // offset in Qc residual
                                            ChVectorDynamic<>& Qc,     // result: the Qc residual, Qc += c*Ct
-                                           const double c             // a scaling factor
+                                           const double c,            // the scaling factor
+                                           const double c_vel         //the scaling factor if the constraint is at speed level
 ) {
-    ChAssembly::IntLoadConstraint_Ct(off_L, Qc, c);  // parent
+    ChAssembly::IntLoadConstraint_Ct(off_L, Qc, c, c_vel);  // parent
 
     unsigned int displ_L = off_L - this->offset_L;
 
     if (!m_is_model_reduced) {
         for (auto& body : internal_bodylist) {
             if (body->IsActive())
-                body->IntLoadConstraint_Ct(displ_L + body->GetOffset_L(), Qc, c);
+                body->IntLoadConstraint_Ct(displ_L + body->GetOffset_L(), Qc, c, c_vel);
         }
         for (auto& link : internal_linklist) {
             if (link->IsActive())
-                link->IntLoadConstraint_Ct(displ_L + link->GetOffset_L(), Qc, c);
+                link->IntLoadConstraint_Ct(displ_L + link->GetOffset_L(), Qc, c, c_vel);
         }
         for (auto& mesh : internal_meshlist) {
-            mesh->IntLoadConstraint_Ct(displ_L + mesh->GetOffset_L(), Qc, c);
+            mesh->IntLoadConstraint_Ct(displ_L + mesh->GetOffset_L(), Qc, c, c_vel);
         }
         for (auto& item : internal_otherphysicslist) {
             if (item->IsActive())
-                item->IntLoadConstraint_Ct(displ_L + item->GetOffset_L(), Qc, c);
+                item->IntLoadConstraint_Ct(displ_L + item->GetOffset_L(), Qc, c, c_vel);
         }
     } else {
         // todo:

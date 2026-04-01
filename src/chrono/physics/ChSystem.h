@@ -795,6 +795,7 @@ class ChApi ChSystem : public ChIntegrableIIorder {
     ///    Qc += c*C
     virtual void LoadConstraint_C(ChVectorDynamic<>& Qc,        ///< result: the Qc residual, Qc += c*C
                                   const double c,               ///< a scaling factor
+                                  const double c_vel,           ///< scaling factor for constraints at speed level 
                                   const bool do_clamp = false,  ///< enable optional clamping of Qc
                                   const double clamp = 1e30     ///< clamping value
                                   ) override;
@@ -802,7 +803,8 @@ class ChApi ChSystem : public ChIntegrableIIorder {
     /// Increment a vector Qc with the term Ct = partial derivative dC/dt:
     ///    Qc += c*Ct
     virtual void LoadConstraint_Ct(ChVectorDynamic<>& Qc,  ///< result: the Qc residual, Qc += c*Ct
-                                   const double c          ///< a scaling factor
+                                   const double c,         ///< a scaling factor
+                                   const double c_vel      ///< scaling factor for constraints at speed level
                                    ) override;
 
     /// Collect all variables and constraints for physical components into the underlying system descriptor.

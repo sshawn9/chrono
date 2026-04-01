@@ -1233,30 +1233,31 @@ void ChSystem::LoadResidual_CqL(ChVectorDynamic<>& R, const ChVectorDynamic<>& L
 //    Qc += c*C
 void ChSystem::LoadConstraint_C(ChVectorDynamic<>& Qc,  // result: the Qc residual, Qc += c*C
                                 const double c,         // a scaling factor
+                                const double c_vel,     // scaling factor for constraints at speed level 
                                 const bool do_clamp,    // enable optional clamping of Qc
                                 const double clamp      // clamping value
 ) {
     unsigned int off_L = 0;
 
     // Operate on assembly sub-objects (bodies, links, etc.)
-    assembly.IntLoadConstraint_C(off_L, Qc, c, do_clamp, clamp);
+    assembly.IntLoadConstraint_C(off_L, Qc, c, c_vel, do_clamp, clamp);
 
     // Use also on contact container:
     unsigned int displ_L = off_L - assembly.offset_L;
-    contact_container->IntLoadConstraint_C(displ_L + contact_container->GetOffset_L(), Qc, c, do_clamp, clamp);
+    contact_container->IntLoadConstraint_C(displ_L + contact_container->GetOffset_L(), Qc, c, c_vel, do_clamp, clamp);
 }
 
 // Increment a vector Qc with the term Ct = partial derivative dC/dt:
 //    Qc += c*Ct
-void ChSystem::LoadConstraint_Ct(ChVectorDynamic<>& Qc, const double c) {
+void ChSystem::LoadConstraint_Ct(ChVectorDynamic<>& Qc, const double c, const double c_vel) {
     unsigned int off_L = 0;
 
     // Operate on assembly sub-objects (bodies, links, etc.)
-    assembly.IntLoadConstraint_Ct(off_L, Qc, c);
+    assembly.IntLoadConstraint_Ct(off_L, Qc, c, c_vel);
 
     // Use also on contact container:
     unsigned int displ_L = off_L - assembly.offset_L;
-    contact_container->IntLoadConstraint_Ct(displ_L + contact_container->GetOffset_L(), Qc, c);
+    contact_container->IntLoadConstraint_Ct(displ_L + contact_container->GetOffset_L(), Qc, c, c_vel);
 }
 
 // -----------------------------------------------------------------------------
