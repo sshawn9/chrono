@@ -379,6 +379,8 @@ int main(int argc, char* argv[]) {
         mkl_solver->LockSparsityPattern(true);
         sys.SetSolver(mkl_solver);
  
+        // The default EULER_IMPLICIT_LINEAR is not good for problems with finite elements, switch to:
+        sys.SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT);
 
         // Simulation loop
         double timestep = 50;
@@ -559,6 +561,8 @@ int main(int argc, char* argv[]) {
         mkl_solver->LockSparsityPattern(true);
         sys.SetSolver(mkl_solver);
 
+        // The default EULER_IMPLICIT_LINEAR is not good for problems with finite elements, switch to:
+        sys.SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT);
 
         // Simulation loop
         double timestep = 10;
