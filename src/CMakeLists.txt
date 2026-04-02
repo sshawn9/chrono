@@ -420,7 +420,7 @@ endif()
 # Macro to enable YAML support
 #-----------------------------------------------------------------------------
 
-macro(enable_YAML)
+function(enable_YAML)
     if(CHRONO_YAML_ENABLED)
         message(STATUS "Chrono YAML parser already enabled.")
         return()
@@ -463,7 +463,7 @@ macro(enable_YAML)
     set(CHRONO_YAML_ENABLED ${CHRONO_YAML_ENABLED} PARENT_SCOPE)
     set(CHRONO_HAS_YAML ${CHRONO_HAS_YAML} PARENT_SCOPE)
 
-endmacro()
+endfunction()
 
 #------------------------------------------------------------
 # Build submodules
