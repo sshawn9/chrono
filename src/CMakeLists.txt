@@ -577,6 +577,20 @@ endif()
 message(STATUS "")
 
 #------------------------------------------------------------
+# Install yaml-cpp
+#------------------------------------------------------------
+
+if(CHRONO_YAML_ENABLED)
+  install(TARGETS yaml-cpp
+          EXPORT ChronoTargets
+          RUNTIME DESTINATION bin
+          LIBRARY DESTINATION lib
+          ARCHIVE DESTINATION lib
+          #INCLUDES DESTINATION include/chrono_thirdparty/yaml-cpp
+  )
+endif()
+
+#------------------------------------------------------------
 # Install headers from chrono_thirdparty folder
 # Other modules, if successfully configured, will install more
 #------------------------------------------------------------

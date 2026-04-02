@@ -315,14 +315,6 @@ install(TARGETS Chrono_parsers
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         INCLUDES DESTINATION include/chrono_parsers)
-if(CHRONO_YAML_ENABLED)
-  install(TARGETS yaml-cpp
-          EXPORT ChronoTargets
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib
-          INCLUDES DESTINATION include/chrono_parsers)
-endif()
 
 #-------------------------------------------------------------------------------
 # Install files
