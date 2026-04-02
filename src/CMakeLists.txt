@@ -420,6 +420,8 @@ endif()
 # Macro to enable YAML support
 #-----------------------------------------------------------------------------
 
+set(CHRONO_YAML_ENABLED NO CACHE INTERNAL "")
+
 function(enable_YAML)
     if(CHRONO_YAML_ENABLED)
         message(STATUS "Chrono YAML parser already enabled.")
@@ -429,15 +431,12 @@ function(enable_YAML)
     if(MSVC AND MSVC_VERSION LESS 1930)
       # Due to a bug, yaml-cpp cannot be compiled with VS 2019 or older
       message("WARNING: The Chrono YAML parser requires Visual Studio 2022 or newer.")
-      set(CHRONO_YAML_ENABLED NO)
-      set(CHRONO_HAS_YAML "#undef CHRONO_HAS_YAML")
-      set(CHRONO_YAML_ENABLED ${CHRONO_YAML_ENABLED} PARENT_SCOPE)
-      set(CHRONO_HAS_YAML ${CHRONO_HAS_YAML} PARENT_SCOPE)
+      set(CHRONO_YAML_ENABLED NO CACHE INTERNAL "")
       return()
     endif()
     
     message(STATUS "Enable YAML parser support.")
-    set(CHRONO_YAML_ENABLED YES)
+    set(CHRONO_YAML_ENABLED YES CACHE INTERNAL "")
 
     # Fetch yaml-cpp from third party directory
     include(FetchContent)
@@ -457,12 +456,6 @@ function(enable_YAML)
       target_compile_options(yaml-cpp PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/wd4275>)
       target_compile_options(yaml-cpp PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/wd4267>)
     endif()
-
-    set(CHRONO_HAS_YAML "#define CHRONO_HAS_YAML")
-
-    set(CHRONO_YAML_ENABLED ${CHRONO_YAML_ENABLED} PARENT_SCOPE)
-    set(CHRONO_HAS_YAML ${CHRONO_HAS_YAML} PARENT_SCOPE)
-
 endfunction()
 
 #------------------------------------------------------------
@@ -781,6 +774,12 @@ if(CH_CXX17)
     set(CHRONO_HAS_CXX17 "#define CHRONO_HAS_CXX17")
 else()
     set(CHRONO_HAS_CXX17 "#undef CHRONO_HAS_CXX17")
+endif()
+
+if(CHRONO_YAML_ENABLED)
+    set(CHRONO_HAS_YAML "#define CHRONO_HAS_YAML")
+else()
+    set(CHRONO_HAS_YAML "#undef CHRONO_HAS_YAML")
 endif()
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/ChConfig.h.in"
