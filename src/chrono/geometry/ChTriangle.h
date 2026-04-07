@@ -45,7 +45,7 @@ class ChApi ChTriangle : public ChGeometry {
     virtual ChAABB GetBoundingBox() const override;
 
     /// Compute center of mass.
-    virtual ChVector3d Baricenter() const override;
+    virtual ChVector3d Barycenter() const override;
 
     /// Indicate that a triangle is a 2D surface.
     virtual int GetManifoldDimension() const override { return 2; }

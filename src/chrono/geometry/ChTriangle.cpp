@@ -56,7 +56,7 @@ ChAABB ChTriangle::GetBoundingBox() const {
     return CalcBoundingBox(p1, p2, p3);
 }
 
-ChVector3d ChTriangle::Baricenter() const {
+ChVector3d ChTriangle::Barycenter() const {
     ChVector3d mb;
     mb.x() = (p1.x() + p2.x() + p3.x()) * CH_1_3;
     mb.y() = (p1.y() + p2.y() + p3.y()) * CH_1_3;
