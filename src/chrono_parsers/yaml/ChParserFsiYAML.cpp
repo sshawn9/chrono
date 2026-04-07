@@ -48,7 +48,7 @@ std::shared_ptr<utils::ChBodyGeometry> ChParserFsiYAML::ReadCollisionGeometry(co
     for (size_t i = 0; i < num_shapes; i++) {
         const YAML::Node& shape = a[i];
         ChAssertAlways(shape["type"]);
-        std::string type = ToUpper(shape["type"].as<std::string>());
+        std::string type = ChToUpper(shape["type"].as<std::string>());
 
         if (type == "SPHERE") {
             ChAssertAlways(shape["location"]);
@@ -200,10 +200,10 @@ void ChParserFsiYAML::LoadFsiData(const YAML::Node& yaml) {
         cout << "model name: '" << m_name << "'" << endl;
         cout << "angles in degrees? " << (m_use_degrees ? "true" : "false") << endl;
         switch (m_data_path) {
-            case ChParserYAML::DataPathType::ABS:
+            case YamlDataPathType::ABS:
                 cout << "using absolute file paths" << endl;
                 break;
-            case ChParserYAML::DataPathType::REL:
+            case YamlDataPathType::REL:
                 cout << "using file paths relative to: '" << m_rel_path << "'" << endl;
                 break;
         }
@@ -231,7 +231,7 @@ void ChParserFsiYAML::LoadSimData(const YAML::Node& yaml) {
             m_vis.enable_shadows = vis["enable_shadows"].as<bool>();
         if (vis["camera"]) {
             if (vis["camera"]["vertical"]) {
-                auto camera_vertical = ToUpper(vis["camera"]["vertical"].as<std::string>());
+                auto camera_vertical = ChToUpper(vis["camera"]["vertical"].as<std::string>());
                 if (camera_vertical == "Y")
                     m_vis.camera_vertical = CameraVerticalDir::Y;
                 else if (camera_vertical == "Z")

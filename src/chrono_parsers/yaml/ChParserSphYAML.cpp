@@ -403,10 +403,10 @@ void ChParserSphYAML::LoadModelData(const YAML::Node& yaml) {
         cout << "model name: '" << m_name << "'" << endl;
         cout << "angles in degrees? " << (m_use_degrees ? "true" : "false") << endl;
         switch (m_data_path) {
-            case ChParserYAML::DataPathType::ABS:
+            case YamlDataPathType::ABS:
                 cout << "using absolute file paths" << endl;
                 break;
-            case ChParserYAML::DataPathType::REL:
+            case YamlDataPathType::REL:
                 cout << "using file paths relative to: '" << m_rel_path << "'" << endl;
                 break;
         }
@@ -983,7 +983,7 @@ void ChParserSphYAML::VisParams::PrintInfo() {
 // =============================================================================
 
 ChParserSphYAML::GeometryType ChParserSphYAML::ReadGeometryType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "CARTESIAN")
         return GeometryType::CARTESIAN;
     if (val == "CYLINDRICAL")
@@ -992,7 +992,7 @@ ChParserSphYAML::GeometryType ChParserSphYAML::ReadGeometryType(const YAML::Node
 }
 
 fsi::sph::PhysicsProblem ChParserSphYAML::ReadPhysicsProblemType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "CFD")
         return fsi::sph::PhysicsProblem::CFD;
     if (val == "CRM")
@@ -1001,7 +1001,7 @@ fsi::sph::PhysicsProblem ChParserSphYAML::ReadPhysicsProblemType(const YAML::Nod
 }
 
 fsi::sph::ChFsiProblemWavetank::WavemakerType ChParserSphYAML::ReadWavetankType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "PISTON")
         return fsi::sph::ChFsiProblemWavetank::WavemakerType::PISTON;
     if (val == "FLAP")
@@ -1010,7 +1010,7 @@ fsi::sph::ChFsiProblemWavetank::WavemakerType ChParserSphYAML::ReadWavetankType(
 }
 
 fsi::sph::EosType ChParserSphYAML::ReadEosType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "ISOTHERMAL")
         return fsi::sph::EosType::ISOTHERMAL;
     if (val == "TAIT")
@@ -1019,7 +1019,7 @@ fsi::sph::EosType ChParserSphYAML::ReadEosType(const YAML::Node& a) {
 }
 
 fsi::sph::KernelType ChParserSphYAML::ReadKernelType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "QUADRATIC")
         return fsi::sph::KernelType::QUADRATIC;
     if (val == "CUBIC_SPLINE")
@@ -1032,7 +1032,7 @@ fsi::sph::KernelType ChParserSphYAML::ReadKernelType(const YAML::Node& a) {
 }
 
 fsi::sph::IntegrationScheme ChParserSphYAML::ReadIntegrationScheme(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "EULER")
         return fsi::sph::IntegrationScheme::EULER;
     if (val == "RK2")
@@ -1047,7 +1047,7 @@ fsi::sph::IntegrationScheme ChParserSphYAML::ReadIntegrationScheme(const YAML::N
 }
 
 fsi::sph::BoundaryMethod ChParserSphYAML::ReadBoundaryMethod(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "ADAMI")
         return fsi::sph::BoundaryMethod::ADAMI;
     if (val == "HOLMES")
@@ -1056,7 +1056,7 @@ fsi::sph::BoundaryMethod ChParserSphYAML::ReadBoundaryMethod(const YAML::Node& a
 }
 
 fsi::sph::ShiftingMethod ChParserSphYAML::ReadShiftingMethod(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "NONE")
         return fsi::sph::ShiftingMethod::NONE;
     if (val == "PPST")
@@ -1073,7 +1073,7 @@ fsi::sph::ShiftingMethod ChParserSphYAML::ReadShiftingMethod(const YAML::Node& a
 }
 
 fsi::sph::ViscosityMethod ChParserSphYAML::ReadViscosityMethod(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "LAMINAR")
         return fsi::sph::ViscosityMethod::LAMINAR;
     if (val == "ARTIFICIAL_UNILATERAL")
@@ -1136,7 +1136,7 @@ int ChParserSphYAML::ReadWallFlagsCylindrical(const YAML::Node& a) {
 }
 
 fsi::sph::BCType ChParserSphYAML::ReadBoundaryConditionType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "NONE")
         return fsi::sph::BCType::NONE;
     if (val == "PERIODIC")
@@ -1147,7 +1147,7 @@ fsi::sph::BCType ChParserSphYAML::ReadBoundaryConditionType(const YAML::Node& a)
 }
 
 ChParserSphYAML::ParticleColoringType ChParserSphYAML::ReadParticleColoringType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "NONE")
         return ParticleColoringType::NONE;
     if (val == "HEIGHT")
@@ -1162,7 +1162,7 @@ ChParserSphYAML::ParticleColoringType ChParserSphYAML::ReadParticleColoringType(
 }
 
 ChColormap::Type ChParserSphYAML::ReadColorMapType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "BLACK_BODY")
         return ChColormap::Type::BLACK_BODY;
     if (val == "BLUE")
@@ -1190,7 +1190,7 @@ ChColormap::Type ChParserSphYAML::ReadColorMapType(const YAML::Node& a) {
 
 #ifdef CHRONO_VSG
 fsi::sph::MarkerPlanesVisibilityCallback::Mode ChParserSphYAML::ReadVisibilityMode(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "ANY")
         return fsi::sph::MarkerPlanesVisibilityCallback::Mode::ANY;
     if (val == "ALL")

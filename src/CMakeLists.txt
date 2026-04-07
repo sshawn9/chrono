@@ -397,66 +397,59 @@ endif()
 #-----------------------------------------------------------------------------
 
 option(CH_ENABLE_HDF5 "Enable HDF5 support" OFF)
-set(CHRONO_HAS_HDF5 "#undef CHRONO_HAS_HDF5")
 
 if(CH_ENABLE_HDF5)
     message(STATUS "Searching for HDF5...")
-    find_package(HDF5 COMPONENTS CXX)
 
+    find_package(HDF5 COMPONENTS CXX)
     if (HDF5_FOUND)
         message(STATUS "  HDF5 found         (HDF5_FOUND)         ${HDF5_FOUND}")
         message(STATUS "  HDF5 include dirs  (HDF5_INCLUDE_DIR)   ${HDF5_INCLUDE_DIRS}")
         message(STATUS "  HDF5 C++ libraries (HDF5_CXX_LIBRARIES) ${HDF5_CXX_LIBRARIES}")
         message(STATUS "  HDF5 libraries     (HDF5_LIBRARIES)     ${HDF5_LIBRARIES}")
-
-        set(CHRONO_HAS_HDF5 "#define CHRONO_HAS_HDF5")
     else()
         message(STATUS "  Could not find HDF5")
     endif()
-
 endif()
 
 #-----------------------------------------------------------------------------
-# Macro to enable YAML support
+# Enable YAML support
 #-----------------------------------------------------------------------------
 
-set(CHRONO_YAML_ENABLED NO CACHE INTERNAL "")
+option(CH_ENABLE_YAML "Enable YAML support" ON)
 
-function(enable_YAML)
-    if(CHRONO_YAML_ENABLED)
-        message(STATUS "Chrono YAML parser already enabled.")
-        return()
-    endif()
-        
+if(CH_ENABLE_YAML)
+    message(STATUS "Enabling YAML support...")
+
     if(MSVC AND MSVC_VERSION LESS 1930)
-      # Due to a bug, yaml-cpp cannot be compiled with VS 2019 or older
-      message("WARNING: The Chrono YAML parser requires Visual Studio 2022 or newer.")
-      set(CHRONO_YAML_ENABLED NO CACHE INTERNAL "")
-      return()
-    endif()
+        # Due to a bug, yaml-cpp cannot be compiled with VS 2019 or older
+        message("WARNING: yaml-cpp requires Visual Studio 2022 or newer.")
+        message(STATUS "YAML parser support disabled.")
+        set(CHRONO_YAML_ENABLED NO)
+    else()
+        # Fetch yaml-cpp from third party directory
+        include(FetchContent)
     
-    message(STATUS "Enable YAML parser support.")
-    set(CHRONO_YAML_ENABLED YES CACHE INTERNAL "")
+        FetchContent_Declare(
+          yaml-cpp
+          SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/yaml-cpp"
+        )
+        FetchContent_MakeAvailable(yaml-cpp)
+        
+        mark_as_advanced(FORCE YAML_CPP_INSTALL)
+        mark_as_advanced(FORCE YAML_CPP_INSTALL_CMAKEDIR)
+        
+        # Disable warnings
+        if (MSVC)
+          target_compile_options(yaml-cpp PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/wd4251>)
+          target_compile_options(yaml-cpp PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/wd4275>)
+          target_compile_options(yaml-cpp PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/wd4267>)
+        endif()
 
-    # Fetch yaml-cpp from third party directory
-    include(FetchContent)
-    
-    FetchContent_Declare(
-      yaml-cpp
-      SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/yaml-cpp"
-    )
-    FetchContent_MakeAvailable(yaml-cpp)
-    
-    mark_as_advanced(FORCE YAML_CPP_INSTALL)
-    mark_as_advanced(FORCE YAML_CPP_INSTALL_CMAKEDIR)
-    
-    # Disable warnings
-    if (MSVC)
-      target_compile_options(yaml-cpp PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/wd4251>)
-      target_compile_options(yaml-cpp PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/wd4275>)
-      target_compile_options(yaml-cpp PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/wd4267>)
+        message(STATUS "  Using ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/yaml-cpp.")
+        set(CHRONO_YAML_ENABLED YES)
     endif()
-endfunction()
+endif()
 
 #------------------------------------------------------------
 # Build submodules
@@ -788,6 +781,12 @@ if(CH_CXX17)
     set(CHRONO_HAS_CXX17 "#define CHRONO_HAS_CXX17")
 else()
     set(CHRONO_HAS_CXX17 "#undef CHRONO_HAS_CXX17")
+endif()
+
+if(HDF5_FOUND)
+    set(CHRONO_HAS_HDF5 "#define CHRONO_HAS_HDF5")
+else()
+    set(CHRONO_HAS_HDF5 "#undef CHRONO_HAS_HDF5")
 endif()
 
 if(CHRONO_YAML_ENABLED)

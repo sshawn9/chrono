@@ -186,10 +186,10 @@ void ChParserTdpfYAML::LoadModelData(const YAML::Node& yaml) {
         cout << "model name: '" << m_name << "'" << endl;
         cout << "angles in degrees? " << (m_use_degrees ? "true" : "false") << endl;
         switch (m_data_path) {
-            case ChParserYAML::DataPathType::ABS:
+            case YamlDataPathType::ABS:
                 cout << "using absolute file paths" << endl;
                 break;
-            case ChParserYAML::DataPathType::REL:
+            case YamlDataPathType::REL:
                 cout << "using file paths relative to: '" << m_rel_path << "'" << endl;
                 break;
         }
@@ -337,7 +337,7 @@ void ChParserTdpfYAML::VisParams::PrintInfo() {
 // =============================================================================
 
 ChColormap::Type ChParserTdpfYAML::ReadColorMapType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "BLACK_BODY")
         return ChColormap::Type::BLACK_BODY;
     if (val == "BLUE")
@@ -364,7 +364,7 @@ ChColormap::Type ChParserTdpfYAML::ReadColorMapType(const YAML::Node& a) {
 }
 
 ChParserTdpfYAML::WaveType ChParserTdpfYAML::ReadWaveType(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "REGULAR")
         return WaveType::REGULAR;
     if (val == "IRREGULAR")
@@ -374,7 +374,7 @@ ChParserTdpfYAML::WaveType ChParserTdpfYAML::ReadWaveType(const YAML::Node& a) {
 
 #ifdef CHRONO_VSG
 fsi::tdpf::ChTdpfVisualizationVSG::ColorMode ChParserTdpfYAML::ReadWaveColoringMode(const YAML::Node& a) {
-    auto val = ToUpper(a.as<std::string>());
+    auto val = ChToUpper(a.as<std::string>());
     if (val == "HEIGHT")
         return fsi::tdpf::ChTdpfVisualizationVSG::ColorMode::HEIGHT;
     if (val == "VELOCITY")

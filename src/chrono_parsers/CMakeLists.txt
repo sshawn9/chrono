@@ -148,48 +148,43 @@ if(CH_USE_PYTHON)
 endif()
 source_group("" FILES ${Chrono_PARSERS_FILES} ${CV_CONFIG_FILE})
 
-set(Chrono_PARSERS_YAML_FILES
-    yaml/ChParserYAML.h
-    yaml/ChParserYAML.cpp
-    yaml/ChParserMbsYAML.h
-    yaml/ChParserMbsYAML.cpp
-)
-if(CH_ENABLE_MODULE_FSI)
-    set(Chrono_PARSERS_YAML_FILES ${Chrono_PARSERS_YAML_FILES}
-        yaml/ChParserFsiYAML.h
-        yaml/ChParserFsiYAML.cpp
-        yaml/ChParserCfdYAML.h
-        yaml/ChParserCfdYAML.cpp
+if(CHRONO_YAML_ENABLED)
+    set(Chrono_PARSERS_YAML_FILES
+        yaml/ChParserYAML.h
+        yaml/ChParserYAML.cpp
+        yaml/ChParserMbsYAML.h
+        yaml/ChParserMbsYAML.cpp
     )
-endif()
-if(CH_ENABLE_MODULE_FSI_SPH)
-    set(Chrono_PARSERS_YAML_FILES ${Chrono_PARSERS_YAML_FILES}
-        yaml/ChParserSphYAML.h
-        yaml/ChParserSphYAML.cpp
-    )
-endif()
-if(CH_ENABLE_MODULE_FSI_TDPF)
-    set(Chrono_PARSERS_YAML_FILES ${Chrono_PARSERS_YAML_FILES}
-        yaml/ChParserTdpfYAML.h
-        yaml/ChParserTdpfYAML.cpp
-    )
-endif()
-if(CH_ENABLE_MODULE_VEHICLE)
-    set(Chrono_PARSERS_YAML_FILES ${Chrono_PARSERS_YAML_FILES}
-        yaml/ChParserVehicleYAML.h
-        yaml/ChParserVehicleYAML.cpp
-    )
-endif()
-source_group("yaml" FILES ${Chrono_PARSERS_YAML_FILES})
-
-# ------------------------------------------------------------------------------
-# Chrono YAML parser
-# ------------------------------------------------------------------------------
-
-enable_YAML()
-if(NOT CHRONO_YAML_ENABLED)
-   message("WARNING: The Chrono YAML parser requires yaml-cpp. The Chrono YAML parser will NOT be built.")
-   set(Chrono_PARSERS_YAML_FILES "")
+    if(CH_ENABLE_MODULE_FSI)
+        set(Chrono_PARSERS_YAML_FILES ${Chrono_PARSERS_YAML_FILES}
+            yaml/ChParserFsiYAML.h
+            yaml/ChParserFsiYAML.cpp
+            yaml/ChParserCfdYAML.h
+            yaml/ChParserCfdYAML.cpp
+        )
+    endif()
+    if(CH_ENABLE_MODULE_FSI_SPH)
+        set(Chrono_PARSERS_YAML_FILES ${Chrono_PARSERS_YAML_FILES}
+            yaml/ChParserSphYAML.h
+            yaml/ChParserSphYAML.cpp
+        )
+    endif()
+    if(CH_ENABLE_MODULE_FSI_TDPF)
+        set(Chrono_PARSERS_YAML_FILES ${Chrono_PARSERS_YAML_FILES}
+            yaml/ChParserTdpfYAML.h
+            yaml/ChParserTdpfYAML.cpp
+        )
+    endif()
+    if(CH_ENABLE_MODULE_VEHICLE)
+        set(Chrono_PARSERS_YAML_FILES ${Chrono_PARSERS_YAML_FILES}
+            yaml/ChParserVehicleYAML.h
+            yaml/ChParserVehicleYAML.cpp
+        )
+    endif()
+    source_group("yaml" FILES ${Chrono_PARSERS_YAML_FILES})
+else()
+    message("WARNING: The Chrono YAML parser requires yaml-cpp. The Chrono YAML parser will NOT be built.")
+    set(Chrono_PARSERS_YAML_FILES "")
 endif()
 
 # ------------------------------------------------------------------------------
@@ -250,9 +245,6 @@ endif()
 target_compile_definitions(Chrono_parsers PRIVATE $<$<COMPILE_LANGUAGE:CXX>:CH_API_COMPILE_PARSERS>)
 
 target_link_libraries(Chrono_parsers PRIVATE Chrono_core)
-if(CHRONO_YAML_ENABLED)
-  target_link_libraries(Chrono_parsers PUBLIC yaml-cpp::yaml-cpp)
-endif()
 
 if(CH_ENABLE_MODULE_PARDISO_MKL)
   target_link_libraries(Chrono_parsers PRIVATE Chrono_pardisomkl)
