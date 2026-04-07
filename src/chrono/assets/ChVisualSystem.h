@@ -83,7 +83,7 @@ class ChApi ChVisualSystem {
 
     /// Add a camera to the 3D scene.
     /// Return an ID which can be used later to modify camera location and/or target points.
-    /// A concrete visualization system may or may not support multiuple cameras.
+    /// A concrete visualization system may or may not support multiple cameras.
     virtual int AddCamera(const ChVector3d& pos, ChVector3d targ = VNULL) { return -1; }
 
     /// Add a grid with specified parameters in the x-y plane of the given frame.

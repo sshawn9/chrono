@@ -1138,12 +1138,14 @@ set(Chrono_inputoutput_HEADERS
     input_output/ChCheckpointASCII.h
     input_output/ChWriterCSV.h
     input_output/ChUtilsInputOutput.h
+    input_output/ChUtilsJSON.h
 )
 set(Chrono_inputoutput_SOURCES
     input_output/ChOutputASCII.cpp
     input_output/ChCheckpointASCII.cpp
     input_output/ChWriterCSV.cpp
     input_output/ChUtilsInputOutput.cpp
+    input_output/ChUtilsJSON.cpp
 )
 if(HDF5_FOUND)
     set(Chrono_inputoutput_HEADERS ${Chrono_inputoutput_HEADERS}

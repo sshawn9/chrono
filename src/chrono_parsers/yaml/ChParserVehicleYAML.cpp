@@ -23,7 +23,7 @@
 
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/tracked_vehicle/vehicle/TrackedVehicle.h"
-#include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono_vehicle/utils/ChVehicleUtilsJSON.h"
 
 #include "chrono_parsers/yaml/ChParserVehicleYAML.h"
 
@@ -284,7 +284,7 @@ void ChParserVehicleYAML::CreateVehicle(ChSystem& sys) {
 ChParserVehicleYAML::VehicleType ChParserVehicleYAML::ReadVehicleType(const std::string& vehicle_json) {
     // Peek in vehicle JSON file and infer type
     rapidjson::Document d;
-    vehicle::ReadFileJSON(vehicle_json, d);
+    ReadFileJSON(vehicle_json, d);
     ChAssertAlways(!d.IsNull());
     ChAssertAlways(d.HasMember("Type"));
     ChAssertAlways(d.HasMember("Template"));

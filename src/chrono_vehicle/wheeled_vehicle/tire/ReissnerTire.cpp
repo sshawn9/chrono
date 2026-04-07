@@ -22,7 +22,7 @@
 #include "chrono/fea/ChLinkNodeFace.h"
 
 #include "chrono_vehicle/wheeled_vehicle/tire/ReissnerTire.h"
-#include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono_vehicle/utils/ChVehicleUtilsJSON.h"
 
 using namespace chrono::fea;
 using namespace rapidjson;
