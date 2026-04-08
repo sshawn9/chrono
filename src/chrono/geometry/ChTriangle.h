@@ -45,7 +45,7 @@ class ChApi ChTriangle : public ChGeometry {
     virtual ChAABB GetBoundingBox() const override;
 
     /// Compute center of mass.
-    virtual ChVector3d Baricenter() const override;
+    virtual ChVector3d Barycenter() const override;
 
     /// Indicate that a triangle is a 2D surface.
     virtual int GetManifoldDimension() const override { return 2; }
@@ -62,11 +62,11 @@ class ChApi ChTriangle : public ChGeometry {
     /// Given point B, computes the distance from this triangle plane,
     /// returning also the projection of point on the plane.
     double PointTriangleDistance(ChVector3d B,           ///< point to be measured
-                                 double& mu,             ///< returns U parametric coord of projection
-                                 double& mv,             ///< returns V parametric coord of projection
+                                 double& u,              ///< returns U parametric coord of projection
+                                 double& v,              ///< returns V parametric coord of projection
                                  bool& is_into,          ///< returns true if projection falls on the triangle
                                  ChVector3d& Bprojected  ///< returns the position of the projected point
-    );
+    ) const;
 
     /// Set the triangle vertices.
     void SetPoints(const ChVector3d& P1, const ChVector3d& P2, const ChVector3d& P3);

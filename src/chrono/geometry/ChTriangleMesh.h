@@ -56,7 +56,7 @@ class ChApi ChTriangleMesh : public ChGeometry {
     virtual ChAABB GetBoundingBox() const override;
 
     //// TODO
-    //// virtual ChVector3d Baricenter() const override;
+    //// virtual ChVector3d Barycenter() const override;
 
     /// This is a surface
     virtual int GetManifoldDimension() const override { return 2; }

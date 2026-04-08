@@ -316,13 +316,13 @@ void ChBodyEasyConvexHull::SetupBody(std::vector<ChVector3d>& points,
     }
 
     double mass;
-    ChVector3d baricenter;
+    ChVector3d barycenter;
     ChMatrix33<> inertia;
-    vshape->GetMesh()->ComputeMassProperties(true, mass, baricenter, inertia);
+    vshape->GetMesh()->ComputeMassProperties(true, mass, barycenter, inertia);
 
-    // Translate the convex hull baricenter so that body origin is also baricenter
+    // Translate the convex hull barycenter so that body origin is also barycenter
     for (unsigned int i = 0; i < vshape->GetMesh()->GetCoordsVertices().size(); ++i)
-        vshape->GetMesh()->GetCoordsVertices()[i] -= baricenter;
+        vshape->GetMesh()->GetCoordsVertices()[i] -= barycenter;
 
     SetMass(mass * density);
     SetInertia(inertia * density);
@@ -396,9 +396,9 @@ void ChBodyEasyConvexHullAuxRef::SetupBody(std::vector<ChVector3d>& points,
     }
 
     double mass;
-    ChVector3d baricenter;
+    ChVector3d barycenter;
     ChMatrix33<> inertia;
-    vshape->GetMesh()->ComputeMassProperties(true, mass, baricenter, inertia);
+    vshape->GetMesh()->ComputeMassProperties(true, mass, barycenter, inertia);
 
     ChMatrix33<> principal_inertia_csys;
     ChVectorN<double, 3> principal_I;
@@ -411,7 +411,7 @@ void ChBodyEasyConvexHullAuxRef::SetupBody(std::vector<ChVector3d>& points,
     SetInertiaXX(ChVector3d(principal_I) * density);
 
     // Set the COG coordinates to barycenter, without displacing the REF reference
-    SetFrameCOMToRef(ChFrame<>(baricenter, principal_inertia_csys));
+    SetFrameCOMToRef(ChFrame<>(barycenter, principal_inertia_csys));
 
     if (create_collision) {
         assert(material);
@@ -585,11 +585,11 @@ void ChBodyEasyClusterOfSpheres::SetupBody(std::vector<ChVector3d>& positions,
 
     double totmass = 0;
     ChMatrix33<> totinertia;
-    ChVector3d baricenter = VNULL;
+    ChVector3d barycenter = VNULL;
     totinertia.setZero();
     for (unsigned int i = 0; i < positions.size(); ++i) {
         double sphmass = density * (CH_4_3 * CH_PI * std::pow(radii[i], 3));
-        baricenter = (baricenter * totmass + positions[i] * sphmass) / (totmass + sphmass);
+        barycenter = (barycenter * totmass + positions[i] * sphmass) / (totmass + sphmass);
         totmass += sphmass;
     }
     for (unsigned int i = 0; i < positions.size(); ++i) {
@@ -597,7 +597,7 @@ void ChBodyEasyClusterOfSpheres::SetupBody(std::vector<ChVector3d>& positions,
         double sphinertia = (2.0 / 5.0) * sphmass * std::pow(radii[i], 2);
 
         // Huygens-Steiner parallel axis theorem:
-        ChVector3d dist = positions[i] - baricenter;
+        ChVector3d dist = positions[i] - barycenter;
         totinertia(0, 0) += sphinertia + sphmass * (dist.Length2() - dist.x() * dist.x());
         totinertia(1, 1) += sphinertia + sphmass * (dist.Length2() - dist.y() * dist.y());
         totinertia(2, 2) += sphinertia + sphmass * (dist.Length2() - dist.z() * dist.z());
@@ -612,10 +612,10 @@ void ChBodyEasyClusterOfSpheres::SetupBody(std::vector<ChVector3d>& positions,
     SetMass(totmass);
     SetInertia(totinertia);
 
-    // Translate the cluster baricenter so that body origin is also baricenter
+    // Translate the cluster barycenter so that body origin is also barycenter
     std::vector<ChVector3d> offset_positions = positions;
     for (unsigned int i = 0; i < positions.size(); ++i)
-        offset_positions[i] -= baricenter;
+        offset_positions[i] -= barycenter;
 
     if (create_collision) {
         assert(material);

@@ -56,7 +56,7 @@ ChAABB ChTriangle::GetBoundingBox() const {
     return CalcBoundingBox(p1, p2, p3);
 }
 
-ChVector3d ChTriangle::Baricenter() const {
+ChVector3d ChTriangle::Barycenter() const {
     ChVector3d mb;
     mb.x() = (p1.x() + p2.x() + p3.x()) * CH_1_3;
     mb.y() = (p1.y() + p2.y() + p3.y()) * CH_1_3;
@@ -104,12 +104,12 @@ bool ChTriangle::IsDegenerated() const {
 }
 
 double ChTriangle::PointTriangleDistance(ChVector3d B,           // point to be measured
-                                         double& mu,             // returns U parametric coord of projection
-                                         double& mv,             // returns V parametric coord of projection
+                                         double& u,              // returns U parametric coord of projection
+                                         double& v,              // returns V parametric coord of projection
                                          bool& is_into,          // returns true if projection falls on the triangle
                                          ChVector3d& Bprojected  // returns the position of the projected point
-) {
-    return utils::PointTriangleDistance(B, p1, p2, p3, mu, mv, is_into, Bprojected);
+) const {
+    return utils::PointTriangleDistance(B, p1, p2, p3, u, v, is_into, Bprojected);
 }
 
 void ChTriangle::SetPoints(const ChVector3d& P1, const ChVector3d& P2, const ChVector3d& P3) {
