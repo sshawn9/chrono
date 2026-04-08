@@ -43,14 +43,56 @@ namespace chrono {
 /// @addtogroup chrono_io
 /// @{
 
-enum class YamlDataPathType { ABS, REL };
+// -----------------------------------------------------------------------------
+
+/// Utility class for handling data paths in YAML specification files.
+class ChApi ChYamlFileHandler {
+  public:
+    /// Type of data path (absolute or relative).
+    enum class Type { ABS, REL };
+
+    /// Construct a default data path handler (with absolute path type).
+    ChYamlFileHandler();
+
+    /// Read specification of the data path handler from the given YAML node.
+    /// If the YAML node does not contain a data path specification, the default absolute path type is used.
+    /// Otherwise, the data path type and relative path (if applicable) are read from the YAML node.
+    void Read(const YAML::Node& a);
+
+    /// Set the reference directory based on the location of the given path.
+    /// - if the given path is a file, the reference directory is set to its parent directory.
+    /// - if the given path is a directory, the reference directory is set to that directory.
+    void SetReferenceDirectory(const std::string& pathname);
+
+    /// Return the data path type (absolute or relative).
+    Type GetType() const { return m_type; }
+
+    /// Return the reference directory (for relative data path type).
+    const std::string& GetReferenceDirectory() const { return m_reference_dir; }
+
+    /// Return the relative path for data files (for relative data path type).
+    const std::string& GetRelativePath() const { return m_relative_path; }
+
+    /// Return the full path for the given filename, based on the data path type and reference directory.
+    std::string GetFilename(const std::string& filename) const;
+
+    /// Print information about the data path handler.
+    void PrintInfo() const;
+
+  private:
+    /// Read the data path type (absolute or relative) from the given YAML node.
+    Type ReadType(const YAML::Node& a);
+
+    Type m_type;                  ///< data path type (absolute or relative)
+    std::string m_reference_dir;  ///< reference directory (REL data path type)
+    std::string m_relative_path;  ///< relative path for data files (REL data path type)
+};
+
+// -----------------------------------------------------------------------------
 
 /// Check the version specified in the given YAML node against the Chrono version.
 /// Throw an exception if the versions are incompatible.
 ChApi void CheckVersion(const YAML::Node& a);
-
-/// Read the data path type (absolute or relative).
-ChApi YamlDataPathType ReadDataPathType(const YAML::Node& a);
 
 /// Load and return a ChVector3d from the specified node.
 ChApi ChVector3d ReadVector(const YAML::Node& a);

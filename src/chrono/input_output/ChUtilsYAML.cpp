@@ -24,6 +24,73 @@ using std::endl;
 
 namespace chrono {
 
+// -----------------------------------------------------------------------------
+
+ChYamlFileHandler::ChYamlFileHandler() : m_type(Type::ABS), m_reference_dir(""), m_relative_path(".") {}
+
+void ChYamlFileHandler::Read(const YAML::Node& a) {
+    if (a["data_path"]) {
+        ChAssertAlways(a["data_path"]["type"]);
+        m_type = ReadType(a["data_path"]["type"]);
+        if (a["data_path"]["root"])
+            m_relative_path = a["data_path"]["root"].as<std::string>();
+        else
+            m_relative_path = ".";
+    } else {
+        m_type = Type::ABS;
+        m_relative_path = ".";
+    }
+}
+
+ChYamlFileHandler::Type ChYamlFileHandler::ReadType(const YAML::Node& a) {
+    auto type = ChToUpper(a.as<std::string>());
+    if (type == "RELATIVE")
+        return Type::REL;
+    else
+        return Type::ABS;
+}
+
+void ChYamlFileHandler::SetReferenceDirectory(const std::string& pathname) {
+    auto path = filesystem::path(pathname);
+    if (!path.exists()) {
+        cerr << "Error: path '" << pathname << "' does not exist." << endl;
+        throw std::runtime_error("Path does not exist");
+    }
+    m_reference_dir = path.is_file() ? path.parent_path().str() : pathname;
+}
+
+std::string ChYamlFileHandler::GetFilename(const std::string& filename) const {
+    std::string full_filename = "";
+    switch (m_type) {
+        case Type::ABS:
+            full_filename = filename;
+            break;
+        case Type::REL:
+            full_filename = m_reference_dir + "/" + m_relative_path + "/" + filename;
+            break;
+    }
+
+    auto filepath = filesystem::path(full_filename);
+
+    ChAssertAlways(filepath.exists());
+    ChAssertAlways(filepath.is_file());
+
+    return full_filename;
+}
+
+void ChYamlFileHandler::PrintInfo() const {
+    switch (m_type) {
+        case Type::ABS:
+            cout << "using absolute file paths" << endl;
+            break;
+        case Type::REL:
+            cout << "using file paths relative to: '" << m_reference_dir + "/" + m_relative_path << "'" << endl;
+            break;
+    }
+}
+
+// -----------------------------------------------------------------------------
+
 void CheckVersion(const YAML::Node& a) {
     std::string chrono_version = a.as<std::string>();
 
@@ -44,14 +111,6 @@ void CheckVersion(const YAML::Node& a) {
 }
 
 // -----------------------------------------------------------------------------
-
-YamlDataPathType ReadDataPathType(const YAML::Node& a) {
-    auto type = ChToUpper(a.as<std::string>());
-    if (type == "RELATIVE")
-        return YamlDataPathType::REL;
-    else
-        return YamlDataPathType::ABS;
-}
 
 ChVector3d ReadVector(const YAML::Node& a) {
     ChAssertAlways(a.IsSequence());

@@ -79,9 +79,6 @@ class ChApiParsers ChParserYAML {
     /// Read output settings from specified YAML node.
     void ReadOutputParams(const YAML::Node& a);
 
-    /// Return the path to the specified data file.
-    std::string GetDatafilePath(const std::string& filename);
-
     /// Read the YAML file type.
     static YamlFileType ReadYamlFileType(const YAML::Node& a);
 
@@ -91,12 +88,9 @@ class ChApiParsers ChParserYAML {
 
     std::string m_output_dir;               ///< root output directory
     std::shared_ptr<ChOutput> m_output_db;  ///< output database
+    OutputParameters m_output;              ///< output parameters
 
-    YamlDataPathType m_data_path;
-    std::string m_rel_path;
-    std::string m_script_directory;
-
-    OutputParameters m_output;
+    ChYamlFileHandler m_file_handler;  ///< handler for data file paths
 };
 
 /// @} parsers_module

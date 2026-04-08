@@ -30,32 +30,11 @@ namespace parsers {
 
 ChParserYAML::ChParserYAML()
     : m_name("model"),
-      m_data_path(YamlDataPathType::ABS),
-      m_rel_path("."),
       m_verbose(false),
       m_use_degrees(true),
       m_output_dir(".") {}
 
 // -----------------------------------------------------------------------------
-
-std::string ChParserYAML::GetDatafilePath(const std::string& filename) {
-    std::string full_filename = "";
-    switch (m_data_path) {
-        case YamlDataPathType::ABS:
-            full_filename = filename;
-            break;
-        case YamlDataPathType::REL:
-            full_filename = m_script_directory + "/" + m_rel_path + "/" + filename;
-            break;
-    }
-
-    auto filepath = filesystem::path(full_filename);
-
-    ChAssertAlways(filepath.exists());
-    ChAssertAlways(filepath.is_file());
-
-    return full_filename;
-}
 
 ChParserYAML::YamlFileType ChParserYAML::ReadYamlFileType(const std::string& yaml_filename) {
     auto path = filesystem::path(yaml_filename);
