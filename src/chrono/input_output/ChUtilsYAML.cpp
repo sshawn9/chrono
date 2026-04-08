@@ -185,6 +185,46 @@ ChColor ReadColor(const YAML::Node& a) {
     return ChColor(a[0].as<float>(), a[1].as<float>(), a[2].as<float>());
 }
 
+ChColormap::Type ReadColorMapType(const YAML::Node& a) {
+    auto val = ChToUpper(a.as<std::string>());
+    if (val == "BLACK_BODY")
+        return ChColormap::Type::BLACK_BODY;
+    if (val == "BLUE")
+        return ChColormap::Type::BLUE;
+    if (val == "BROWN")
+        return ChColormap::Type::BROWN;
+    if (val == "COPPER")
+        return ChColormap::Type::COPPER;
+    if (val == "FAST")
+        return ChColormap::Type::FAST;
+    if (val == "INFERNO")
+        return ChColormap::Type::INFERNO;
+    if (val == "JET")
+        return ChColormap::Type::JET;
+    if (val == "KINDLMANN")
+        return ChColormap::Type::KINDLMANN;
+    if (val == "BLACK_BODY")
+        return ChColormap::Type::BLACK_BODY;
+    if (val == "PLASMA")
+        return ChColormap::Type::PLASMA;
+    if (val == "RED_BLUE")
+        return ChColormap::Type::RED_BLUE;
+    return ChColormap::Type::JET;
+}
+
+VisualizationType ReadVisualizationType(const YAML::Node& a) {
+    auto type = ChToUpper(a.as<std::string>());
+    if (type == "NONE")
+        return VisualizationType::NONE;
+    if (type == "PRIMITIVES")
+        return VisualizationType::PRIMITIVES;
+    if (type == "MODEL_FILE")
+        return VisualizationType::MESH;
+    if (type == "COLLISION")
+        return VisualizationType::COLLISION;
+    return VisualizationType::NONE;
+}
+
 ChOutput::Type ReadOutputType(const YAML::Node& a) {
     auto type = ChToUpper(a.as<std::string>());
     if (type == "ASCII")
@@ -201,6 +241,48 @@ ChOutput::Mode ReadOutputMode(const YAML::Node& a) {
     if (mode == "FRAMES")
         return ChOutput::Mode::FRAMES;
     return ChOutput::Mode::FRAMES;
+}
+
+ChSolver::Type ReadSolverType(const YAML::Node& a) {
+    auto type = ChToUpper(a.as<std::string>());
+    if (type == "BARZILAI_BORWEIN")
+        return ChSolver::Type::BARZILAIBORWEIN;
+    if (type == "PSOR")
+        return ChSolver::Type::PSOR;
+    if (type == "APGD")
+        return ChSolver::Type::APGD;
+    if (type == "MINRES")
+        return ChSolver::Type::MINRES;
+    if (type == "GMRES")
+        return ChSolver::Type::GMRES;
+    if (type == "BICGSTAB")
+        return ChSolver::Type::BICGSTAB;
+    if (type == "PARDISO")
+        return ChSolver::Type::PARDISO_MKL;
+    if (type == "MUMPS")
+        return ChSolver::Type::MUMPS;
+    if (type == "SPARSE_LU")
+        return ChSolver::Type::SPARSE_LU;
+    if (type == "SPARSE_QR")
+        return ChSolver::Type::SPARSE_QR;
+
+    cerr << "Unknown solver type: " << a.as<std::string>() << endl;
+    throw std::runtime_error("Invalid solver type");
+}
+
+ChTimestepper::Type ReadIntegratorType(const YAML::Node& a) {
+    auto type = ChToUpper(a.as<std::string>());
+    if (type == "EULER_IMPLICIT_LINEARIZED")
+        return ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED;
+    if (type == "EULER_IMPLICIT_PROJECTED")
+        return ChTimestepper::Type::EULER_IMPLICIT_PROJECTED;
+    if (type == "EULER_IMPLICIT")
+        return ChTimestepper::Type::EULER_IMPLICIT;
+    if (type == "HHT")
+        return ChTimestepper::Type::HHT;
+
+    cerr << "Unknown integrator type: " << a.as<std::string>() << endl;
+    throw std::runtime_error("Invalid integrator type");
 }
 
 // -----------------------------------------------------------------------------

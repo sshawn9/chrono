@@ -28,8 +28,12 @@
 #include "chrono/core/ChApiCE.h"
 #include "chrono/core/ChCoordsys.h"
 #include "chrono/assets/ChColor.h"
+#include "chrono/assets/ChColormap.h"
 #include "chrono/input_output/ChOutput.h"
 #include "chrono/utils/ChUtils.h"
+#include "chrono/utils/ChBodyGeometry.h"
+#include "chrono/solver/ChSolver.h"
+#include "chrono/timestepper/ChTimestepper.h"
 
 #include "chrono_thirdparty/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "chrono_thirdparty/filesystem/path.h"
@@ -71,8 +75,23 @@ ChApi std::shared_ptr<ChFunction> ReadFunction(const YAML::Node& a, bool use_deg
 /// Load and return a ChColor from the specified node.
 ChApi ChColor ReadColor(const YAML::Node& a);
 
+/// Load and return a ChColor from the specified node.
+ChApi ChColormap::Type ReadColorMapType(const YAML::Node& a);
+
+/// Load and return a VisualizationType from the specified node.
+ChApi VisualizationType ReadVisualizationType(const YAML::Node& a);
+
+/// Load and return the output type from the specified node.
 ChApi ChOutput::Type ReadOutputType(const YAML::Node& a);
+
+/// Load and return the output mode from the specified node.
 ChApi ChOutput::Mode ReadOutputMode(const YAML::Node& a);
+
+/// Load and return the solver type from the specified node.
+ChApi ChSolver::Type ReadSolverType(const YAML::Node& a);
+
+/// Load and return the integrator type from the specified node.
+ChApi ChTimestepper::Type ReadIntegratorType(const YAML::Node& a);
 
 /// Print YAML node type.
 ChApi void PrintNodeType(const YAML::Node& node);
