@@ -55,7 +55,7 @@ void ChIrrNodeShape::Update() {
     }
 
     if (auto trianglemesh = std::dynamic_pointer_cast<ChVisualShapeTriangleMesh>(m_shape)) {
-        if (trianglemesh->FixedConnectivity())
+        if (trianglemesh->IsFixedConnectivity())
             UpdateTriangleMeshFixedConnectivity(trianglemesh);
         else
             UpdateTriangleMesh(trianglemesh);

@@ -92,7 +92,7 @@ class ChApi ChVisualShape {
     std::vector<std::shared_ptr<ChVisualMaterial>>& GetMaterials() { return material_list; }
 
     /// Get the specified material in the list.
-    std::shared_ptr<ChVisualMaterial> GetMaterial(int i) { return material_list[i]; }
+    std::shared_ptr<ChVisualMaterial> GetMaterial(int i) const { return material_list[i]; }
 
     /// Get the number of visualization materials.
     unsigned int GetNumMaterials() const { return (unsigned int)material_list.size(); }
