@@ -254,8 +254,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddCamera(ChVector3d(-2, 3, -4));
     vis->AddTypicalLights();
-    vis->AddGrid(0.5, 0.5, 12, 12, ChCoordsys<>(ChVector3d(0, -0.5, 0), QuatFromAngleX(CH_PI_2)),
-                 ChColor(0.31f, 0.43f, 0.43f));
+    vis->AddGrid(0.5, 0.5, 12, 12, ChCoordsys<>(ChVector3d(0, -0.5, 0), QuatFromAngleX(CH_PI_2)), ChColor(0.31f, 0.43f, 0.43f));
 
     // Rendering loop
     while (vis->Run()) {

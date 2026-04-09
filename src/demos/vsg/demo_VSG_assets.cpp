@@ -307,8 +307,7 @@ int main(int argc, char* argv[]) {
     vis->SetCameraAngleDeg(40);
     vis->SetLightIntensity(1.0f);
     vis->SetLightDirection(azimuth, elevation);
-    vis->AddGrid(0.5, 0.5, 12, 12, ChCoordsys<>(ChVector3d(0, -0.49, 0), QuatFromAngleX(CH_PI_2)),
-                 ChColor(0.31f, 0.43f, 0.43f));
+    vis->AddGrid(0.5, 0.5, 12, 12, ChCoordsys<>(ChVector3d(0, -0.49, 0), QuatFromAngleX(CH_PI_2)), ChColor(0.31f, 0.43f, 0.43f));
 
     // add scenery objects, not bound to bodies
     auto Zup = QuatFromAngleX(-CH_PI_2);

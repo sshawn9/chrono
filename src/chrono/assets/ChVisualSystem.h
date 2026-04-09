@@ -87,12 +87,12 @@ class ChApi ChVisualSystem {
     virtual int AddCamera(const ChVector3d& pos, ChVector3d targ = VNULL) { return -1; }
 
     /// Add a grid with specified parameters in the x-y plane of the given frame.
-    virtual void AddGrid(double x_step,                           ///< grid cell size in X direction
-                         double y_step,                           ///< grid cell size in Y direction
-                         int nx,                                  ///< number of cells in X direction
-                         int ny,                                  ///< number of cells in Y direction
-                         ChCoordsys<> pos = CSYSNORM,             ///< grid reference frame
-                         ChColor col = ChColor(0.1f, 0.1f, 0.1f)  ///< grid line color
+    virtual void AddGrid(double x_step,     ///< spacing in x direction
+                         double y_step,     ///< spacing in y direction
+                         int nx,            ///< number of divisions in x direction
+                         int ny,            ///< number of divisions in y direction
+                         ChCoordsys<> pos,  ///< grid reference frame
+                         ChColor col        ///< grid line color
     ) {}
 
     /// Set window background color.

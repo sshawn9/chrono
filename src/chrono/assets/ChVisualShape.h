@@ -14,7 +14,6 @@
 #define CH_VISUAL_SHAPE_H
 
 #include "chrono/core/ChFrame.h"
-#include "chrono/core/ChFrame.h"
 
 #include "chrono/geometry/ChGeometry.h"
 
