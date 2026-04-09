@@ -17,7 +17,6 @@
 #include <BRepTools.hxx>
 #include <Poly.hxx>
 #include <TopExp_Explorer.hxx>
-#include <TopoDS.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 
 namespace chrono {

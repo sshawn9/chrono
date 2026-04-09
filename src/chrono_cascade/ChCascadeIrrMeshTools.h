@@ -19,6 +19,7 @@
 
 #include "chrono_cascade/ChCascadeDoc.h"
 #include "chrono_cascade/ChCascadeMeshTools.h"
+#include <TopoDS.hxx>
 
 namespace chrono {
 namespace cascade {
