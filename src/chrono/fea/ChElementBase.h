@@ -104,6 +104,10 @@ class ChApi ChElementBase {
     ///   R += forces * c
     virtual void EleIntLoadResidual_F(ChVectorDynamic<>& R, const double c) {}
 
+    /// For a given finite element, computes updates at the end of a time step. This may happen less
+    /// frequently than a full Update. Ex. useful for plasticity, etc.
+    virtual void ElementUpdateEndStep(double time) {}
+
     /// Add the product of element mass M by a vector w (pasted at global nodes offsets) into
     /// a global vector R, multiplied by a scaling factor c, as
     ///   R += M * w * c

@@ -218,6 +218,7 @@ class ChApi ChMesh : public ChIndexedNodes {
                                       const ChState& x,
                                       const unsigned int off_v,
                                       ChStateDelta& Dv) override;
+    virtual void IntStateOnEndStep(double T) override;
     virtual void IntLoadResidual_F(const unsigned int off, ChVectorDynamic<>& R, const double c) override;
     virtual void IntLoadResidual_Mv(const unsigned int off,
                                     ChVectorDynamic<>& R,
