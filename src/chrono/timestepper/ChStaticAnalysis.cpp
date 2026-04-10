@@ -74,6 +74,7 @@ void ChStaticLinearAnalysis::StaticAnalysis() {
 
     integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
     integrable->StateScatterReactions(L);                        // -> system auxiliary data
+    integrable->StateOnEndStep(T);                               // finalize step, ex. for plasticity etc.
 }
 
 // -----------------------------------------------------------------------------
@@ -206,10 +207,12 @@ void ChStaticNonLinearAnalysis::StaticAnalysis() {
 
         integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
         integrable->StateScatterReactions(L);                        // -> system auxiliary data
+        integrable->StateOnEndStep(T);                               // finalize step, ex. for plasticity etc.
     }
 
     integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
     integrable->StateScatterReactions(L);                        // -> system auxiliary data
+    integrable->StateOnEndStep(T);                               // finalize step, ex. for plasticity etc.
 }
 
 void ChStaticNonLinearAnalysis::SetCorrectionTolerance(double reltol, double abstol) {
@@ -532,6 +535,7 @@ void ChStaticNonLinearRheonomicAnalysis::StaticAnalysis() {
 
     integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
     integrable->StateScatterReactions(L);                        // -> system auxiliary data
+    integrable->StateOnEndStep(T);                               // finalize step, ex. for plasticity etc.
 }
 
 void ChStaticNonLinearRheonomicAnalysis::SetCorrectionTolerance(double reltol, double abstol) {
@@ -741,10 +745,12 @@ void ChStaticNonLinearAnalysisIncremental::StaticAnalysis() {
 
         }  // end inner loop for Newton iteration
 
+        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
+        integrable->StateScatterReactions(L);                        // -> system auxiliary data
+        integrable->StateOnEndStep(T);  // finalize step, ex. for plasticity etc.
+
     }  // end outer loop incrementing external loads
 
-    integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
-    integrable->StateScatterReactions(L);                        // -> system auxiliary data
 }
 
 void ChStaticNonLinearAnalysisIncremental::SetCorrectionTolerance(double reltol, double abstol) {
