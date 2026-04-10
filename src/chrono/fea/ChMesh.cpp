@@ -280,7 +280,7 @@ void ChMesh::IntStateGetIncrement(const unsigned int off_x,
 
 void ChMesh::IntStateOnEndStep(double T) {
     for (int ie = 0; ie < velements.size(); ie++) {
-        velements[ie]->EleIntStateOnEndStep(double T);
+        velements[ie]->ElementUpdateEndStep(T);
     }
 }
 

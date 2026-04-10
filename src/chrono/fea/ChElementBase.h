@@ -97,6 +97,9 @@ class ChApi ChElementBase {
     // Functions for interfacing to the state bookkeeping
 
     /// This is optionally implemented if there is some internal state that requires integration.
+    /// Note: this will be called at each IntStateIncrement(), that can happen more frequently
+    /// than at each time step (ex. in implicit solvers). If you rather need to integrate some inner
+    /// state only at the end of each time step, rather implement  ElementUpdateEndStep()
     virtual void EleDoIntegration() {}
 
     /// Add the internal forces (pasted at global nodes offsets) into
@@ -105,7 +108,8 @@ class ChApi ChElementBase {
     virtual void EleIntLoadResidual_F(ChVectorDynamic<>& R, const double c) {}
 
     /// For a given finite element, computes updates at the end of a time step. This may happen less
-    /// frequently than a full Update. Ex. useful for plasticity, etc.
+    /// frequently than a full Update. Ex. useful if you have some custom per-element inner states 
+    /// like plastic flow, etc.
     virtual void ElementUpdateEndStep(double time) {}
 
     /// Add the product of element mass M by a vector w (pasted at global nodes offsets) into
