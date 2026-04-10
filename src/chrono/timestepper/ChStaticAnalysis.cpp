@@ -133,7 +133,7 @@ void ChStaticNonLinearAnalysis::StaticAnalysis() {
     //      [ Cq         0   ] [-Dl  ] = [-C ]
 
     for (int i = 0; i < m_maxiters; ++i) {
-        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
+        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL_NO_VISUAL);  // state -> system
         R.setZero();
         Qc.setZero();
         integrable->LoadResidual_F(R, 1.0);
@@ -205,7 +205,7 @@ void ChStaticNonLinearAnalysis::StaticAnalysis() {
 
         X = Xnew;
 
-        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
+        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL_NO_VISUAL);  // state -> system
         integrable->StateScatterReactions(L);                        // -> system auxiliary data
         integrable->StateOnEndStep(T);                               // finalize step, ex. for plasticity etc.
     }
@@ -291,7 +291,7 @@ void ChStaticNonLinearRheonomicAnalysis::StaticAnalysis() {
     // Use Newton Raphson iteration
 
     for (int i = 0; i < m_maxiters; ++i) {
-        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
+        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL_NO_VISUAL);  // state -> system
 
         // Update nonzero speeds and accelerations, if any, calling
         // the iteration callback, if any:
@@ -529,7 +529,7 @@ void ChStaticNonLinearRheonomicAnalysis::StaticAnalysis() {
         std::cout << "V_last=\n"<< V << std::endl;
         */
 
-        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
+        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL_NO_VISUAL);  // state -> system
         integrable->StateScatterAcceleration(A);
     }
 
@@ -644,7 +644,7 @@ void ChStaticNonLinearAnalysisIncremental::StaticAnalysis() {
         double R_norm_old = 0;
 
         for (int i = 0; i < max_newton_iters; ++i) {
-            integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
+            integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL_NO_VISUAL);  // state -> system
             R.setZero();
             Qc.setZero();
             integrable->LoadResidual_F(R, 1.0);       // put the F term in RHS  (where F = F_in + scaled_F_ext )
