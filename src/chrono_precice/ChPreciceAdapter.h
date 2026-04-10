@@ -1,0 +1,216 @@
+// =============================================================================
+// PROJECT CHRONO - http://projectchrono.org
+//
+// Copyright (c) 2026 projectchrono.org
+// All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be found
+// in the LICENSE file at the top level of the distribution and at
+// http://projectchrono.org/license-chrono.txt.
+//
+// =============================================================================
+// Authors: Radu Serban
+// =============================================================================
+
+#ifndef CH_PRECICE_ADAPTER_H
+#define CH_PRECICE_ADAPTER_H
+
+#include <string>
+#include <map>
+
+#include "chrono_precice/ChApiPrecice.h"
+
+#include "chrono/ChConfig.h"
+#include "chrono/ChVersion.h"
+#include "chrono/core/ChVector2.h"
+#include "chrono/core/ChVector3.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
+
+#include <precice/precice.hpp>
+
+namespace chrono {
+namespace ch_precice {
+
+/// @addtogroup precice_module
+/// @{
+
+/// Base class for all preCICE adapters.
+class ChApiPrecice ChPreciceAdapter {
+  public:
+    virtual ~ChPreciceAdapter() {}
+
+    ChPreciceAdapter(const ChPreciceAdapter&) = delete;
+    void operator=(const ChPreciceAdapter&) = delete;
+
+    // ---- preCICE participant specification
+
+    /// Get an instance of the preCICE adapter.
+    static ChPreciceAdapter& GetInstance();
+
+#ifdef CHRONO_HAS_YAML
+    /// Get the participant name from the specified YAML input file.
+    static std::string GetParticipantName(const std::string& input_filename);
+
+    /// Register the Chrono solver and its mesh interfaces for use with preCICE, using the specified input file.
+    /// The YAML input file must have a group named "precice_adapter_config" with the following parameters:
+    /// - participant_name:        name of the participant or solver
+    /// - precice_config_filename: path and file name to preCICE configuration file
+    /// - interfaces:              list of interfaces, each with the following parameters:
+    ///    - mesh_name:  name of the coupling mesh
+    ///    - read_data:  data to read from preCICE on this mesh
+    ///    - write_data: data to write to preCICE on this mesh
+    void RegisterSolver(const std::string& input_filename, int rank, int size);
+#endif
+
+    /// Register the Chrono solver for use with preCICE, using the specified configuration file and MPI rank/size.
+    void RegisterSolver(const std::string& participant_name, const std::string& precice_config_filename, int rank, int size);
+
+    /// Register the coupling mesh and data names for use with preCICE, using the specified mesh name and lists of data names for writing and reading.
+    void RegisterMeshInterface(const std::string& mesh_name, const std::vector<std::string>& data_write_names, const std::vector<std::string>& data_read_names);
+
+    // ---- Mesh specification
+
+    /// Add 2D vertices for solver coupling to the mesh with specified name.
+    /// With the mesh size, the data maps inside the adapter initialize the relevant data vector to size of mesh_size*data_dimension.
+    void SetMesh(const std::string& mesh_name, const std::vector<ChVector2d>& positions);
+
+    /// Add 3D vertices for solver coupling to the mesh with specified name.
+    /// With the mesh size, the data maps inside the adapter initialize the relevant data vector to size of mesh_size*data_dimension.
+    void SetMesh(const std::string& mesh_name, const std::vector<ChVector3d>& positions);
+
+    /// Add vertices for solver coupling to the mesh with specified name.
+    /// This method can be used for both 2D and 3D meshes by providing the appropriate positions vector.
+    /// The positions vector is expected to be in the format:
+    /// - (x0, y0, x1, y1, ...) for 2D meshes, and
+    /// - (x0, y0, z0, x1, y1, z1, ...) for 3D meshes.
+    /// With the mesh size, the data maps inside the adapter initialize the relevant data vector to size of mesh_size*data_dimension.
+    /// - scalar data (declared with <data:scalar ...>) has data_dimension = 1; e.g., temperature, pressure, etc.
+    /// - vector data (declared with <data:vector ...>) has data_dimension equal to the mesh dimension; e.g., velocity, displacement, etc.
+    void SetMesh(const std::string& mesh_name, const std::vector<double>& positions);
+
+    // ---- Accessor functions
+
+    /// Get the number of spatial dimensions for the mesh with the specified name.
+    int GetMeshDimensions(const std::string& mesh_name) const;
+
+    /// Get the data dimensions for the data with the specified name on the mesh with the specified name.
+    int GetDataDimensions(const std::string& mesh_name, const std::string& data_name) const;
+
+    /// Get the maximum time step size from preCICE.
+    double GetMaxTimeStepSize() const;
+
+    /// Get the participant name from config
+    const std::string& GetParticipantName() const;
+
+    /// Get the coupled mesh names on this participant.
+    std::vector<std::string> GetMeshNames() const;
+
+    /// Get the data names for reading on the mesh with specified name.
+    std::vector<std::string> GetReadDataNamesOnMesh(const std::string& mesh_name) const;
+
+    /// Get the data names for writing on the mesh with specified name.
+    std::vector<std::string> GetWriteDataNamesOnMesh(const std::string& mesh_name) const;
+
+    /// Get the number of vertices on the coupling interface.
+    size_t GetNumVertices() const;
+
+    // ---- Checkpointing
+
+    /// Write the solver state to a checkpoint if required by preCICE.
+    bool WriteCheckpointIfRequired();
+
+    // Let the derived class implement the actual checkpoint writing if required by preCICE.
+    /// The default implementation does nothing.
+    virtual void WriteCheckpoint() {}
+
+    /// Read the solver state from a checkpoint if required by preCICE.
+    bool ReadCheckpointIfRequired();
+
+    /// Let the derived class implement the actual checkpoint reading if required by preCICE.
+    /// The default implementation does nothing.
+    virtual void ReadCheckpoint() {}
+
+    // ---- Initialization and shutdown
+
+    /// Check if the participant is required to provide initial data.
+    /// If true, the participant needs to write initial data to defined vertices prior to calling Initialize().
+    bool MustWriteInitialData();
+
+    /// Initialize the coupling after all quantities / datasets and coupling meshes are known.
+    void Initialize();
+
+    /// Finalize (destroy) the coupling.
+    void Finalize();
+
+    // ---- Data exchange
+
+    // Set the (write) data vector for the specified mesh and data names.
+    void SetData(const std::string& mesh_name, const std::string& data_name, const std::vector<double>& data);
+
+    /// Write (send) a block of data to preCICE.
+    void WriteDataBlock(const std::string& mesh_name, const std::string& data_name);
+
+    /// Set and write (send) a block of data to preCICE.
+    /// This is a convenience function that combines SetData and WriteDataBlock into a single call.
+    void WriteDataBlock(const std::string& mesh_name, const std::string& data_name, const std::vector<double>& data);
+
+    /// Read (receive) a block of data from preCICE.
+    void ReadDataBlock(const std::string& mesh_name, const std::string& data_name, double relative_read_time);
+
+    /// Get the (read) data vector for the specified mesh and data names.
+    const std::vector<double>& GetData(const std::string& mesh_name, const std::string& data_name) const;
+
+    /// Read (receive) a block of data from preCICE and return the data vector.
+    /// This is a convenience function that combines ReadDataBlock and GetData into a single call.
+    /// It is assumed that the data is always read at the beginning of the time step (relative_read_time = 0).
+    const std::vector<double>& ReadDataBlock(const std::string& mesh_name, const std::string& data_name);
+
+    // ---- Simulation control
+
+    /// Advance the coupling by the given time step.
+    void Advance(const double computed_time_step);
+
+    /// Check if coupling is ongoing.
+    bool IsCouplingOngoing();
+
+    /// Check if the time window has completed.
+    bool IsTimeWindowComplete();
+
+    // ---- Utility functions
+
+    /// Convert a vector of ChVector2d to a vector of doubles in the format (x0, y0, x1, y1, ...).
+    static std::vector<double> SetVerticesToData(const std::vector<ChVector2d>& vertices);
+
+    /// Convert a vector of ChVector3d to a vector of doubles in the format (x0, y0, z0, x1, y1, z1, ...).
+    static std::vector<double> SetVerticesToData(const std::vector<ChVector3d>& vertices);
+
+  protected:
+    /// Definition of data structure to hold coupling data for a particular mesh/data name pair.
+    /// The key is the pair of mesh name and data name, and the value is the vector of data values for that mesh/data pair.
+    /// The dimension of the data vector is determined by the number of vertices on the coupling mesh and the data dimension for that mesh/data pair.
+    using MeshData = std::map<std::pair<std::string, std::string>, std::vector<double>>;
+
+    ChPreciceAdapter();
+
+    std::unique_ptr<precice::Participant> m_participant;  ///< preCICE instance
+    std::string m_precice_config_filename;                ///< preCICE configuration file name and path
+    std::string m_participant_name;                       ///< name of the participant (solver)
+
+    MeshData m_data_read;   ///< data read from preCICE (for a particular interface; i.e., mesh/data name pair)
+    MeshData m_data_write;  ///< data to write to preCICE (for a particular interface; i.e., mesh/data name pair)
+
+    std::vector<int> m_vertex_ids;  ///< preCICE identifiers of the vertices of the coupling mesh
+
+    bool m_created;             ///< true if the preCICE participant was created
+    bool m_interfaces_created;  ///< true if the data interfaces were created
+    bool m_mesh_created;        ///< true if the coupling mesh was created
+    bool m_initialized;         ///< true if preCICE participant was initialized
+};
+
+/// @} precice_module
+
+}  // end namespace ch_precice
+}  // namespace chrono
+
+#endif
