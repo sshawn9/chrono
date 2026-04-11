@@ -1,0 +1,14 @@
+precice_adapter_config:
+    data_path:
+      type: RELATIVE
+      root: "."
+
+    participant_name: Solver1
+    precice_config_filename: test.xml
+
+    interfaces:
+    - mesh_name: Mesh1
+      write_data:
+      - name: data1
+      read_data:
+      - name: data2
