@@ -38,10 +38,13 @@ namespace ch_precice {
 /// Base class for all preCICE adapters.
 class ChApiPrecice ChPreciceAdapter {
   public:
+    ChPreciceAdapter();
     virtual ~ChPreciceAdapter() {}
 
     ChPreciceAdapter(const ChPreciceAdapter&) = delete;
     void operator=(const ChPreciceAdapter&) = delete;
+
+    void SetVerbose(bool verbose) { m_verbose = verbose; }
 
     // ---- preCICE participant specification
 
@@ -94,6 +97,9 @@ class ChApiPrecice ChPreciceAdapter {
     /// Get the number of spatial dimensions for the mesh with the specified name.
     int GetMeshDimensions(const std::string& mesh_name) const;
 
+    /// Get the number of vertices for the mesh with the specified name.
+    size_t GetNumVertices(const std::string& mesh_name);
+
     /// Get the data dimensions for the data with the specified name on the mesh with the specified name.
     int GetDataDimensions(const std::string& mesh_name, const std::string& data_name) const;
 
@@ -112,24 +118,17 @@ class ChApiPrecice ChPreciceAdapter {
     /// Get the data names for writing on the mesh with specified name.
     std::vector<std::string> GetWriteDataNamesOnMesh(const std::string& mesh_name) const;
 
-    /// Get the number of vertices on the coupling interface.
-    size_t GetNumVertices() const;
-
     // ---- Checkpointing
 
     /// Write the solver state to a checkpoint if required by preCICE.
-    bool WriteCheckpointIfRequired();
-
-    // Let the derived class implement the actual checkpoint writing if required by preCICE.
-    /// The default implementation does nothing.
-    virtual void WriteCheckpoint() {}
+    /// If requested by preCISE, this function invokes the solver-specific checkpoint writing function.
+    /// The return value indicates whether a checkpoint was written.
+    bool WriteCheckpointIfRequired(double time);
 
     /// Read the solver state from a checkpoint if required by preCICE.
-    bool ReadCheckpointIfRequired();
-
-    /// Let the derived class implement the actual checkpoint reading if required by preCICE.
-    /// The default implementation does nothing.
-    virtual void ReadCheckpoint() {}
+    /// If requested by preCISE, this function invokes the solver-specific checkpoint reading function.
+    /// The return value indicates whether a checkpoint was read.
+    bool ReadCheckpointIfRequired(double time);
 
     // ---- Initialization and shutdown
 
@@ -138,38 +137,53 @@ class ChApiPrecice ChPreciceAdapter {
     bool MustWriteInitialData();
 
     /// Initialize the coupling after all quantities / datasets and coupling meshes are known.
-    void Initialize();
+    void InitializeCoupling();
 
     /// Finalize (destroy) the coupling.
-    void Finalize();
+    void FinalizeCoupling();
 
     // ---- Data exchange
 
     // Set the (write) data vector for the specified mesh and data names.
-    void SetData(const std::string& mesh_name, const std::string& data_name, const std::vector<double>& data);
+    void SetDataBlock(const std::string& mesh_name, const std::string& data_name, const std::vector<double>& data);
 
     /// Write (send) a block of data to preCICE.
     void WriteDataBlock(const std::string& mesh_name, const std::string& data_name);
 
     /// Set and write (send) a block of data to preCICE.
-    /// This is a convenience function that combines SetData and WriteDataBlock into a single call.
+    /// This is a convenience function that combines SetDataBlock and WriteDataBlock into a single call.
     void WriteDataBlock(const std::string& mesh_name, const std::string& data_name, const std::vector<double>& data);
 
     /// Read (receive) a block of data from preCICE.
     void ReadDataBlock(const std::string& mesh_name, const std::string& data_name, double relative_read_time);
 
     /// Get the (read) data vector for the specified mesh and data names.
-    const std::vector<double>& GetData(const std::string& mesh_name, const std::string& data_name) const;
+    const std::vector<double>& GetDataBlock(const std::string& mesh_name, const std::string& data_name) const;
 
     /// Read (receive) a block of data from preCICE and return the data vector.
-    /// This is a convenience function that combines ReadDataBlock and GetData into a single call.
+    /// This is a convenience function that combines ReadDataBlock and GetDataBlock into a single call.
     /// It is assumed that the data is always read at the beginning of the time step (relative_read_time = 0).
     const std::vector<double>& ReadDataBlock(const std::string& mesh_name, const std::string& data_name);
 
     // ---- Simulation control
 
+    /// Wrapper function for initializing the coupled simulation for this participant.
+    /// The participant initializes the output data (if needed), after which the coupling is initialized.
+    void InitializeSimulation();
+
+    /// Wrapper function for performing the simulation loop.
+    /// While coupling is on-going, at each iteration, the participant:
+    /// - writes a checkpoint if requested
+    /// - agrees on the simulation time step size
+    /// - reads data
+    /// - advances the underlying solver dynamics
+    /// - writes data
+    /// - advances the preCICE coupling
+    /// - reads a checkpoint if requested, otherwise advances time
+    void SimulationLoop();
+
     /// Advance the coupling by the given time step.
-    void Advance(const double computed_time_step);
+    void AdvanceCoupling(double time_step);
 
     /// Check if coupling is ongoing.
     bool IsCouplingOngoing();
@@ -186,12 +200,48 @@ class ChApiPrecice ChPreciceAdapter {
     static std::vector<double> SetVerticesToData(const std::vector<ChVector3d>& vertices);
 
   protected:
+    // ---- Solver-specific functions to be implemented by derived classes
+
+    /// Let the derived class implement the actual checkpoint writing if required by preCICE.
+    virtual void WriteCheckpoint(double time);
+
+    /// Let the derived class implement the actual checkpoint reading if required by preCICE.
+    /// The solver from a derived class must restore its state at the values in the last saved checkpoint and, if needed, reset its internal time to the provided value.
+    virtual void ReadCheckpoint(double time);
+
+    /// Read data from other solvers.
+    /// A derived class must:
+    /// - call ReadDataBlock() for all its interfaces,
+    /// - obtain the read data with calls to GetDataBlock(), and
+    /// - perform any necessary processing on the received data.
+    /// A convenience version of ReadDataBlock() that combines the first 2 steps for a given read interface (mesh/data name pair) is available.
+    virtual void ReadData();
+
+    /// Let the derived class implement the actual computation of the solver time step based on the maximum time step provided by preCICE.
+    /// The default implementation simply returns the maximum time step provided by preCICE, but derived classes can override this to implement custom time-stepping logic.
+    virtual double GetSolverTimeStep(double max_time_step) const { return max_time_step; }
+
+    /// Let the derived class implement the actual solver time-stepping by the given time step.
+    virtual void AdvanceSolver(double time, double time_step);
+
+    /// Write data for other solvers.
+    /// A derived class must:
+    /// - prepare the data to be sent,
+    /// - set the data for all its interfaces with calls to SetDataBlock(), and
+    /// - finally call WriteDataBlock().
+    /// A convenience version of WriteDataBlock() that combines the last 2 steps for a given write interface (mesh/data name pair) is available.
+    virtual void WriteData();
+
+    // ---- Member variables
+
     /// Definition of data structure to hold coupling data for a particular mesh/data name pair.
     /// The key is the pair of mesh name and data name, and the value is the vector of data values for that mesh/data pair.
     /// The dimension of the data vector is determined by the number of vertices on the coupling mesh and the data dimension for that mesh/data pair.
     using MeshData = std::map<std::pair<std::string, std::string>, std::vector<double>>;
 
-    ChPreciceAdapter();
+    /// Definition of data structure to hold vertex IDs for a particular mesh.
+    /// The key is the mesh name and the value is the vector of preCICE vertex IDs.
+    using VertexIDs = std::map<std::string, std::vector<int>>;
 
     std::unique_ptr<precice::Participant> m_participant;  ///< preCICE instance
     std::string m_precice_config_filename;                ///< preCICE configuration file name and path
@@ -200,12 +250,17 @@ class ChApiPrecice ChPreciceAdapter {
     MeshData m_data_read;   ///< data read from preCICE (for a particular interface; i.e., mesh/data name pair)
     MeshData m_data_write;  ///< data to write to preCICE (for a particular interface; i.e., mesh/data name pair)
 
-    std::vector<int> m_vertex_ids;  ///< preCICE identifiers of the vertices of the coupling mesh
+    ////std::vector<int> m_vertex_ids;  ///< preCICE identifiers of the vertices of the coupling mesh
+    VertexIDs m_vertex_ids;  ///< preCICE identifiers of the mesh vertices (for a particular mesh name)
 
     bool m_created;             ///< true if the preCICE participant was created
     bool m_interfaces_created;  ///< true if the data interfaces were created
     bool m_mesh_created;        ///< true if the coupling mesh was created
     bool m_initialized;         ///< true if preCICE participant was initialized
+
+    bool m_verbose;         ///< verbose terminal output
+    std::string m_prefix1;  ///< prefix for terminal messages (first line)
+    std::string m_prefix2;  ///< prefix for terminal messages (subsequent lines)
 };
 
 /// @} precice_module
