@@ -42,17 +42,13 @@ using namespace chrono;
 int main(int argc, char* argv[]) {
     std::cout << "=== Transparency + Shadow Demo ===" << std::endl;
 
-    // Chrono data path (fonts, shaders, etc.)
-    SetChronoDataPath(CHRONO_DATA_DIR);
-
     // Physics system
     ChSystemNSC sys;
     sys.SetGravitationalAcceleration(ChVector3d(0, 0, -9.81));
 
     // Ground plane (fixed, opaque gray)
-    auto ground = chrono_types::make_shared<ChBodyEasyBox>(
-        12.0, 12.0, 0.1,   // large flat slab
-        1000, true, false);
+    auto ground = chrono_types::make_shared<ChBodyEasyBox>(12.0, 12.0, 0.1,  // large flat slab
+                                                           1000, true, false);
     ground->SetFixed(true);
     ground->SetPos(ChVector3d(0, 0, -0.05));
     {
@@ -64,8 +60,7 @@ int main(int argc, char* argv[]) {
     sys.AddBody(ground);
 
     // Opaque red box
-    auto opaqueBox = chrono_types::make_shared<ChBodyEasyBox>(
-        1.0, 1.0, 1.2, 500, true, false);
+    auto opaqueBox = chrono_types::make_shared<ChBodyEasyBox>(1.0, 1.0, 1.2, 500, true, false);
     opaqueBox->SetFixed(true);
     opaqueBox->SetPos(ChVector3d(-2.0, 0, 0.6));
     {
@@ -77,22 +72,19 @@ int main(int argc, char* argv[]) {
     sys.AddBody(opaqueBox);
 
     // Transparent blue sphere
-    auto transSphere = chrono_types::make_shared<ChBodyEasySphere>(
-        0.5, 500, true, false);
+    auto transSphere = chrono_types::make_shared<ChBodyEasySphere>(0.5, 500, true, false);
     transSphere->SetFixed(true);
     transSphere->SetPos(ChVector3d(0, 0, 1.0));
     {
         auto mat = chrono_types::make_shared<ChVisualMaterial>();
         mat->SetDiffuseColor({0.2f, 0.4f, 0.9f});
-        mat->SetOpacity(0.35f);   // 35% opaque -- clearly transparent
+        mat->SetOpacity(0.35f);  // 35% opaque -- clearly transparent
         transSphere->GetVisualShape(0)->SetMaterial(0, mat);
     }
     sys.AddBody(transSphere);
 
     // Opaque green cylinder (reference)
-    auto opaqueCyl = chrono_types::make_shared<ChBodyEasyCylinder>(
-        chrono::ChAxis::Z,
-        0.4, 1.5, 500, true, false);
+    auto opaqueCyl = chrono_types::make_shared<ChBodyEasyCylinder>(chrono::ChAxis::Z, 0.4, 1.5, 500, true, false);
     opaqueCyl->SetFixed(true);
     opaqueCyl->SetPos(ChVector3d(2.0, 0, 0.75));
     {
@@ -117,7 +109,7 @@ int main(int argc, char* argv[]) {
     vis->EnableShadows(true);
 
     // Light direction: low angle to cast long visible shadows
-    vis->SetLightDirection(1.2, 0.5);   // azimuth ~70deg, elevation ~30deg
+    vis->SetLightDirection(1.2, 0.5);  // azimuth ~70deg, elevation ~30deg
     vis->SetLightIntensity(0.9f);
 
     vis->Initialize();
