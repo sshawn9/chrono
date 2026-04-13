@@ -635,6 +635,12 @@ class ChApi ChSystem : public ChIntegrableIIorder {
     /// call.
     void ForceUpdate();
 
+    /// Check if the system was initialized.
+    bool IsInitialized() const { return is_initialized; }
+
+    /// Check if the system was updated.
+    bool IsUpdated() const { return is_updated; }
+
     void IntToDescriptor(const unsigned int off_v,
                          const ChStateDelta& v,
                          const ChVectorDynamic<>& R,
