@@ -12,6 +12,8 @@
 // Authors: Radu Serban
 // =============================================================================
 
+#include <algorithm>
+
 #include "chrono/utils/ChUtils.h"
 #ifdef CHRONO_HAS_YAML
     #include "chrono/input_output/ChUtilsYAML.h"
@@ -28,16 +30,36 @@ namespace ch_precice {
 
 ChPreciceAdapter::ChPreciceAdapter() : m_participant(nullptr), m_created(false), m_interfaces_created(false), m_mesh_created(false), m_initialized(false), m_verbose(false) {}
 
-ChPreciceAdapter& ChPreciceAdapter::GetInstance() {
-    static ChPreciceAdapter instance;
-    return instance;
-}
-
 #ifdef CHRONO_HAS_YAML
 
 static std::string ToUpper(std::string in) {
     std::transform(in.begin(), in.end(), in.begin(), ::toupper);
     return in;
+}
+
+static ChPreciceAdapter::DataType ReadDataType(const YAML::Node& a) {
+    auto type = ChToUpper(a.as<std::string>());
+    if (type == "GENERIC")
+        return ChPreciceAdapter::DataType::GENERIC;
+    if (type == "RIGID_BODY_REF_POINT")
+        return ChPreciceAdapter::DataType::RIGID_BODY_REF_POINT;
+    if (type == "RIGID_BODY_POINTS")
+        return ChPreciceAdapter::DataType::RIGID_BODY_POINTS;
+    if (type == "CONTACT_MESH1D_NODES")
+        return ChPreciceAdapter::DataType::CONTACT_MESH1D_NODES;
+    if (type == "CONTACT_MESH2D_NODES")
+        return ChPreciceAdapter::DataType::CONTACT_MESH2D_NODES;
+    if (type == "RIGID_BODY_REF_FORCE")
+        return ChPreciceAdapter::DataType::RIGID_BODY_REF_FORCE;
+    if (type == "RIGID_BODY_FORCES")
+        return ChPreciceAdapter::DataType::RIGID_BODY_FORCES;
+    if (type == "CONTACT_MESH1D_FORCES")
+        return ChPreciceAdapter::DataType::CONTACT_MESH1D_FORCES;
+    if (type == "CONTACT_MESH2D_FORCES")
+        return ChPreciceAdapter::DataType::CONTACT_MESH2D_FORCES;
+
+    cerr << "Unknown data type: " << a.as<std::string>() << endl;
+    throw std::runtime_error("Invalid data type");
 }
 
 std::string ChPreciceAdapter::GetParticipantName(const std::string& input_filename) {
@@ -82,10 +104,13 @@ void ChPreciceAdapter::RegisterSolver(const std::string& input_filename, int ran
             ChAssertAlways(write_data.IsSequence());
             for (size_t j = 0; j < write_data.size(); j++) {
                 auto data = write_data[j];
+                ChAssertAlways(data["type"]);
                 ChAssertAlways(data["name"]);
+                auto data_type = ReadDataType(data["type"]);
                 auto data_name = data["name"].as<std::string>();
                 auto key = std::make_pair(mesh_name, data_name);
-                m_data_write[key] = std::vector<double>();  // initialize empty vector for this data
+                m_data_write[key].type = data_type;
+                m_data_write[key].values = std::vector<double>();  // initialize empty vector for this data
             }
         }
         if (interfaces[i]["read_data"]) {
@@ -93,10 +118,13 @@ void ChPreciceAdapter::RegisterSolver(const std::string& input_filename, int ran
             ChAssertAlways(read_data.IsSequence());
             for (size_t j = 0; j < read_data.size(); j++) {
                 auto data = read_data[j];
+                ChAssertAlways(data["type"]);
                 ChAssertAlways(data["name"]);
+                auto data_type = ReadDataType(data["type"]);
                 auto data_name = data["name"].as<std::string>();
                 auto key = std::make_pair(mesh_name, data_name);
-                m_data_read[key] = std::vector<double>();  // initialize empty vector for this data
+                m_data_read[key].type = data_type;
+                m_data_read[key].values = std::vector<double>();  // initialize empty vector for this data
             }
         }
     }
@@ -125,11 +153,11 @@ void ChPreciceAdapter::RegisterMeshInterface(const std::string& mesh_name, const
 
     for (const auto& data_name : data_write_names) {
         auto key = std::make_pair(mesh_name, data_name);
-        m_data_write[key] = std::vector<double>();  // initialize empty vector for this data
+        m_data_write[key].values = std::vector<double>();  // initialize empty vector for this data
     }
     for (const auto& data_name : data_read_names) {
         auto key = std::make_pair(mesh_name, data_name);
-        m_data_read[key] = std::vector<double>();  // initialize empty vector for this data
+        m_data_read[key].values = std::vector<double>();  // initialize empty vector for this data
     }
 
     m_interfaces_created = true;
@@ -185,27 +213,68 @@ void ChPreciceAdapter::SetMesh(const std::string& mesh_name, const std::vector<d
         // Data dimension is the number of values per vertex for this data, which is determined by preCICE based on the configuration file
         // (e.g., scalar data has dimension 1, vector data has dimension equal to mesh dimension, etc.)
         int data_dimension = m_participant->getDataDimensions(mesh_name, data_name);
-        m_data_read[std::make_pair(mesh_name, data_name)].resize(num_vertices * data_dimension);
+        m_data_read[std::make_pair(mesh_name, data_name)].values.resize(num_vertices * data_dimension);
     }
 
     for (auto& data_name : write_data_names) {
         int data_dimension = m_participant->getDataDimensions(mesh_name, data_name);
-        m_data_write[std::make_pair(mesh_name, data_name)].resize(num_vertices * data_dimension);
+        m_data_write[std::make_pair(mesh_name, data_name)].values.resize(num_vertices * data_dimension);
     }
 
     if (m_verbose) {
         cout << m_prefix1 << "Set mesh " << mesh_name << endl;
-        cout << m_prefix2 << "num. dimensions: " << mesh_dim << endl;
-        cout << m_prefix2 << "num. vertices:   " << GetNumVertices(mesh_name) << endl;
-        cout << m_prefix2 << "read interfaces: ";
+        cout << m_prefix2 << "dimension:        " << mesh_dim << endl;
+        cout << m_prefix2 << "num. vertices:    " << GetNumVertices(mesh_name) << endl;
+        cout << m_prefix2 << "read interfaces:  ";
         for (auto& data_name : read_data_names)
-            cout << data_name << " (" << GetDataDimensions(mesh_name, data_name) << ")  ";
+            cout << data_name << " (" << GetDataTypeAsString(mesh_name, data_name) << "," << GetDataDimensions(mesh_name, data_name) << ")  ";
         cout << endl;
         cout << m_prefix2 << "write interfaces: ";
         for (auto& data_name : write_data_names)
-            cout << data_name << " (" << GetDataDimensions(mesh_name, data_name) << ")  ";
+            cout << data_name << " (" << GetDataTypeAsString(mesh_name, data_name) << "," << GetDataDimensions(mesh_name, data_name) << ")  ";
         cout << endl;
     }
+}
+
+ChPreciceAdapter::DataType ChPreciceAdapter::GetDataType(const std::string& mesh_name, const std::string& data_name) const {
+    auto key = std::make_pair(mesh_name, data_name);
+    {
+        auto it = m_data_read.find(key);
+        if (it != m_data_read.end())
+            return it->second.type;
+    }
+    {
+        auto it = m_data_write.find(key);
+        if (it != m_data_write.end())
+            return it->second.type;
+    }
+    assert(false);
+    return DataType::GENERIC;
+}
+
+std::string ChPreciceAdapter::GetDataTypeAsString(const std::string& mesh_name, const std::string& data_name) const {
+    auto type = GetDataType(mesh_name, data_name);
+    switch (type) {
+        case DataType::GENERIC:
+            return "GENERIC";
+        case DataType::RIGID_BODY_REF_POINT:
+            return "RIGID_BODY_REF_POINT";
+        case DataType::RIGID_BODY_POINTS:
+            return "RIGID_BODY_POINTS";
+        case DataType::CONTACT_MESH1D_NODES:
+            return "CONTACT_MESH1D_NODES";
+        case DataType::CONTACT_MESH2D_NODES:
+            return "CONTACT_MESH2D_NODES";
+        case DataType::RIGID_BODY_REF_FORCE:
+            return "RIGID_BODY_REF_FORCE";
+        case DataType::RIGID_BODY_FORCES:
+            return "RIGID_BODY_FORCES";
+        case DataType::CONTACT_MESH1D_FORCES:
+            return "CONTACT_MESH1D_FORCES";
+        case DataType::CONTACT_MESH2D_FORCES:
+            return "CONTACT_MESH2D_FORCES";
+    }
+    return "UNKNOWN";
 }
 
 int ChPreciceAdapter::GetMeshDimensions(const std::string& mesh_name) const {
@@ -215,7 +284,6 @@ int ChPreciceAdapter::GetMeshDimensions(const std::string& mesh_name) const {
 
 int ChPreciceAdapter::GetDataDimensions(const std::string& mesh_name, const std::string& data_name) const {
     assert(m_created);
-    auto key = std::make_pair(mesh_name, data_name);
     return m_participant->getDataDimensions(mesh_name, data_name);
 }
 
@@ -393,8 +461,8 @@ void ChPreciceAdapter::SetDataBlock(const std::string& mesh_name, const std::str
     auto key = std::make_pair(mesh_name, data_name);
     auto it = m_data_write.find(key);
     assert(it != m_data_write.end());
-    assert(it->second.size() == data.size());
-    it->second = data;
+    assert(it->second.values.size() == data.size());
+    it->second.values = data;
 }
 
 void ChPreciceAdapter::WriteDataBlock(const std::string& mesh_name, const std::string& data_name) {
@@ -402,7 +470,7 @@ void ChPreciceAdapter::WriteDataBlock(const std::string& mesh_name, const std::s
         cout << m_prefix2 << data_name << endl;
 
     auto key = std::make_pair(mesh_name, data_name);
-    std::vector<double>& data_vector = m_data_write[key];
+    std::vector<double>& data_vector = m_data_write[key].values;
     m_participant->writeData(mesh_name, data_name, m_vertex_ids[mesh_name], data_vector);
 }
 
@@ -416,7 +484,7 @@ void ChPreciceAdapter::ReadDataBlock(const std::string& mesh_name, const std::st
         cout << m_prefix2 << data_name << endl;
 
     auto key = std::make_pair(mesh_name, data_name);
-    std::vector<double>& data_vector = m_data_read[key];
+    std::vector<double>& data_vector = m_data_read[key].values;
     m_participant->readData(mesh_name, data_name, m_vertex_ids[mesh_name], relative_read_time, data_vector);
 }
 
@@ -424,7 +492,7 @@ const std::vector<double>& ChPreciceAdapter::GetDataBlock(const std::string& mes
     auto key = std::make_pair(mesh_name, data_name);
     auto it = m_data_read.find(key);
     assert(it != m_data_read.end());
-    return it->second;
+    return it->second.values;
 }
 
 const std::vector<double>& ChPreciceAdapter::ReadDataBlock(const std::string& mesh_name, const std::string& data_name) {

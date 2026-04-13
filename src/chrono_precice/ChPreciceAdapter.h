@@ -16,6 +16,7 @@
 #define CH_PRECICE_ADAPTER_H
 
 #include <string>
+#include <vector>
 #include <map>
 
 #include "chrono_precice/ChApiPrecice.h"
@@ -38,6 +39,19 @@ namespace ch_precice {
 /// Base class for all preCICE adapters.
 class ChApiPrecice ChPreciceAdapter {
   public:
+    /// Chrono coupling data types.
+    enum class DataType {
+        GENERIC,                ///<
+        RIGID_BODY_REF_POINT,   ///<
+        RIGID_BODY_POINTS,      ///<
+        CONTACT_MESH1D_NODES,   ///<
+        CONTACT_MESH2D_NODES,   ///<
+        RIGID_BODY_REF_FORCE,   ///<
+        RIGID_BODY_FORCES,      ///<
+        CONTACT_MESH1D_FORCES,  ///<
+        CONTACT_MESH2D_FORCES   ///<
+    };
+
     ChPreciceAdapter();
     virtual ~ChPreciceAdapter() {}
 
@@ -47,9 +61,6 @@ class ChApiPrecice ChPreciceAdapter {
     void SetVerbose(bool verbose) { m_verbose = verbose; }
 
     // ---- preCICE participant specification
-
-    /// Get an instance of the preCICE adapter.
-    static ChPreciceAdapter& GetInstance();
 
 #ifdef CHRONO_HAS_YAML
     /// Get the participant name from the specified YAML input file.
@@ -99,6 +110,12 @@ class ChApiPrecice ChPreciceAdapter {
 
     /// Get the number of vertices for the mesh with the specified name.
     size_t GetNumVertices(const std::string& mesh_name);
+
+    /// Get the type for the data with the specified name on the mesh with the specified name.
+    DataType GetDataType(const std::string& mesh_name, const std::string& data_name) const;
+
+    /// Get the type name for the data with the specified name on the mesh with the specified name.
+    std::string GetDataTypeAsString(const std::string& mesh_name, const std::string& data_name) const;
 
     /// Get the data dimensions for the data with the specified name on the mesh with the specified name.
     int GetDataDimensions(const std::string& mesh_name, const std::string& data_name) const;
@@ -234,10 +251,16 @@ class ChApiPrecice ChPreciceAdapter {
 
     // ---- Member variables
 
+    /// Definition of mesh data.
+    struct Data {
+        DataType type;
+        std::vector<double> values;
+    };
+
     /// Definition of data structure to hold coupling data for a particular mesh/data name pair.
-    /// The key is the pair of mesh name and data name, and the value is the vector of data values for that mesh/data pair.
+    /// The key is the pair of mesh name and data name, and the value is the data type and a vector of data values for that mesh/data pair.
     /// The dimension of the data vector is determined by the number of vertices on the coupling mesh and the data dimension for that mesh/data pair.
-    using MeshData = std::map<std::pair<std::string, std::string>, std::vector<double>>;
+    using MeshData = std::map<std::pair<std::string, std::string>, Data>;
 
     /// Definition of data structure to hold vertex IDs for a particular mesh.
     /// The key is the mesh name and the value is the vector of preCICE vertex IDs.
