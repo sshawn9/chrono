@@ -308,14 +308,19 @@ void ChBodyEasyConvexHull::SetupBody(std::vector<ChVector3d>& points,
                                      bool create_collision,
                                      std::shared_ptr<ChContactMaterial> material) {
     auto vshape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
-    bt_utils::ChConvexHullLibraryWrapper lh;
-    lh.ComputeHull(points, *vshape->GetMesh());
+    
+    bool success = bt_utils::ChConvexHullLibraryWrapper::ComputeHull(points, *vshape->GetMesh());
+    if (!success) {
+        std::cerr << "ChBodyEasyConvexHull::SetupBody: Unable to create convex hull\n";
+        return;
+    }
+
     if (create_visualization) {
         vshape->SetName("chull_mesh_" + std::to_string(GetIdentifier()));
         AddVisualShape(vshape);
     }
 
-    double mass;
+    double mass = 0.0;
     ChVector3d barycenter;
     ChMatrix33<> inertia;
     vshape->GetMesh()->ComputeMassProperties(true, mass, barycenter, inertia);
@@ -388,8 +393,12 @@ void ChBodyEasyConvexHullAuxRef::SetupBody(std::vector<ChVector3d>& points,
                                            bool create_collision,
                                            std::shared_ptr<ChContactMaterial> material) {
     auto vshape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
-    bt_utils::ChConvexHullLibraryWrapper lh;
-    lh.ComputeHull(points, *vshape->GetMesh());
+    bool success = bt_utils::ChConvexHullLibraryWrapper::ComputeHull(points, *vshape->GetMesh());
+        if (!success) {
+        std::cerr << "ChBodyEasyConvexHullAuxRef::SetupBody: Unable to create convex hull\n";
+        return;
+    }
+
     if (create_visualization) {
         vshape->SetName("chull_mesh_" + std::to_string(GetIdentifier()));
         AddVisualShape(vshape);
