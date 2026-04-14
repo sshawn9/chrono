@@ -16,7 +16,6 @@
 #define CHMATERIAL3DSTRESSOGDEN_H
 
 #include "chrono/fea/ChMaterial3DHyperelastic.h"
-#include "unsupported/Eigen/CXX11/Tensor"
 
 namespace chrono {
 namespace fea {

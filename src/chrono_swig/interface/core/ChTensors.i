@@ -37,7 +37,6 @@
 %include "../../../chrono/core/ChTensors.h"
 
 // Tensors are templated by type
-%template(ChVoigtTensorD) chrono::ChVoigtTensor<double>;
 %template(ChStressTensorD) chrono::ChStressTensor<double>;
 %template(ChStrainTensorD) chrono::ChStrainTensor<double>;
 %template(ChStrainEngTensorD) chrono::ChStrainTensor<double>;

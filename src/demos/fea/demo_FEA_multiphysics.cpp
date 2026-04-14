@@ -24,6 +24,8 @@
 #include "chrono/fea/ChDomainThermal.h"
 #include "chrono/fea/ChDomainThermoDeformation.h"
 #include "chrono/fea/ChMaterial3DThermalNonlinear.h"
+#include "chrono/fea/ChMaterial3DStressNeoHookean.h"
+#include "chrono/fea/ChMaterial3DStressOgden.h"
 #include "chrono/fea/ChDrawer.h"
 #include "chrono/fea/ChSurfaceOfDomain.h"
 #include "chrono/fea/ChFieldElementHexahedron8.h"
@@ -93,15 +95,15 @@ int main(int argc, char* argv[]) {
         // MATERIAL
         // 
         // Depending on the type of domain, you can set some properties for the material 
-        // to be used for the FEA. In this case we create an elastic meaterial, which 
+        // to be used for the FEA. In this case we create a Neo-Hookean hyperelastic material, which 
         // for small deformations acts like linear elasticity.
 
-        auto elastic_material = chrono_types::make_shared<ChMaterial3DStressStVenant>();
-        elastic_domain->material = elastic_material; // set the material in domain
+        auto elastic_material = chrono_types::make_shared<ChMaterial3DStressNeoHookean>();
         elastic_material->SetDensity(1000);
         elastic_material->SetYoungModulus(3e6);
-        elastic_material->SetPoissonRatio(0.3);
+        elastic_material->SetPoissonRatio(0.39);
 
+        elastic_domain->material = elastic_material;  // set the material in domain
 
         // CREATE FINITE ELEMENTS AND NODES
         //
@@ -109,7 +111,7 @@ int main(int argc, char* argv[]) {
         // conciseness we use a ChBuilderVolumeBox helper:
 
         // Build a test volume discretized with a regular grid of finite elements.
-        ChBuilderVolumeBoxTetra builder;
+        ChBuilderVolumeBox builder;
         builder.BuildVolume( ChFrame<>(),
             8, 3, 3,            // N of elements in x,y,z direction
             3, 0.5, 0.5);       // width in x,y,z direction
@@ -136,6 +138,7 @@ int main(int argc, char* argv[]) {
   
         // POSTPROCESSING & VISUALIZATION (optional)
 
+        // show dots at each node, colored as their velocity
         auto visual_nodes = chrono_types::make_shared<ChVisualDomainGlyphs>(elastic_domain);
         visual_nodes->SetGlyphsSize(0.1);
         visual_nodes->AddPositionExtractor(ExtractPos());
@@ -143,6 +146,7 @@ int main(int argc, char* argv[]) {
         visual_nodes->SetColormap(ChColormap(ChColormap::Type::JET));
         elastic_domain->AddVisualShape(visual_nodes);
 
+        // show tensors at each material point, as Euler-Almansi axes
         auto visual_stress = chrono_types::make_shared<ChVisualDomainGlyphs>(elastic_domain);
         visual_stress->SetGlyphsSize(2.2);
         visual_stress->AddPositionExtractor(ExtractPos());
@@ -150,21 +154,20 @@ int main(int argc, char* argv[]) {
         visual_stress->SetColormap(ChColormap(ChColormap::Type::JET));
         elastic_domain->AddVisualShape(visual_stress);
 
-        auto visual_mesh = chrono_types::make_shared<ChVisualDomainMesh>(elastic_domain);
-        visual_mesh->AddPositionExtractor(ExtractPos());
-        visual_mesh->AddPropertyExtractor(ExtractPosDt(), 0.0, 2.0, "Vel");
-        visual_mesh->SetColormap(ChColor(0, 1, 0));
-        visual_mesh->SetWireframe(true);
-        visual_mesh->SetShrinkElements(true, 0.9);
-        //elastic_domain->AddVisualShape(visual_mesh);
-
+        // show mesh painted with jet colormap proportional to Euler-Almansi strain intensity
         auto visual_mesh2 = chrono_types::make_shared<ChVisualDomainMesh>(elastic_domain);
         visual_mesh2->AddPositionExtractor(ExtractPos());
         visual_mesh2->AddPropertyExtractor(ChDomainDeformation::ExtractEulerAlmansiStrain().VonMises(), -0.1, 0.1, "Stretch");
         visual_mesh2->SetColormap(ChColormap(ChColormap::Type::JET));
-       // visual_mesh2->SetWireframe(true);
         visual_mesh2->SetShrinkElements(true, 0.9);
         elastic_domain->AddVisualShape(visual_mesh2);
+
+        // show reference mesh
+        auto visual_mesh_ref = chrono_types::make_shared<ChVisualDomainMesh>(elastic_domain);
+        visual_mesh_ref->SetColormap(ChColor(1, 1, 1));
+        visual_mesh_ref->SetWireframe(true);
+        elastic_domain->AddVisualShape(visual_mesh_ref);
+
 
         // Create the Irrlicht visualization system
         auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
@@ -174,7 +177,7 @@ int main(int argc, char* argv[]) {
         vis->Initialize();
         vis->AddLogo();
         vis->AddSkyBox();
-        vis->AddCamera(ChVector3d(0, 4, -6));
+        vis->AddCamera(ChVector3d(0, 2, -4));
         vis->AddTypicalLights();
         
         auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
@@ -423,10 +426,14 @@ int main(int argc, char* argv[]) {
 
         domain->material_thermalstress->material_thermal = thermal_material;
 
-        auto elastic_material = chrono_types::make_shared<ChMaterial3DStressStVenant>();
+        auto elastic_material = chrono_types::make_shared<ChMaterial3DStressOgden>();
         elastic_material->SetDensity(1000);
-        elastic_material->SetYoungModulus(6e6);
-        elastic_material->SetPoissonRatio(0.3);
+        elastic_material->SetAsEquivalentNeoHookean(6e6, 0.3);
+
+        //auto elastic_material = chrono_types::make_shared<ChMaterial3DStressStVenant>();
+        //elastic_material->SetDensity(1000);
+        //elastic_material->SetYoungModulus(8e6);
+        //elastic_material->SetPoissonRatio(0.3);
 
         domain->material_thermalstress->material_stress = elastic_material;
 
@@ -464,7 +471,7 @@ int main(int argc, char* argv[]) {
         auto exa_face_loadable = chrono_types::make_shared <ChFieldElementLoadableSurface>(exa_face, temperature_field);
 
         auto heat_flux = chrono_types::make_shared<ChLoaderHeatFlux>(exa_face_loadable);
-        heat_flux->SetSurfaceHeatFlux(24000); // the surface flux: heat in W/m^2
+        heat_flux->SetSurfaceHeatFlux(18000); // the surface flux: heat in W/m^2
         load_container->Add(heat_flux);
 
         // - IMPOSED CONVECTION ON THE ENTIRE BOUNDARY OF VOLUME
