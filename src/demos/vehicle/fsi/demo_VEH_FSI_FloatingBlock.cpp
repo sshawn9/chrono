@@ -425,7 +425,7 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystemSMC& sys,
     double scale_ratio = 1.0;
     trimesh->LoadWavefrontMesh(GetChronoDataFile(mesh_filename), false, true);
     trimesh->Transform(ChVector3d(0, 0, 0), ChMatrix33<>(scale_ratio));  // scale to a different size
-    trimesh->RepairDuplicateVertexes(1e-9);                              // if meshes are not watertight
+    trimesh->RepairDuplicateVertices(1e-9);                              // if meshes are not watertight
     auto wheel_shape = chrono_types::make_shared<ChCollisionShapeTriangleMesh>(cmaterial, trimesh, false, false, 0.005);
 
     // Create wheel BCE markers

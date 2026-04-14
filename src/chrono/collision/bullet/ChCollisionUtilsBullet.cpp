@@ -337,9 +337,9 @@ bool ChConvexHullLibraryWrapper::ComputeHull(const std::vector<ChVector3d>& poin
     if (hret == QE_OK) {
         trimesh.Clear();
 
-        trimesh.GetIndicesVertexes().resize(hresult.mNumFaces);
+        trimesh.GetIndicesVertices().resize(hresult.mNumFaces);
         for (unsigned int it = 0; it < hresult.mNumFaces; ++it) {
-            trimesh.GetIndicesVertexes()[it] =
+            trimesh.GetIndicesVertices()[it] =
                 ChVector3i(hresult.m_Indices[it * 3 + 0], hresult.m_Indices[it * 3 + 1], hresult.m_Indices[it * 3 + 2]);
         }
         trimesh.GetCoordsVertices().resize(hresult.mNumOutputVertices);

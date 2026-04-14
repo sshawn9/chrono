@@ -715,7 +715,7 @@ void ChContactSurfaceMesh::ConstructFromTrimesh(std::shared_ptr<ChTriangleMeshCo
     }
 
     std::vector<NodeTripletXYZ> triangles_ptrs;
-    for (const auto& tri : trimesh->GetIndicesVertexes()) {
+    for (const auto& tri : trimesh->GetIndicesVertices()) {
         const auto& node0 = nodes[tri[0]];
         const auto& node1 = nodes[tri[1]];
         const auto& node2 = nodes[tri[2]];

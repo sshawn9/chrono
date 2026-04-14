@@ -265,7 +265,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshColShape(std::shared_ptr<ChT
     const auto& uvs = mesh->GetCoordsUV();
     const auto& colors = mesh->GetCoordsColors();
 
-    const auto& v_indices = mesh->GetIndicesVertexes();
+    const auto& v_indices = mesh->GetIndicesVertices();
     const auto& n_indices = mesh->GetIndicesNormals();
     const auto& uv_indices = mesh->GetIndicesUV();
     const auto& c_indices = mesh->GetIndicesColors();
@@ -397,7 +397,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshColAvgShape(std::shared_ptr<
         colors_ok = false;
     }
 
-    const auto& v_indices = mesh->GetIndicesVertexes();
+    const auto& v_indices = mesh->GetIndicesVertices();
 
     // create and fill the vsg buffers
     vsg::ref_ptr<vsg::vec3Array> vsg_vertices = vsg::vec3Array::create(nvertices);
@@ -464,7 +464,7 @@ vsg::ref_ptr<vsg::Group> ShapeBuilder::CreateTrimeshPbrMatShape(std::shared_ptr<
     const auto& normals = mesh->GetCoordsNormals();
     const auto& uvs = mesh->GetCoordsUV();
 
-    const auto& v_indices = mesh->GetIndicesVertexes();
+    const auto& v_indices = mesh->GetIndicesVertices();
     const auto& n_indices = mesh->GetIndicesNormals();
     const auto& uv_indices = mesh->GetIndicesUV();
     const auto& m_indices = mesh->GetIndicesMaterials();
