@@ -30,7 +30,7 @@ namespace fea {
 /// FALLBACK default implementation; but if possible implement a faster ad hoc computation.
 double ChFieldElementLine::ComputeJ(const ChVector3d eta, ChMatrix33d& J) {
     ChMatrixDynamic<double> Xhat(3, this->GetNumNodes());
-    for (int i = 0; i < this->GetNumNodes(); ++i)
+    for (unsigned int i = 0; i < this->GetNumNodes(); ++i)
         Xhat.block<3, 1>(0, i) = std::static_pointer_cast<ChNodeFEAfieldXYZ>(this->GetNode(i))->eigen();
     // J = Xhat * dNde^T
     ChMatrixDynamic<double> dNde(1, this->GetNumNodes());
@@ -49,7 +49,7 @@ double ChFieldElementLine::ComputeJ(const ChVector3d eta, ChMatrix33d& J) {
 /// FALLBACK default implementation; but if possible implement a faster ad hoc computation.
 double ChFieldElementSurface::ComputeJ(const ChVector3d eta, ChMatrix33d& J) {
     ChMatrixDynamic<double> Xhat(3, this->GetNumNodes());
-    for (int i = 0; i < this->GetNumNodes(); ++i)
+    for (unsigned int i = 0; i < this->GetNumNodes(); ++i)
         Xhat.block<3, 1>(0, i) = std::static_pointer_cast<ChNodeFEAfieldXYZ>(this->GetNode(i))->eigen();
     // J = Xhat * dNde^T
     ChMatrixDynamic<double> dNde(1, this->GetNumNodes());
@@ -65,7 +65,7 @@ double ChFieldElementSurface::ComputeJ(const ChVector3d eta, ChMatrix33d& J) {
 /// FALLBACK default implementation; but if possible implement a faster ad hoc computation.
 double ChFieldElementVolume::ComputeJ(const ChVector3d eta, ChMatrix33d& J) {
     ChMatrixDynamic<double> Xhat(3, this->GetNumNodes());
-    for (int i = 0; i < this->GetNumNodes(); ++i)
+    for (unsigned int i = 0; i < this->GetNumNodes(); ++i)
         Xhat.block<3, 1>(0, i) = std::static_pointer_cast<ChNodeFEAfieldXYZ>(this->GetNode(i))->eigen();
     // J = Xhat * dNde^T
     ChMatrixDynamic<double> dNde(3, this->GetNumNodes());
