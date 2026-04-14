@@ -1,30 +1,32 @@
 message(STATUS "Add demo programs for preCICE adapters")
 
-if(NOT CH_ENABLE_MODULE_PARSERS)
-  message(STATUS "  Warning: the preCICE demos require Chrono::Parsers.")
-  return()
-endif()
-
 #--------------------------------------------------------------
 # List of all MBS demos
 
-set(DEMOS
-    demo_PRECICE_test
-)
+set(DEMOS demo_PRECICE_test)
 
-#if(CH_ENABLE_MODULE_FSI)
-#  set(DEMOS ${DEMOS} demo_PRECICE_fsi)
-#endif()
+if(CH_ENABLE_MODULE_PARSERS)
 
-#if(CH_ENABLE_MODULE_VEHICLE)
-#  set(DEMOS ${DEMOS} demo_PRECICE_vehicle)
-#endif()
+  #set(DEMOS ${DEMOS} demo_PRECICE_mbs)
+  
+  #if(CH_ENABLE_MODULE_FSI)
+  #  set(DEMOS ${DEMOS} demo_PRECICE_fsi)
+  #endif()
+  
+  #if(CH_ENABLE_MODULE_VEHICLE)
+  #  set(DEMOS ${DEMOS} demo_PRECICE_vehicle)
+  #endif()
+
+endif()
 
 #--------------------------------------------------------------
 
 list(APPEND LIBS Chrono_core)
 list(APPEND LIBS Chrono_precice)
-list(APPEND LIBS Chrono_parsers)
+
+if(CH_ENABLE_MODULE_PARSERS)
+  list(APPEND LIBS Chrono_parsers)
+endif()
 
 if(CH_ENABLE_MODULE_VSG)
   list(APPEND LIBS Chrono_vsg)

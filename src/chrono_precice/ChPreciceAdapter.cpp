@@ -43,16 +43,16 @@ static ChPreciceAdapter::DataType ReadDataType(const YAML::Node& a) {
         return ChPreciceAdapter::DataType::GENERIC;
     if (type == "RIGID_BODY_REF_POINT")
         return ChPreciceAdapter::DataType::RIGID_BODY_REF_POINT;
-    if (type == "RIGID_BODY_POINTS")
-        return ChPreciceAdapter::DataType::RIGID_BODY_POINTS;
+    if (type == "RIGID_BODY_MESH_POINTS")
+        return ChPreciceAdapter::DataType::RIGID_BODY_MESH_POINTS;
     if (type == "CONTACT_MESH1D_NODES")
         return ChPreciceAdapter::DataType::CONTACT_MESH1D_NODES;
     if (type == "CONTACT_MESH2D_NODES")
         return ChPreciceAdapter::DataType::CONTACT_MESH2D_NODES;
     if (type == "RIGID_BODY_REF_FORCE")
         return ChPreciceAdapter::DataType::RIGID_BODY_REF_FORCE;
-    if (type == "RIGID_BODY_FORCES")
-        return ChPreciceAdapter::DataType::RIGID_BODY_FORCES;
+    if (type == "RIGID_BODY_MESH_FORCES")
+        return ChPreciceAdapter::DataType::RIGID_BODY_MESH_FORCES;
     if (type == "CONTACT_MESH1D_FORCES")
         return ChPreciceAdapter::DataType::CONTACT_MESH1D_FORCES;
     if (type == "CONTACT_MESH2D_FORCES")
@@ -259,16 +259,16 @@ std::string ChPreciceAdapter::GetDataTypeAsString(const std::string& mesh_name, 
             return "GENERIC";
         case DataType::RIGID_BODY_REF_POINT:
             return "RIGID_BODY_REF_POINT";
-        case DataType::RIGID_BODY_POINTS:
-            return "RIGID_BODY_POINTS";
+        case DataType::RIGID_BODY_MESH_POINTS:
+            return "RIGID_BODY_MESH_POINTS";
         case DataType::CONTACT_MESH1D_NODES:
             return "CONTACT_MESH1D_NODES";
         case DataType::CONTACT_MESH2D_NODES:
             return "CONTACT_MESH2D_NODES";
         case DataType::RIGID_BODY_REF_FORCE:
             return "RIGID_BODY_REF_FORCE";
-        case DataType::RIGID_BODY_FORCES:
-            return "RIGID_BODY_FORCES";
+        case DataType::RIGID_BODY_MESH_FORCES:
+            return "RIGID_BODY_MESH_FORCES";
         case DataType::CONTACT_MESH1D_FORCES:
             return "CONTACT_MESH1D_FORCES";
         case DataType::CONTACT_MESH2D_FORCES:
@@ -356,20 +356,14 @@ bool ChPreciceAdapter::MustWriteInitialData() {
     return m_participant->requiresInitialData();
 }
 
-void ChPreciceAdapter::InitializeCoupling() {
+bool ChPreciceAdapter::IsCouplingOngoing() {
     assert(m_created);
-    assert(m_mesh_created);
-    assert(!m_initialized);
-
-    m_participant->initialize();
-
-    m_initialized = true;
+    return m_participant->isCouplingOngoing();
 }
 
-void ChPreciceAdapter::FinalizeCoupling() {
+bool ChPreciceAdapter::IsTimeWindowComplete() {
     assert(m_created);
-    if (m_initialized)
-        m_participant->finalize();
+    return m_participant->isTimeWindowComplete();
 }
 
 // -----------------------------------------------------------------------------
@@ -377,12 +371,17 @@ void ChPreciceAdapter::FinalizeCoupling() {
 void ChPreciceAdapter::InitializeSimulation() {
     assert(m_created);
     assert(m_mesh_created);
+    assert(!m_initialized);
+
+    InitializeSolver();
 
     if (m_participant->requiresInitialData()) {
         WriteData();
     }
 
-    InitializeCoupling();
+    m_participant->initialize();
+
+    m_initialized = true;
 }
 
 void ChPreciceAdapter::SimulationLoop() {
@@ -404,7 +403,7 @@ void ChPreciceAdapter::SimulationLoop() {
         ReadData();
         AdvanceSolver(time, time_step);
         WriteData();
-        AdvanceCoupling(time_step);
+        m_participant->advance(time_step);
 
         if (m_participant->requiresReadingCheckpoint())
             ReadCheckpoint(time);
@@ -413,22 +412,20 @@ void ChPreciceAdapter::SimulationLoop() {
     }
 }
 
-bool ChPreciceAdapter::IsCouplingOngoing() {
+void ChPreciceAdapter::FinalizeSimulation() {
     assert(m_created);
-    return m_participant->isCouplingOngoing();
-}
+    assert(m_initialized);
 
-bool ChPreciceAdapter::IsTimeWindowComplete() {
-    assert(m_created);
-    return m_participant->isTimeWindowComplete();
-}
-
-void ChPreciceAdapter::AdvanceCoupling(double time_step) {
-    assert(m_created);
-    m_participant->advance(time_step);
+    FinalizeSolver();
+    m_participant->finalize();
 }
 
 // -----------------------------------------------------------------------------
+
+void ChPreciceAdapter::InitializeSolver() {
+    if (m_verbose)
+        cout << m_prefix1 << "Initialization" << endl;
+}
 
 void ChPreciceAdapter::WriteData() {
     if (m_verbose)
@@ -453,6 +450,11 @@ void ChPreciceAdapter::ReadCheckpoint(double time) {
 void ChPreciceAdapter::AdvanceSolver(double time, double time_step) {
     if (m_verbose)
         cout << m_prefix1 << "Advance from " << time << " by " << time_step << endl;
+}
+
+void ChPreciceAdapter::FinalizeSolver() {
+    if (m_verbose)
+        cout << m_prefix1 << "Shutdown" << endl;
 }
 
 // -----------------------------------------------------------------------------

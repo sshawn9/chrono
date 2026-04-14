@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
     participant.SimulationLoop();
 
     // Finalize the preCICE coupling
-    participant.FinalizeCoupling();
+    participant.FinalizeSimulation();
 
     return 0;
 }

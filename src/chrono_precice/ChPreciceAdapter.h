@@ -41,15 +41,15 @@ class ChApiPrecice ChPreciceAdapter {
   public:
     /// Chrono coupling data types.
     enum class DataType {
-        GENERIC,                ///<
-        RIGID_BODY_REF_POINT,   ///<
-        RIGID_BODY_POINTS,      ///<
-        CONTACT_MESH1D_NODES,   ///<
-        CONTACT_MESH2D_NODES,   ///<
-        RIGID_BODY_REF_FORCE,   ///<
-        RIGID_BODY_FORCES,      ///<
-        CONTACT_MESH1D_FORCES,  ///<
-        CONTACT_MESH2D_FORCES   ///<
+        GENERIC,                 ///<
+        RIGID_BODY_REF_POINT,    ///<
+        RIGID_BODY_MESH_POINTS,  ///<
+        CONTACT_MESH1D_NODES,    ///<
+        CONTACT_MESH2D_NODES,    ///<
+        RIGID_BODY_REF_FORCE,    ///<
+        RIGID_BODY_MESH_FORCES,  ///<
+        CONTACT_MESH1D_FORCES,   ///<
+        CONTACT_MESH2D_FORCES    ///<
     };
 
     ChPreciceAdapter();
@@ -147,18 +147,6 @@ class ChApiPrecice ChPreciceAdapter {
     /// The return value indicates whether a checkpoint was read.
     bool ReadCheckpointIfRequired(double time);
 
-    // ---- Initialization and shutdown
-
-    /// Check if the participant is required to provide initial data.
-    /// If true, the participant needs to write initial data to defined vertices prior to calling Initialize().
-    bool MustWriteInitialData();
-
-    /// Initialize the coupling after all quantities / datasets and coupling meshes are known.
-    void InitializeCoupling();
-
-    /// Finalize (destroy) the coupling.
-    void FinalizeCoupling();
-
     // ---- Data exchange
 
     // Set the (write) data vector for the specified mesh and data names.
@@ -184,6 +172,16 @@ class ChApiPrecice ChPreciceAdapter {
 
     // ---- Simulation control
 
+    /// Check if the participant is required to provide initial data.
+    /// If true, the participant needs to write initial data to defined vertices prior to calling Initialize().
+    bool MustWriteInitialData();
+
+    /// Check if coupling is ongoing.
+    bool IsCouplingOngoing();
+
+    /// Check if the time window has completed.
+    bool IsTimeWindowComplete();
+
     /// Wrapper function for initializing the coupled simulation for this participant.
     /// The participant initializes the output data (if needed), after which the coupling is initialized.
     void InitializeSimulation();
@@ -199,14 +197,8 @@ class ChApiPrecice ChPreciceAdapter {
     /// - reads a checkpoint if requested, otherwise advances time
     void SimulationLoop();
 
-    /// Advance the coupling by the given time step.
-    void AdvanceCoupling(double time_step);
-
-    /// Check if coupling is ongoing.
-    bool IsCouplingOngoing();
-
-    /// Check if the time window has completed.
-    bool IsTimeWindowComplete();
+    /// Wrapper function for finalizing the coupled simulation for this participant.
+    void FinalizeSimulation();
 
     // ---- Utility functions
 
@@ -218,6 +210,10 @@ class ChApiPrecice ChPreciceAdapter {
 
   protected:
     // ---- Solver-specific functions to be implemented by derived classes
+
+    /// Let the derived class perform any necessary operations during the simulation initialization.
+    /// This optional function is called before the solver writes initial data (if requested) and before the preCICE coupling is initialized.
+    virtual void InitializeSolver();
 
     /// Let the derived class implement the actual checkpoint writing if required by preCICE.
     virtual void WriteCheckpoint(double time);
@@ -248,6 +244,10 @@ class ChApiPrecice ChPreciceAdapter {
     /// - finally call WriteDataBlock().
     /// A convenience version of WriteDataBlock() that combines the last 2 steps for a given write interface (mesh/data name pair) is available.
     virtual void WriteData();
+
+    /// Let the derived class perform any necessary operations during simulation shutdown.
+    /// This function is called before the preCICE coupling is finalized.
+    virtual void FinalizeSolver();
 
     // ---- Member variables
 
