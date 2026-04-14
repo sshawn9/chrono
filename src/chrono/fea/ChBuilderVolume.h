@@ -20,6 +20,8 @@
 #include "chrono/fea/ChFieldElementHexahedron8Face.h"
 #include "chrono/fea/ChFieldElementTetrahedron4.h"
 #include "chrono/fea/ChFieldElementTetrahedron4Face.h"
+#include "chrono/fea/ChDomain.h"
+#include "chrono/fea/ChField.h"
 
 namespace chrono {
 
@@ -119,7 +121,10 @@ class Ch3DArrayOfHexa8 : public Ch3DArrayOfItems<std::shared_ptr<ChFieldElementH
 class ChApi ChBuilderVolumeBox {
 
 public:
+    ChBuilderVolumeBox() {}
 
+    /// Fills a box with origin (corner) at "frame", with finite elements. 
+    /// After calling this, you may want to call AddToDomain() 
     void BuildVolume(const ChFrame<>& frame,  ///< origin and rotation of the box being meshed
                     int nlayers_x,
                     int nlayers_y,
@@ -128,12 +133,25 @@ public:
                     double W_y,
                     double W_z);
 
+    /// After you called BuildVolume(), the builder object has populated its
+    /// "nodes" and "elements" fields. Then you need to add all the elements to the domain, 
+    /// and add all the the nodes to the field(s) of the domain: you can do this by yourself or
+    /// use this AddDomain() shortcut.
+    void AddToDomain(std::shared_ptr<ChDomain> domain);
+
     // results here:
 
     Ch3DArrayOfNodes nodes;
 
     Ch3DArrayOfHexa8  elements;
 
+    // may be useful if adding loads:
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_x_hi;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_x_lo;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_y_hi;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_y_lo;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_z_hi;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_z_lo;
 };
 
 
@@ -147,6 +165,10 @@ class ChApi ChBuilderVolumeBoxTetra {
 
 public:
 
+    ChBuilderVolumeBoxTetra() {}
+
+    /// Fills a box with origin (corner) at "frame", with finite elements.
+    /// After calling this, you may want to call AddToDomain() 
     void BuildVolume(const ChFrame<>& frame,  ///< origin and rotation of the box being meshed
         int nlayers_x,
         int nlayers_y,
@@ -155,12 +177,25 @@ public:
         double W_y,
         double W_z);
 
+    /// After you called BuildVolume(), the builder object has populated its
+    /// "nodes" and "elements" fields. Then you need to add all the elements to the domain,
+    /// and add all the the nodes to the field(s) of the domain: you can do this by yourself or
+    /// use this AddDomain() shortcut.
+    void AddToDomain(std::shared_ptr<ChDomain> domain);
+
     // results here:
 
     Ch3DArrayOfNodes nodes;
 
     Ch3DArrayOfItems<std::array<std::shared_ptr<ChFieldElementTetrahedron4>, 5 > >  elements; // grouped as 5 tetra evey cubic cell
 
+    // may be useful if adding loads:
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_x_hi;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_x_lo;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_y_hi;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_y_lo;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_z_hi;
+    std::vector<std::shared_ptr<ChFieldElementSurface>> faces_z_lo;
 };
 
 
