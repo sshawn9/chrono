@@ -107,23 +107,24 @@ public:
         // Green Lagrange    E = 1/2( F'*F - I) = 1/2( C - I) 
         ChMatrix33d E_strain33 = 0.5 * (C_deformation - ChMatrix33d(1));
     
-        // Green Lagrange in Voigt notation (todo: optimization: could be skipped)
-        ChStrainTensor<> strain; 
+        // Green Lagrange in Voigt "engineering" notation (todo: optimization: could be skipped)
+        ChStrainEngTensor<> strain; 
         strain.ConvertFromMatrix(E_strain33);
-        strain.XY() *= 2; strain.XZ() *= 2; strain.YZ() *= 2;
 
         double G = GetShearModulus();
         stress.XX() = strain.XX() * (m_lamefirst + 2 * G) + strain.YY() * m_lamefirst + strain.ZZ() * m_lamefirst;
         stress.YY() = strain.XX() * m_lamefirst + strain.YY() * (m_lamefirst + 2 * G) + strain.ZZ() * m_lamefirst;
         stress.ZZ() = strain.XX() * m_lamefirst + strain.YY() * m_lamefirst + strain.ZZ() * (m_lamefirst + 2 * G);
-        stress.XY() = strain.XY() * G;
-        stress.XZ() = strain.XZ() * G;
-        stress.YZ() = strain.YZ() * G;
+        stress.SetXY(strain.GetXY() * 2 * G);  // also stress(3) = strain.(3) * G;  without *2 because "eng." shear stored in voigt vect
+        stress.SetXZ(strain.GetXZ() * 2 * G);
+        stress.SetYZ(strain.GetYZ() * 2 * G);
     }
 
     /// Computes the tangent modulus C. 
-    /// (The Cauchy-Green deformation "C_deformation" is not used here, as C  in S=C:E is independent on C_deformation)
-    virtual void ComputeElasticTangentModulus(ChMatrixNM<double, 6, 6>& C, const ChMatrix33d& C_deformation) override {
+    /// It takes the right Cauchy-Green deformation tensor C_def, and returns the tangent 
+    /// modulus in 6x6 matrix C, for  dS = C * dE  where S is 2nd PK stress, and E is Green Lagrange strain.
+    /// (The Cauchy-Green deformation "C_def" is not used here, as C  in S=C:E is independent on C_def)
+    virtual void ComputeElasticTangentModulus(ChMatrixNM<double, 6, 6>& C, const ChMatrix33d& C_def) override {
         C = this->StressStrainMatrix;
     }
 

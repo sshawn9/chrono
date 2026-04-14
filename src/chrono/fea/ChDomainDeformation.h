@@ -37,7 +37,7 @@ namespace fea {
 class ChFieldDataAuxiliaryDeformation : public ChFieldDataNONE {
 public:
     ChMatrix33d F;  /// deformation gradient tensor - can be used to plot Green-Lagrange etc. 
-    ChVoightTensor<> S_pk2; /// stress as 2nd Piola-Kirchhoff stress tensor in Voigt notation
+    ChStressTensor<> S_pk2; /// stress as 2nd Piola-Kirchhoff stress tensor in Voigt notation
 };
 
 

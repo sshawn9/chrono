@@ -41,7 +41,7 @@ public:
     ChMatrix33d F_t_inv;/// thermal deformation gradient tensor, inverse
     ChMatrix33d F_m;    /// mechanical deformation gradient tensor
     ChVector3d  q_flux; /// heat flux
-    ChVoightTensor<> S_pk2; /// stress as 2nd Piola-Kirchhoff stress tensor in Voigt notation
+    ChStressTensor<> S_pk2; /// stress as 2nd Piola-Kirchhoff stress tensor in Voigt notation
     
     // by the way this could have been also: 
     // ChFieldDataAuxiliaryThermal aux_thermal;      // with "q_flux"

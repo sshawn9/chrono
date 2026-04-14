@@ -54,8 +54,8 @@ public:
                                 ChElementData* data_per_element     ///< pointer to auxiliary data (ex states), if any, per element 
     ) = 0;
 
-    /// Computes the tangent modulus for a given strain, assuming it
-    /// between delta of 2nd Piola-Kirchhoff S and delta of Green Lagrange E, both in Voigt notation.
+    /// Computes the 6x6 tangent modulus for a given strain, assuming the definition  dS = C * dE, that maps   
+    /// variations of S, 2nd Piola-Kirchhoff stress, and of E, Green Lagrange strains, both in Voigt notation.
     /// Assuming current strain is a 3x3 deformation gradient tensor F_def. 
 
     virtual void ComputeTangentModulus(ChMatrixNM<double, 6, 6>& C, ///< output C tangent modulus, as dS=C*dE
