@@ -464,7 +464,7 @@ int main(int argc, char* argv[]) {
                                    size_t& norm_offset) const {
             // Setup triangles: vertex indexes per each triangle. Here 1 triangle collapsed to a segment.
             ChVector3i ivert_offset((int)vert_offset, (int)vert_offset, (int)vert_offset);
-            mmesh.GetIndicesVertexes()[tri_offset] = ChVector3i(0, 1, 1) + ivert_offset;
+            mmesh.GetIndicesVertices()[tri_offset] = ChVector3i(0, 1, 1) + ivert_offset;
             ChVector3i inorm_offset = ChVector3i((int)norm_offset, (int)norm_offset, (int)norm_offset);
             mmesh.GetIndicesNormals()[tri_offset] = ChVector3i(0, 0, 0) + inorm_offset;
             vert_offset += 2;

@@ -95,7 +95,7 @@ protected:
             mmesh.GetCoordsNormals()[norm_offset + nn] = ChVector3d(0, 0, 0);
         }
         for (unsigned int nt = 0; nt < num_triangles; ++nt) {
-            auto vert_indexes = mmesh.GetIndicesVertexes()[tri_offset + nt];
+            auto vert_indexes = mmesh.GetIndicesVertices()[tri_offset + nt];
             auto norm_indexes = mmesh.GetIndicesNormals()[tri_offset + nt];
             ChVector3d tnorm = Vcross(mmesh.GetCoordsVertices()[vert_indexes.y()] - mmesh.GetCoordsVertices()[vert_indexes.x()],
                 mmesh.GetCoordsVertices()[vert_indexes.z()] - mmesh.GetCoordsVertices()[vert_indexes.x()])
@@ -133,10 +133,10 @@ public:
         //ChFieldElementTetrahedron_4& element = static_cast<ChFieldElementTetrahedron_4&>(melement);
 
         // Setup triangles: vertex indexes per each triangle
-        mmesh.GetIndicesVertexes()[tri_offset+0] = ChVector3i((int)vert_offset + 0, (int)vert_offset + 1, (int)vert_offset + 2);
-        mmesh.GetIndicesVertexes()[tri_offset+1] = ChVector3i((int)vert_offset + 1, (int)vert_offset + 3, (int)vert_offset + 2);
-        mmesh.GetIndicesVertexes()[tri_offset+2] = ChVector3i((int)vert_offset + 2, (int)vert_offset + 0, (int)vert_offset + 3);
-        mmesh.GetIndicesVertexes()[tri_offset+3] = ChVector3i((int)vert_offset + 3, (int)vert_offset + 1, (int)vert_offset + 0);
+        mmesh.GetIndicesVertices()[tri_offset+0] = ChVector3i((int)vert_offset + 0, (int)vert_offset + 1, (int)vert_offset + 2);
+        mmesh.GetIndicesVertices()[tri_offset + 1] = ChVector3i((int)vert_offset + 1, (int)vert_offset + 3, (int)vert_offset + 2);
+        mmesh.GetIndicesVertices()[tri_offset + 2] = ChVector3i((int)vert_offset + 2, (int)vert_offset + 0, (int)vert_offset + 3);
+        mmesh.GetIndicesVertices()[tri_offset + 3] = ChVector3i((int)vert_offset + 3, (int)vert_offset + 1, (int)vert_offset + 0);
         
         // Normal indexes per each triangle. Assuming 4 normals, one per tetrahedron face.
         ChVector3i inorm_offset = ChVector3i((int)norm_offset, (int)norm_offset, (int)norm_offset);
@@ -178,18 +178,18 @@ public:
 
         // Setup triangles: vertex indexes per each triangle
         ChVector3i ivert_offset((int)vert_offset, (int)vert_offset, (int)vert_offset);
-        mmesh.GetIndicesVertexes()[tri_offset + 0] = ChVector3i(0, 2, 1) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 1] = ChVector3i(0, 3, 2) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 2] = ChVector3i(4, 5, 6) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 3] = ChVector3i(4, 6, 7) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 4] = ChVector3i(0, 7, 3) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 5] = ChVector3i(0, 4, 7) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 6] = ChVector3i(0, 5, 4) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 7] = ChVector3i(0, 1, 5) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 8] = ChVector3i(3, 7, 6) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 9] = ChVector3i(3, 6, 2) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 10] = ChVector3i(2, 5, 1) + ivert_offset;
-        mmesh.GetIndicesVertexes()[tri_offset + 11] = ChVector3i(2, 6, 5) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 0] = ChVector3i(0, 2, 1) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 1] = ChVector3i(0, 3, 2) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 2] = ChVector3i(4, 5, 6) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 3] = ChVector3i(4, 6, 7) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 4] = ChVector3i(0, 7, 3) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 5] = ChVector3i(0, 4, 7) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 6] = ChVector3i(0, 5, 4) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 7] = ChVector3i(0, 1, 5) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 8] = ChVector3i(3, 7, 6) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 9] = ChVector3i(3, 6, 2) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 10] = ChVector3i(2, 5, 1) + ivert_offset;
+        mmesh.GetIndicesVertices()[tri_offset + 11] = ChVector3i(2, 6, 5) + ivert_offset;
 
         // Normal indexes per each triangle. Assuming 24 normals, 4 per each hexa face.
         ChVector3i inorm_offset = ChVector3i((int)norm_offset, (int)norm_offset, (int)norm_offset);
@@ -735,7 +735,7 @@ public:
         }
         this->GetMesh()->GetCoordsVertices().resize(n_vertexes);
         this->GetMesh()->GetCoordsColors().resize(n_vertexes);
-        this->GetMesh()->GetIndicesVertexes().resize(n_triangles);
+        this->GetMesh()->GetIndicesVertices().resize(n_triangles);
         this->GetMesh()->GetCoordsNormals().resize(n_normals);
         this->GetMesh()->GetIndicesNormals().resize(n_triangles);
         for (auto& mprop : GetMesh()->GetPropertiesPerVertex())
