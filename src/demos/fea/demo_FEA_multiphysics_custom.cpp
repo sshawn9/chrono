@@ -22,9 +22,7 @@
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/solver/ChIterativeSolverLS.h"
-
 #include "chrono/physics/ChLoadContainer.h"
-#include "chrono/fea/ChMesh.h"
 #include "chrono/fea/ChDomainDeformation.h"
 #include "chrono/fea/ChDomainThermal.h"
 #include "chrono/fea/ChDomainThermoDeformation.h"
@@ -578,10 +576,8 @@ int main(int argc, char* argv[]) {
         ChBuilderVolumeBox builder;                                         // this helps creating grids of ChFieldElementHexahedron8 elements
         builder.BuildVolume(ChFrame<>(ChVector3d(0.1, -0.02, 0)), 4, 1, 1,  // N of elements in x,y,z direction
                             0.1, 0.02, 0.04);                               // width in x,y,z direction
-        for (auto& created_element : builder.elements.list())
-            chemical_domain3d->AddElement(created_element);
-        for (auto& created_node : builder.nodes.list())
-            chemical_field->AddNode(created_node);
+        builder.AddToDomain(chemical_domain3d);
+
         // make a ChFieldElementHexahedron8 element share "node2" created before for ChFieldElementChemicalEdge:
         chemical_field->RemoveNode((*builder.elements.list().begin())->GetHexahedronNode(3));
         (*builder.elements.list().begin())->SetHexahedronNode(3, node2);  

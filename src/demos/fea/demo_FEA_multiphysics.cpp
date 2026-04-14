@@ -16,22 +16,9 @@
 //
 // =============================================================================
 
-#include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/solver/ChIterativeSolverLS.h"
-
 #include "chrono/physics/ChLoadContainer.h"
-#include "chrono/fea/ChElementBar.h"
-#include "chrono/fea/ChElementTetraCorot_4.h"
-#include "chrono/fea/ChElementTetraCorot_10.h"
-#include "chrono/fea/ChElementHexaCorot_8.h"
-#include "chrono/fea/ChElementHexaCorot_20.h"
-#include "chrono/fea/ChContinuumThermal.h"
-#include "chrono/fea/ChContinuumElectrostatics.h"
-#include "chrono/fea/ChNodeFEAxyzP.h"
-#include "chrono/fea/ChMesh.h"
-#include "chrono/fea/ChMeshFileLoader.h"
-#include "chrono/fea/ChLinkNodeFrame.h"
 #include "chrono/fea/ChNodeFEAfieldXYZ.h"
 #include "chrono/fea/ChDomainDeformation.h"
 #include "chrono/fea/ChDomainThermal.h"
@@ -122,19 +109,12 @@ int main(int argc, char* argv[]) {
         // conciseness we use a ChBuilderVolumeBox helper:
 
         // Build a test volume discretized with a regular grid of finite elements.
-        ChBuilderVolumeBoxTetra  builder;
+        ChBuilderVolumeBoxTetra builder;
         builder.BuildVolume( ChFrame<>(),
             8, 3, 3,            // N of elements in x,y,z direction
             3, 0.5, 0.5);       // width in x,y,z direction
+        builder.AddToDomain(elastic_domain);
 
-        // After Build(), the elements and the nodes must be added to domains and fields:
-        for (auto& created_elementc : builder.elements.list())
-            for (auto& created_element : created_elementc)
-                elastic_domain->AddElement(created_element);
-        for (auto& created_node : builder.nodes.list())
-            displacement_field->AddNode(created_node);
-
-        
         // Set atomic force on some node.
         // Note that the ChNodeFEAfieldXYZ created in the volume builder are generic nodes that
         // do not contain the xyz position, or speed, or applied atomic forces, because those properties
@@ -190,7 +170,7 @@ int main(int argc, char* argv[]) {
         auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
         vis->AttachSystem(&sys);
         vis->SetWindowSize(800, 600);
-        vis->SetWindowTitle("Test FEA");
+        vis->SetWindowTitle("Multiphysics example.1: elasticity");
         vis->Initialize();
         vis->AddLogo();
         vis->AddSkyBox();
@@ -269,14 +249,7 @@ int main(int argc, char* argv[]) {
         builder.BuildVolume( ChFrame<>(),
             5, 1, 5,        // N of elements in x,y,z direction
             3, 0.5, 3);     // width in x,y,z direction
-
-        // After Build(), the elements and the nodes must be added to domains and fields:
-        for (auto& created_element : builder.elements.list())
-            thermal_domain->AddElement(created_element);
-        for (auto& created_node : builder.nodes.list())
-            temperature_field->AddNode(created_node);
-
-        
+        builder.AddToDomain(thermal_domain);
 
         // EXAMPLE INITIAL CONDITIONS (initial temperature of some nodes)
 
@@ -365,11 +338,11 @@ int main(int argc, char* argv[]) {
         auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
         vis->AttachSystem(&sys);
         vis->SetWindowSize(800, 600);
-        vis->SetWindowTitle("Test FEA");
+        vis->SetWindowTitle("Multiphysics example.2: thermal problem");
         vis->Initialize();
         vis->AddLogo();
         vis->AddSkyBox();
-        vis->AddCamera(ChVector3d(0, 4, -6));
+        vis->AddCamera(ChVector3d(0, 2, -2), ChVector3d(1.5, 0, 1.5));
         vis->AddTypicalLights();
 
 
@@ -467,14 +440,7 @@ int main(int argc, char* argv[]) {
         builder.BuildVolume( ChFrame<>(),
             5, 3, 5,        // N of elements in x,y,z direction
             3, 0.5, 3);     // width in x,y,z direction
-
-        // After Build(), the elements and the nodes must be added to domains and fields:
-        for (auto& created_element : builder.elements.list())
-            domain->AddElement(created_element);
-        for (auto& created_node : builder.nodes.list()) {
-            temperature_field->AddNode(created_node);
-            displacement_field->AddNode(created_node);
-        }
+        builder.AddToDomain(domain);
 
 
         // EXAMPLE DIRICHLET CONDITIONS (fixed positions of some nodes)
@@ -542,11 +508,11 @@ int main(int argc, char* argv[]) {
         auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
         vis->AttachSystem(&sys);
         vis->SetWindowSize(800, 600);
-        vis->SetWindowTitle("Test FEA");
+        vis->SetWindowTitle("Multiphysics example.3: thermo-elastic problem");
         vis->Initialize();
         vis->AddLogo();
         vis->AddSkyBox();
-        vis->AddCamera(ChVector3d(0, 4, -6));
+        vis->AddCamera(ChVector3d(0, 2, -2), ChVector3d(1.5, 0, 1.5));
         vis->AddTypicalLights();
 
 
@@ -557,7 +523,7 @@ int main(int argc, char* argv[]) {
         sys.SetSolver(mkl_solver);
 
         // The default EULER_IMPLICIT_LINEAR is not good for problems with finite elements, switch to:
-        sys.SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT);
+        sys.SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED);
 
         // Simulation loop
         double timestep = 10;
