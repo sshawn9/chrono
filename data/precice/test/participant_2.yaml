@@ -1,16 +1,10 @@
 precice_adapter_config:
-    data_path:
-      type: RELATIVE
-      root: "."
-
     participant_name: Solver2
-    precice_config_filename: test.xml
     
     interfaces:
     - mesh_name: Mesh2
+      data_type: GENERIC
       write_data:
-      - type: GENERIC
-        name: data2
+      - name: data2
       read_data:
-      - type: GENERIC
-        name: data1
+      - name: data1

@@ -25,90 +25,112 @@ using std::endl;
 namespace chrono {
 namespace ch_precice {
 
-ChPreciceAdapterMbs::ChPreciceAdapterMbs(ChSystem& sys, double time_step) : m_sys(sys), m_time_step(time_step) {
-    ChAssertAlways(m_sys.IsInitialized());
+ChPreciceAdapterMbs::ChPreciceAdapterMbs(ChSystem& sys, double time_step, bool verbose) : m_sys(&sys), m_time_step(time_step) {
+    ChAssertAlways(m_sys->IsInitialized());
+
+    SetVerbose(verbose);
 
     // Allocate space for checkpoint
-    m_sys.Setup();
-    auto np = m_sys.GetNumCoordsPosLevel();
-    auto nv = m_sys.GetNumCoordsVelLevel();
-    m_checkpoint.time = m_sys.GetChTime();
-    m_checkpoint.x.setZero(np, &m_sys);
-    m_checkpoint.v.setZero(nv, &m_sys);
+    m_sys->Setup();
+    auto np = m_sys->GetNumCoordsPosLevel();
+    auto nv = m_sys->GetNumCoordsVelLevel();
+    m_checkpoint.time = m_sys->GetChTime();
+    m_checkpoint.x.setZero(np, m_sys);
+    m_checkpoint.v.setZero(nv, m_sys);
 }
 
-ChPreciceAdapterMbs::~ChPreciceAdapterMbs() {}
+#if defined(CHRONO_PARSERS) && defined(CHRONO_HAS_YAML)
+ChPreciceAdapterMbs::ChPreciceAdapterMbs(const std::string& input_filename, bool verbose) {
+    SetVerbose(verbose);
 
-void ChPreciceAdapterMbs::InitializeSolver() {
-    // Go through all interface meshes and check consistency
-    for (const auto& mesh_name : GetMeshNames()) {
-        // All meshes in Chrono interfaces must have dimension 3
-        ChAssertAlways(GetMeshDimensions(mesh_name) == 3);
-        // All data in Chrono interfaces must have dimension 3
-        for (const auto& data_name : GetReadDataNamesOnMesh(mesh_name)) {
-            ChAssertAlways(GetDataDimensions(mesh_name, data_name) == 3);
+    // Create the MBS from the YAML specification file
+    parsers::ChParserMbsYAML parser(input_filename, verbose);
+    auto sys = parser.CreateSystem();
+    parser.Populate(*sys);
+    m_sys = sys.get();
+
+    // Read in preCICE participant configuration
+    ConstructSolver(input_filename);
+
+    // Check consistency between preCICE participant specification and the MBS
+    YAML::Node yaml = YAML::LoadFile(input_filename);
+    ChAssertAlways(yaml["precice_adapter_config"]);
+    auto config = yaml["precice_adapter_config"];
+
+    // Read names of interface physics items and check that they are defined in the MBS
+    if (config["bodies"]) {
+        auto bodies = config["bodies"];
+        ChAssertAlways(bodies.IsSequence());
+        for (int i = 0; i < bodies.size(); i++) {
+            ChAssertAlways(bodies[i]["name"]);
+            auto body_name = bodies[i]["name"].as<std::string>();
+            auto body = m_sys->SearchBody(body_name);
+            if (body) {
+                m_bodies.push_back(body);
+            } else {
+                cerr << "No body named '" << body_name << "' was found in the MBS" << endl;
+                throw std::runtime_error("Interface body not present in MBS");
+            }
         }
     }
 
-
-
-    struct Interface {
-        bool in_defined;
-        bool out_defined;
-
-    };
-
-    Interface rigid_body_ref;
-    Interface rigid_body_mesh;
-    Interface contact_surf_1d;
-    Interface contact_surf_2d;
-
-    // Check types of output (write) data
-    bool rigid_body_ref_point = false;
-    bool rigid_body_mesh_points = false;
-    bool contact_mesh1d_nodes = false;
-    bool contact_mesh2d_nodes = false;
-    for (const auto& [key, value] : m_data_write) {
-        if (m_data_write[key].type == DataType::RIGID_BODY_REF_POINT)
-            rigid_body_ref_point = true;
-        if (m_data_write[key].type == DataType::RIGID_BODY_MESH_POINTS)
-            rigid_body_mesh_points = true;
-        if (m_data_write[key].type == DataType::CONTACT_MESH1D_NODES)
-            contact_mesh1d_nodes = true;
-        if (m_data_write[key].type == DataType::CONTACT_MESH2D_NODES)
-            contact_mesh2d_nodes = true;
+    if (config["meshes1d"]) {
+        //// TODO
     }
 
-    // Check types of input (read) data
-    bool rigid_body_ref_force = false;
-    bool rigid_body_mesh_forces = false;
-    bool contact_mesh1d_forces = false;
-    bool contact_mesh2d_forces = false;
-    for (const auto& [key, value] : m_data_read) {
-        if (m_data_write[key].type == DataType::RIGID_BODY_REF_FORCE)
-            rigid_body_ref_force = true;
-        if (m_data_write[key].type == DataType::RIGID_BODY_MESH_FORCES)
-            rigid_body_mesh_forces = true;
-        if (m_data_write[key].type == DataType::CONTACT_MESH1D_FORCES)
-            contact_mesh1d_forces = true;
-        if (m_data_write[key].type == DataType::CONTACT_MESH2D_FORCES)
-            contact_mesh2d_forces = true;
+    if (config["meshes2d"]) {
+        //// TODO
     }
 
-    // Set number of Chrono physics items in the coupling interface
+    if (m_verbose) {
+    }
+}
+#endif
+
+ChPreciceAdapterMbs::~ChPreciceAdapterMbs() {}
+
+void ChPreciceAdapterMbs::InitializeParticipant() {
+    // Set number of Chrono physics items in the coupling interfaces
     //// TODO - set this from specified FSI data
-    int num_rigid_bodies = 1;
-    int num_contact_mesh1d = 0;
-    int num_contact_mesh2d = 0;
 
-    // Check what interfaces are enabled
-    m_use_rigid_body_ref_data = (num_rigid_bodies > 0) && rigid_body_ref_point && rigid_body_ref_force;
-    m_use_rigid_body_mesh_data = (num_rigid_bodies > 0) && rigid_body_mesh_points && rigid_body_mesh_forces;
-    m_use_contact_mesh1d_data = (num_contact_mesh1d > 0) && contact_mesh1d_nodes && contact_mesh1d_forces;
-    m_use_contact_mesh2d_data = (num_contact_mesh2d > 0) && contact_mesh2d_nodes && contact_mesh2d_forces;
+    // Go through all interface meshes and
+    // - check that coupling meshes have dimension 3
+    // - check that coupling data have dimension 3
+    // - set mesh vertices (depending on data type)
+    // - register mesh with preCICE
+    for (const auto& mesh_name : GetMeshNames()) {
+        ChAssertAlways(GetMeshDimensions(mesh_name) == 3);
 
-    // Size the meshes and data appropriately (note that )
-    if (m_use_rigid_body_ref_data) {
+        for (const auto& data_name : GetReadDataNamesOnMesh(mesh_name)) {
+            ChAssertAlways(GetDataDimensions(mesh_name, data_name) == 3);
+        }
+
+        std::vector<ChVector3d> vertices;
+        size_t num_vertices;
+        auto& mesh_data = m_coupling_meshes[mesh_name];
+        switch (mesh_data.data_type) {
+            case DataType::RIGID_BODY_REF_POINTS: {
+                num_vertices = m_bodies.size();
+                for (const auto& body : m_bodies)
+                    vertices.push_back(body->GetPos());
+                break;
+            }
+            case DataType::RIGID_BODY_MESH_POINTS: {
+                num_vertices = 0;  //// TODO
+                break;
+            }
+            case DataType::FEA_MESH1D_NODES: {
+                num_vertices = 0;  //// TODO
+                break;
+            }
+            case DataType::FEA_MESH2D_NODES: {
+                num_vertices = 0;  //// TODO
+                break;
+            }
+        }
+
+        // Register coupling mesh with preCICE
+        RegisterMesh(mesh_name, vertices);
     }
 }
 
@@ -116,7 +138,7 @@ void ChPreciceAdapterMbs::WriteCheckpoint(double time) {
     ChPreciceAdapter::WriteCheckpoint(time);
 
     double sys_time;
-    m_sys.StateGather(m_checkpoint.x, m_checkpoint.v, sys_time);
+    m_sys->StateGather(m_checkpoint.x, m_checkpoint.v, sys_time);
     assert(time == sys_time);
 }
 
@@ -124,7 +146,7 @@ void ChPreciceAdapterMbs::ReadCheckpoint(double time) {
     ChPreciceAdapter::ReadCheckpoint(time);
 
     ChAssertAlways(m_checkpoint.time == time);
-    m_sys.StateScatter(m_checkpoint.x, m_checkpoint.v, m_checkpoint.time, UpdateFlags::UPDATE_ALL);
+    m_sys->StateScatter(m_checkpoint.x, m_checkpoint.v, m_checkpoint.time, UpdateFlags::UPDATE_ALL);
 }
 
 void ChPreciceAdapterMbs::ReadData() {
@@ -137,11 +159,11 @@ double ChPreciceAdapterMbs::GetSolverTimeStep(double max_time_step) const {
     return std::min(m_time_step, max_time_step);
 }
 
-void ChPreciceAdapterMbs::AdvanceSolver(double time, double time_step) {
-    ChPreciceAdapter::AdvanceSolver(time, time_step);
+void ChPreciceAdapterMbs::AdvanceParticipant(double time, double time_step) {
+    ChPreciceAdapter::AdvanceParticipant(time, time_step);
 
-    ChAssertAlways(time == m_sys.GetChTime());
-    m_sys.DoStepDynamics(time_step);
+    ChAssertAlways(time == m_sys->GetChTime());
+    m_sys->DoStepDynamics(time_step);
 }
 
 void ChPreciceAdapterMbs::WriteData() {

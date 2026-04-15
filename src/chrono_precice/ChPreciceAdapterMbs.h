@@ -29,6 +29,10 @@
 #include "chrono/physics/ChLinkMotorRotation.h"
 #include "chrono/utils/ChBodyGeometry.h"
 
+#if defined(CHRONO_PARSERS) && defined(CHRONO_HAS_YAML)
+    #include "chrono_parsers/yaml/ChParserMbsYAML.h"
+#endif
+
 namespace chrono {
 namespace ch_precice {
 
@@ -38,15 +42,22 @@ namespace ch_precice {
 /// preCICE adapter for Chrono MBS simulation.
 class ChApiPrecice ChPreciceAdapterMbs : public ChPreciceAdapter {
   public:
-    ChPreciceAdapterMbs(ChSystem& sys, double time_step);
+    ChPreciceAdapterMbs(ChSystem& sys, double time_step, bool verbose = false);
+
+#if defined(CHRONO_PARSERS) && defined(CHRONO_HAS_YAML)
+    ChPreciceAdapterMbs(const std::string& input_filename, bool verbose = false);
+#endif
+
     ~ChPreciceAdapterMbs();
 
-    virtual void InitializeSolver() override;
+    ChSystem& GetSystem() { return *m_sys; }
+
+    virtual void InitializeParticipant() override;
     virtual void WriteCheckpoint(double time) override;
     virtual void ReadCheckpoint(double time) override;
     virtual void ReadData() override;
     virtual double GetSolverTimeStep(double max_time_step) const override;
-    virtual void AdvanceSolver(double time, double time_step) override;
+    virtual void AdvanceParticipant(double time, double time_step) override;
     virtual void WriteData() override;
 
   private:
@@ -56,9 +67,11 @@ class ChApiPrecice ChPreciceAdapterMbs : public ChPreciceAdapter {
         ChStateDelta v;
     };
 
-    ChSystem& m_sys;
+    ChSystem* m_sys;
     double m_time_step;
     Checkpoint m_checkpoint;
+
+    std::vector<std::shared_ptr<ChBody>> m_bodies;
 
     bool m_use_rigid_body_ref_data;
     bool m_use_rigid_body_mesh_data;

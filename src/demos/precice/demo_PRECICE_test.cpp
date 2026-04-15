@@ -19,6 +19,7 @@
 
 #include <numeric>
 
+#include "chrono/core/ChDataPath.h"
 #include "chrono/utils/ChUtils.h"
 
 #include "chrono_precice/ChPreciceAdapter.h"
@@ -37,13 +38,14 @@ using std::endl;
 
 class TestAdapter : public ChPreciceAdapter {
   public:
-    TestAdapter(const std::string& yaml_input, bool verbose = false);
+    TestAdapter(const std::string& yaml_input, const std::string& precice_config_filename, bool verbose = false);
 
+    virtual void InitializeParticipant() override;
     virtual void WriteCheckpoint(double time) override;
     virtual void ReadCheckpoint(double time) override;
     virtual void ReadData() override;
     virtual double GetSolverTimeStep(double max_time_step) const override;
-    virtual void AdvanceSolver(double time, double time_step) override;
+    virtual void AdvanceParticipant(double time, double time_step) override;
     virtual void WriteData() override;
 
   private:
@@ -51,6 +53,7 @@ class TestAdapter : public ChPreciceAdapter {
 
     std::string mesh_name;
     int mesh_dim;
+    int num_vertices;
     std::vector<double> vertices;
 
     double solver_time;
@@ -60,11 +63,14 @@ class TestAdapter : public ChPreciceAdapter {
     std::vector<double> solver_vector_output;
 };
 
-TestAdapter::TestAdapter(const std::string& yaml_input, bool verbose) : ChPreciceAdapter(), solver_time(0), solver_state(0) {
+TestAdapter::TestAdapter(const std::string& yaml_input, const std::string& precice_config_filename, bool verbose) : ChPreciceAdapter(), solver_time(0), solver_state(0) {
     SetVerbose(verbose);
 
+    // Construct solver from the specified YAML input file
+    ConstructSolver(yaml_input);
+
     // Register the solver with preCICE using the specified input file, rank 0, and size 1
-    RegisterSolver(yaml_input, 0, 1);
+    RegisterSolver(precice_config_filename, 0, 1);
 
     // Set a unique id for different instantiations of this adapter (to differentiate their behavior)
     id = (m_participant_name == "Solver1") ? 1 : 2;
@@ -76,7 +82,7 @@ TestAdapter::TestAdapter(const std::string& yaml_input, bool verbose) : ChPrecic
     mesh_dim = GetMeshDimensions(mesh_name);
 
     // Create a mock-up mesh for testing
-    const int num_vertices = 4;
+    num_vertices = 4;
     switch (mesh_dim) {
         case 2: {
             cout << "Creating 2D mesh with " << num_vertices << " vertices" << endl;
@@ -98,9 +104,13 @@ TestAdapter::TestAdapter(const std::string& yaml_input, bool verbose) : ChPrecic
             cerr << "Error: [SetInterfaces] Unsupported mesh dimension: " << mesh_dim << endl;
             throw std::runtime_error("[SetInterfaces] Unsupported mesh dimension");
     }
+}
 
-    // Set the mesh vertices in the adapter and resize interface read/write data
-    SetMesh(mesh_name, vertices);
+void TestAdapter::InitializeParticipant() {
+    ChPreciceAdapter::InitializeParticipant();
+
+    // Register the mesh in the adapter, given its vertices, and resize interface read/write data
+    RegisterMesh(mesh_name, vertices);
 
     // Size and initialize mock-up output (write) data
     solver_scalar_output.resize(num_vertices);
@@ -143,8 +153,8 @@ double TestAdapter::GetSolverTimeStep(double max_time_step) const {
     return (id == 1 ? 2e-1 : 1e-1);
 }
 
-void TestAdapter::AdvanceSolver(double time, double time_step) {
-    ChPreciceAdapter::AdvanceSolver(time, time_step);
+void TestAdapter::AdvanceParticipant(double time, double time_step) {
+    ChPreciceAdapter::AdvanceParticipant(time, time_step);
     ChAssertAlways(time == solver_time);
 
     // Dummy dynamics
@@ -184,6 +194,8 @@ int main(int argc, char* argv[]) {
     ////    cout << "Enter something to continue..." << endl;
     ////    cin >> foo;
     ////#endif
+  
+  std::cout << "Copyright (c) 2026 projectchrono.org\nChrono version: " << CHRONO_VERSION << std::endl;
 
     // Get input file name from command line arguments
     ChCLI cli(argv[0], "");
@@ -193,8 +205,9 @@ int main(int argc, char* argv[]) {
     auto input_filename = cli.GetAsType<std::string>("input_filename");
     cout << "YAML adapter configuration file: " << input_filename << endl;
 
-    // Create the participant and set its interfaces
-    TestAdapter participant(input_filename, true);
+    // Create the participant and register it with preCICE
+    std::string precice_config_filename = GetChronoDataFile("precice/test/test.xml");
+    TestAdapter participant(input_filename, precice_config_filename, true);
 
     // Initialize simulation
     participant.InitializeSimulation();
