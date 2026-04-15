@@ -127,7 +127,7 @@ public:
 
     /// Gets the normal to the surface at the parametric coordinate u,v.
     /// Normal must be considered pointing outside in case the surface is a boundary to a volume.
-    virtual ChVector3d ComputeNormal(const double U, const double V) {
+    virtual ChVector3d ComputeNormal(const double U, const double V) override {
         return this->m_element->ComputeNormal(U, V);
     }
 

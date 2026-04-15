@@ -91,11 +91,11 @@ public:
     /// Update, called at least at each time step.
     /// If the element has to keep updated some auxiliary data, such as the rotation matrices for corotational approach,
     /// this should be implemented in this function.
-    virtual void Update() {}
+    virtual void Update() override {}
 
     // The following needed only if element is wrapped as component of a ChLoaderUVW.
-    virtual bool IsTetrahedronIntegrationCompatible() const { return false; }
-    virtual bool IsTrianglePrismIntegrationCompatible() const { return false; }
+    virtual bool IsTetrahedronIntegrationCompatible() const override { return false; }
+    virtual bool IsTrianglePrismIntegrationCompatible() const override { return false; }
 
     virtual int GetNumFaces() override { return 6; }
     virtual std::shared_ptr<ChFieldElementSurface> BuildFace(int i_face, std::shared_ptr<ChFieldElementVolume> shared_this) override;
@@ -104,7 +104,7 @@ private:
     /// Initial setup (called once before start of simulation).
     /// This is used mostly to precompute matrices that do not change during the simulation, i.e. the local stiffness of
     /// each element, if any, the mass, etc.
-    virtual void SetupInitial(ChSystem* system) {}
+    virtual void SetupInitial(ChSystem* system) override {}
 
     std::array<std::shared_ptr<ChNodeFEAfieldXYZ>, 8> nodes;
 };

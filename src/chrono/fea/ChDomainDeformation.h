@@ -235,7 +235,7 @@ public:
         DataPerElement& data,
         const int i_point,
         const double time
-    ) {
+    ) override {
         material->ComputeUpdateEndStep(
             data.matpoints_data.size() ? data.matpoints_data[i_point].get() : nullptr,
             &data.element_data,

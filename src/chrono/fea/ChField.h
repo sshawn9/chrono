@@ -378,7 +378,7 @@ public:
         }
     }
 
-    virtual void InjectVariables(ChSystemDescriptor& descriptor) {
+    virtual void InjectVariables(ChSystemDescriptor& descriptor) override {
         for (auto& node : this->node_data)
             node.second.InjectVariables(descriptor);
     }

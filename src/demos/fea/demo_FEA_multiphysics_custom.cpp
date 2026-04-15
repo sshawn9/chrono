@@ -285,7 +285,7 @@ int main(int argc, char* argv[]) {
         // Tell how many material points are needed
         // - NOTE: THIS EXAMPLE DEMONSTRATES ELEMENTS WITHOUT QUADRATURE, BUT WE'LL RETURN "1" SO THAT 
         //   THE DOMAIN WILL ATTACH ONE MATERIAL DATA OBJECT TO THE ELEMENT  
-        virtual int GetNumQuadraturePointsForOrder(const int order) const { return 1; }
+        virtual int GetNumQuadraturePointsForOrder(const int order) const override { return 1; }
 
         // Get i-th material point weight and parametric coords  
         // - Note: this element does not require quadrature, so this function would be superfluous, but we implement it
@@ -297,13 +297,13 @@ int main(int argc, char* argv[]) {
                                                 ChVector3d& coords) const override { weight = 1.0; coords={0.5,0,0};};
 
         /// Update, called each time the state changes, even multiple times per time step. In our case we do nothing.
-        virtual void Update() {}
+        virtual void Update() override {}
 
         private:
         /// Initial setup (called once before start of simulation).
         /// This is used mostly to precompute matrices that do not change during the simulation, i.e. the local
         /// stiffness of each element, if any, the mass, etc. In our case we do nothing.
-        virtual void SetupInitial(ChSystem* system) {}
+        virtual void SetupInitial(ChSystem* system) override {}
 
         std::array<std::shared_ptr<ChNodeFEAfieldXYZ>, 2> nodes;
     };
@@ -379,7 +379,7 @@ int main(int argc, char* argv[]) {
         /// For our Fick 1D law, going from strong to weak discretized form, it is  d/dt c_i = Fi_i = J_i  
         virtual void ElementComputeInternalLoads(std::shared_ptr<ChFieldElement> melement,
                                                     DataPerElement& data,
-                                                    ChVectorDynamic<>& Fi) {
+                                                    ChVectorDynamic<>& Fi) override {
             int numelcoords = this->GetNumPerNodeCoordsVelLevel() * melement->GetNumNodes();
             Fi.setZero(numelcoords);
             if (auto edge = std::dynamic_pointer_cast<ChFieldElementChemicalEdge>(melement)) {
@@ -405,7 +405,7 @@ int main(int argc, char* argv[]) {
                                                 ChMatrixRef H,
                                                 double Kfactor,
                                                 double Rfactor = 0,
-                                                double Mfactor = 0) {
+                                                double Mfactor = 0) override {
             if (auto edge = std::dynamic_pointer_cast<ChFieldElementChemicalEdge>(melement)) {
                 double length = (*edge->GetNodeA() - *edge->GetNodeB()).Length();
                 // diffusion 

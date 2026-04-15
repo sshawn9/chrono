@@ -333,7 +333,7 @@ public:
     virtual int GetNumNodes() override { return num_nodes; }
 
     virtual int GetNumFields() override { return (int)fields.size(); }
-    virtual std::shared_ptr<ChFieldBase> GetField(int nfield)  { return fields[nfield]; }
+    virtual std::shared_ptr<ChFieldBase> GetField(int nfield) override { return fields[nfield]; }
 
     class IteratorOnElements : public ChDomain::IteratorOnElements {
         using InternalIterator = typename std::unordered_map<std::shared_ptr<ChFieldElement>, DataPerElement>::iterator;
