@@ -86,9 +86,9 @@ public:
     virtual double Get_DtMultiplier() override { 
         // should never hit into this... redesign ChMaterialPoisson to remove it? or add double T as parameter?
         assert(false); 
-        throw(std::exception("Cannot use Get_DtMultiplier because non-linear material"));
+        throw(std::runtime_error("Cannot use Get_DtMultiplier because non-linear material"));
         double T = 0; // placeholder...
-        return m_density * c_mass_specific_heat_capacity->GetVal(T); 
+        return m_density * c_mass_specific_heat_capacity->GetVal(T);
     }
 
     //

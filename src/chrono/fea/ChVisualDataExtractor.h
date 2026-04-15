@@ -42,6 +42,7 @@ public:
     virtual bool IsDataAtNode() const = 0;
 
     virtual ChVisualDataExtractor* clone() const = 0;
+    virtual ~ChVisualDataExtractor() = default;
 };
 
 /// Base class for all extractors that look into a ChFieldData and 
