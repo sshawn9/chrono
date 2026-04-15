@@ -974,6 +974,9 @@ template <typename T_per_node = std::tuple<ChFieldScalar>,
           typename T_per_element = ChElementDataNONE>
 class ChDomainIntegrating : public ChDomainImpl<T_per_node, T_per_matpoint_aux, T_per_element> {
   public:
+    // already in parent class, but need this redundant stuff for non-msvc compilers:
+    using DataPerElement = typename ChDomainImpl<T_per_node, T_per_matpoint_aux, T_per_element>::DataPerElement;
+
     /// Construct a domain, given a tuple of fields.
     ChDomainIntegrating(typename tuple_as_sharedptr<T_per_node>::type mfields)
         : ChDomainImpl<T_per_node, T_per_matpoint_aux, T_per_element>(mfields) {};
