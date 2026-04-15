@@ -40,11 +40,11 @@ namespace fea {
 
     /// Access the nth node.
 
-    inline std::shared_ptr<ChNodeFEAbase> ChFieldElementTetrahedron4::GetNode(unsigned int n) {
+    std::shared_ptr<ChNodeFEAbase> ChFieldElementTetrahedron4::GetNode(unsigned int n) {
         return nodes[n];
     }
 
-    inline void ChFieldElementTetrahedron4::ComputeN(const ChVector3d eta, ChRowVectorDynamic<>& N) {
+    void ChFieldElementTetrahedron4::ComputeN(const ChVector3d eta, ChRowVectorDynamic<>& N) {
         N.resize(GetNumNodes());
         N[0] = eta[0];
         N[1] = eta[1];
@@ -55,7 +55,7 @@ namespace fea {
     // Compute shape function material derivatives dN/d\eta at eta parametric coordinates.
     // Write shape functions dN_j(\eta)/d\eta_i in dNde, a matrix with 4 columns, and 3 rows. 
 
-    inline void ChFieldElementTetrahedron4::ComputedNde(const ChVector3d eta, ChMatrixDynamic<>& dNde) {
+    void ChFieldElementTetrahedron4::ComputedNde(const ChVector3d eta, ChMatrixDynamic<>& dNde) {
         dNde.setZero(GetManifoldDimensions(), GetNumNodes());
         dNde(0, 0) = 1.0;
         dNde(1, 1) = 1.0;
@@ -69,7 +69,7 @@ namespace fea {
     // Write shape functions dN_j(eta)/dX_i in dNdX, a matrix with 4 columns, and 3 rows.
     // Instead of falling back to default dNdX = J^{-T} * dNde; for lin tetrahedron we know the ad-hoc expression:
 /*
-    inline void ChFieldElementTetrahedron4::ComputedNdX(const ChVector3d eta, ChMatrixDynamic<>& dNdX) {
+   void ChFieldElementTetrahedron4::ComputedNdX(const ChVector3d eta, ChMatrixDynamic<>& dNdX) {
         dNdX.resize(3, 4);
         ChVector3d x14 = *this->nodes[0] - *this->nodes[3];
         ChVector3d x24 = *this->nodes[1] - *this->nodes[3];
@@ -116,14 +116,14 @@ namespace fea {
 
     // Tell how many Gauss points are needed for integration
 
-    inline int ChFieldElementTetrahedron4::GetNumQuadraturePointsForOrder(const int order) const {
+    int ChFieldElementTetrahedron4::GetNumQuadraturePointsForOrder(const int order) const {
         if (order == 1)
             return 1; // shortcut
         ChQuadratureTablesTetrahedron* mtables = ChQuadrature::GetStaticTablesTetrahedron();
         return (int)(mtables->Weight[order - 1].size());
     }
 
-    inline void ChFieldElementTetrahedron4::GetMaterialPointWeight(const int order, const int i, double& weight, ChVector3d& coords) const {
+    void ChFieldElementTetrahedron4::GetMaterialPointWeight(const int order, const int i, double& weight, ChVector3d& coords) const {
         if (order == 1) {
             coords.Set(0.25);
             weight = CH_1_6;

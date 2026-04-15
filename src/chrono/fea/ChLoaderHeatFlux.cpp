@@ -19,7 +19,7 @@ namespace chrono {
 namespace fea {
 
 
-inline void ChLoaderHeatFlux::ComputeF(double U, double V, ChVectorDynamic<>& F, ChVectorDynamic<>* state_x, ChVectorDynamic<>* state_w) {
+void ChLoaderHeatFlux::ComputeF(double U, double V, ChVectorDynamic<>& F, ChVectorDynamic<>* state_x, ChVectorDynamic<>* state_w) {
     F(0) = m_heat_flux;
 }
 

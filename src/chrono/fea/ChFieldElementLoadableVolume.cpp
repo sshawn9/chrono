@@ -25,7 +25,7 @@ namespace fea {
 /// in -1..+1 F is a load, N'*F is the resulting generalized load. Returns also det[J] with J=[dx/du,..], which may
 /// be useful in Gauss quadrature.
 
-inline void fea::ChFieldElementLoadableVolume::ComputeNF(const double U, const double V, const double W, ChVectorDynamic<>& Qi, double& detJ, const ChVectorDynamic<>& F, ChVectorDynamic<>* state_x, ChVectorDynamic<>* state_w) {
+void fea::ChFieldElementLoadableVolume::ComputeNF(const double U, const double V, const double W, ChVectorDynamic<>& Qi, double& detJ, const ChVectorDynamic<>& F, ChVectorDynamic<>* state_x, ChVectorDynamic<>* state_w) {
     ChRowVectorDynamic<double> N(m_element->GetNumNodes());
     ChVector3d eta(U, V, W);
     m_element->ComputeN(eta, N);

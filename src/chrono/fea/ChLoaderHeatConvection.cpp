@@ -20,7 +20,7 @@ namespace chrono {
 namespace fea {
 
 
-inline void ChLoaderHeatConvection::ComputeF(double U, double V, ChVectorDynamic<>& F, ChVectorDynamic<>* state_x, ChVectorDynamic<>* state_w) {
+void ChLoaderHeatConvection::ComputeF(double U, double V, ChVectorDynamic<>& F, ChVectorDynamic<>* state_x, ChVectorDynamic<>* state_w) {
     F(0) = 0; // fallback if no face 
     if (auto loface = std::dynamic_pointer_cast<ChFieldElementLoadableSurface>(this->loadable)) {
         if (auto face = std::dynamic_pointer_cast<ChFieldElementSurface>(loface->GetElement())) {

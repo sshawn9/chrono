@@ -102,7 +102,7 @@ bool test_box_uniaxial_pressure(std::shared_ptr<ChMaterial3DStress> test_materia
     #ifdef CHRONO_PARDISO_MKL
         auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
         mkl_solver->LockSparsityPattern(true);
-        mkl_solver->SetVerbose(true);
+        mkl_solver->SetVerbose(false);
         sys.SetSolver(mkl_solver);
     #endif
     } else {
@@ -114,9 +114,6 @@ bool test_box_uniaxial_pressure(std::shared_ptr<ChMaterial3DStress> test_materia
         solver->SetVerbose(false);
     }
 
-    auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
-    mkl_solver->LockSparsityPattern(true);
-    sys.SetSolver(mkl_solver);
     sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT);
 
     // Simulation loop

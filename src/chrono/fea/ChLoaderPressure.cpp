@@ -19,7 +19,7 @@ namespace chrono {
 namespace fea {
 
 
-inline void ChLoaderPressure::ComputeF(double U, double V, ChVectorDynamic<>& F, ChVectorDynamic<>* state_x, ChVectorDynamic<>* state_w) {
+void ChLoaderPressure::ComputeF(double U, double V, ChVectorDynamic<>& F, ChVectorDynamic<>* state_x, ChVectorDynamic<>* state_w) {
     ChVector3d mnorm = this->loadable->ComputeNormal(U, V);
     F.segment(0, 3) = -pressure * mnorm.eigen();
 }

@@ -29,7 +29,7 @@ namespace fea {
 
     /// Access the nth node.
 
-    inline std::shared_ptr<ChNodeFEAbase> ChFieldElementHexahedron8::GetNode(unsigned int n) {
+    std::shared_ptr<ChNodeFEAbase> ChFieldElementHexahedron8::GetNode(unsigned int n) {
         return nodes[n];
     }
 
