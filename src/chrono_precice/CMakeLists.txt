@@ -90,6 +90,10 @@ target_compile_definitions(Chrono_precice PRIVATE $<$<COMPILE_LANGUAGE:CXX>:CH_A
 target_link_libraries(Chrono_precice PRIVATE Chrono_core)
 target_link_libraries(Chrono_precice PUBLIC precice::precice)
 
+if(CH_ENABLE_MODULE_PARSERS)
+  target_link_libraries(Chrono_precice PRIVATE Chrono_parsers)
+endif()
+
 if(CH_ENABLE_MODULE_FSI)
   target_link_libraries(Chrono_precice PRIVATE Chrono_fsi)
 endif()
