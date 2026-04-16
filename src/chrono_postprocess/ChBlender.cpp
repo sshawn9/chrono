@@ -386,7 +386,7 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
 
     // In a second pass, export shape geometry
     for (const auto& shape_instance : item->GetVisualModel()->GetShapeInstances()) {
-        const auto& shape = shape_instance.first;
+        const auto& shape = shape_instance.shape;
 
         std::ofstream* mfile;
         std::unordered_map<size_t, std::shared_ptr<ChVisualShape>>* m_shapes;
@@ -407,6 +407,7 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
             collection = "chrono_assets";
             per_frame = false;
         }
+        std::ofstream* mfiles = mfile; // this could be mfiles = &state_file, for optimize space, but does not work. 
 
         // const auto& shape_frame = shape_instance.second; // not needed, shape frame will be set later via
         // make_chrono_object_assetlist in py files
@@ -455,7 +456,7 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
                    << collection << ".objects.link(new_object)\n"
                    << "bpy.context.scene.collection.objects.unlink(new_object)\n"
                    << "with bpy.context.temp_override(selected_editable_objects=[new_object]):\n"
-                   << "    bpy.ops.object.shade_smooth(use_auto_smooth=True)\n"
+                   << "    bpy.ops.object.shade_auto_smooth(angle=0.8)\n"
                    << std::endl;
             // radius and height will be set later in ExportItemState to avoid having n meshes per each radius
             m_shapes->insert({(size_t)shape.get(), shape});
@@ -469,7 +470,7 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
                    << collection << ".objects.link(new_object)\n"
                    << "bpy.context.scene.collection.objects.unlink(new_object)\n"
                    << "with bpy.context.temp_override(selected_editable_objects=[new_object]):\n"
-                   << "    bpy.ops.object.shade_smooth(use_auto_smooth=True)\n"
+                   << "    bpy.ops.object.shade_auto_smooth(angle=0.8)\n"
                    << std::endl;
             // radius etc will be set later in ExportItemState to avoid having n meshes per each radius
             m_shapes->insert({(size_t)shape.get(), shape});
@@ -689,9 +690,10 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
             }
             *mfile << "] " << std::endl;
 
-            state_file << "glyphsetting = setup_glyph_setting('" << shapename << "'," << std::endl;
+            *mfiles << "glyphsetting = setup_glyph_setting('" << shapename << "'," << std::endl;
+            
             if (glyph_shape->glyph_width_type == ChGlyphs::eCh_GlyphWidth::CONSTANT) {
-                state_file << "\twidth_type='CONST', width_scale=" << glyph_shape->glyph_scalewidth << ", "
+                *mfiles << "\twidth_type='CONST', width_scale=" << glyph_shape->glyph_scalewidth << ", "
                            << std::endl;  // constant width
             }
             if (glyph_shape->glyph_width_type == ChGlyphs::eCh_GlyphWidth::PROPERTY) {
@@ -699,12 +701,12 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
                                           [&](auto const& p) { return p->name == glyph_shape->glyph_width_prop; });
                 int myprop_id =
                     (mprop != glyph_shape->m_properties.end()) ? mprop - glyph_shape->m_properties.begin() : 0;
-                state_file << "\twidth_type='PROPERTY', property_index_width=" << myprop_id
+                *mfiles << "\twidth_type='PROPERTY', property_index_width=" << myprop_id
                            << ", width_scale=" << glyph_shape->glyph_scalewidth << ","
                            << std::endl;  // will use 1st property, the 'F', for width
             }
             if (glyph_shape->glyph_color_type == ChGlyphs::eCh_GlyphColor::CONSTANT) {
-                state_file << "\tcolor_type='CONST', const_color=(" << glyph_shape->glyph_color_constant.R << ","
+                *mfiles << "\tcolor_type='CONST', const_color=(" << glyph_shape->glyph_color_constant.R << ","
                            << glyph_shape->glyph_color_constant.G << "," << glyph_shape->glyph_color_constant.B << "), "
                            << std::endl;  // constant color
             }
@@ -713,17 +715,17 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
                                           [&](auto const& p) { return p->name == glyph_shape->glyph_color_prop; });
                 int myprop_id =
                     (mprop != glyph_shape->m_properties.end()) ? mprop - glyph_shape->m_properties.begin() : 0;
-                state_file << "\tcolor_type='PROPERTY', property_index_color=" << myprop_id << ", " << std::endl;
+                *mfiles << "\tcolor_type='PROPERTY', property_index_color=" << myprop_id << ", " << std::endl;
             }
             if (glyph_shape->GetDrawMode() == ChGlyphs::GLYPH_POINT) {
-                state_file << "\tglyph_type = 'POINT', " << std::endl;
+                *mfiles << "\tglyph_type = 'POINT', " << std::endl;
             }
             if (glyph_shape->GetDrawMode() == ChGlyphs::GLYPH_VECTOR) {
-                state_file << "\tglyph_type = 'VECTOR', " << std::endl;
-                state_file << "\tdir_type='PROPERTY', property_index_dir=0, " << std::endl;
-                state_file << "\tproperty_index_basis=0, " << std::endl;
+                *mfiles << "\tglyph_type = 'VECTOR', " << std::endl;
+                *mfiles << "\tdir_type='PROPERTY', property_index_dir=0, " << std::endl;
+                *mfiles << "\tproperty_index_basis=0, " << std::endl;
                 if (glyph_shape->glyph_length_type == ChGlyphs::eCh_GlyphLength::CONSTANT) {
-                    state_file << "\tlength_type='CONST', length_scale=" << glyph_shape->glyph_scalelenght << ", "
+                    *mfiles << "\tlength_type='CONST', length_scale=" << glyph_shape->glyph_scalelenght << ", "
                                << std::endl;  // constant length
                 }
                 if (glyph_shape->glyph_length_type == ChGlyphs::eCh_GlyphLength::PROPERTY) {
@@ -732,18 +734,19 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
                                      [&](auto const& p) { return p->name == glyph_shape->glyph_length_prop; });
                     int myprop_id =
                         (mprop != glyph_shape->m_properties.end()) ? mprop - glyph_shape->m_properties.begin() : 0;
-                    state_file << "\tlength_type='PROPERTY', property_index_length=" << myprop_id
+                    *mfiles << "\tlength_type='PROPERTY', property_index_length=" << myprop_id
                                << ", length_scale=" << glyph_shape->glyph_scalelenght << "," << std::endl;
                 }
                 if (glyph_shape->vector_tip)
-                    state_file << "\tdo_tip=True," << std::endl;
+                    *mfiles << "\tdo_tip=True," << std::endl;
                 else
-                    state_file << "\tdo_tip=False," << std::endl;
+                    *mfiles << "\tdo_tip=False," << std::endl;
             }
             if (glyph_shape->GetDrawMode() == ChGlyphs::GLYPH_COORDSYS) {
-                state_file << "\tglyph_type = 'COORDSYS', " << std::endl;
+                *mfiles << "\tglyph_type = 'COORDSYS', " << std::endl;
                 if (glyph_shape->glyph_basis_type == ChGlyphs::eCh_GlyphBasis::CONSTANT) {
-                    state_file << "\tbasis_type='CONST', const_basis=(" << glyph_shape->glyph_basis_constant.e0() << ","
+                    *mfiles << "\tbasis_type='CONST', const_basis=(" << glyph_shape->glyph_basis_constant.e0()
+                                      << ","
                                << glyph_shape->glyph_basis_constant.e1() << ","
                                << glyph_shape->glyph_basis_constant.e2() << ","
                                << glyph_shape->glyph_basis_constant.e3() << "), " << std::endl;  // constant basis
@@ -754,13 +757,13 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
                                      [&](auto const& p) { return p->name == glyph_shape->glyph_basis_prop; });
                     int myprop_id =
                         (mprop != glyph_shape->m_properties.end()) ? mprop - glyph_shape->m_properties.begin() : 0;
-                    state_file << "\tbasis_type='PROPERTY', property_index_basis=" << myprop_id << ", " << std::endl;
+                    *mfiles << "\tbasis_type='PROPERTY', property_index_basis=" << myprop_id << ", " << std::endl;
                 }
             }
             if (glyph_shape->GetDrawMode() == ChGlyphs::GLYPH_TENSOR) {
-                state_file << "\tglyph_type = 'TENSOR', " << std::endl;
+                *mfiles << "\tglyph_type = 'TENSOR', " << std::endl;
                 if (glyph_shape->glyph_basis_type == ChGlyphs::eCh_GlyphBasis::CONSTANT) {
-                    state_file << "\tbasis_type='CONST', const_basis=(" << glyph_shape->glyph_basis_constant.e0() << ","
+                    *mfiles << "\tbasis_type='CONST', const_basis=(" << glyph_shape->glyph_basis_constant.e0() << ","
                                << glyph_shape->glyph_basis_constant.e1() << ","
                                << glyph_shape->glyph_basis_constant.e2() << ","
                                << glyph_shape->glyph_basis_constant.e3() << "), " << std::endl;  // constant basis
@@ -771,10 +774,10 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
                                      [&](auto const& p) { return p->name == glyph_shape->glyph_basis_prop; });
                     int myprop_id =
                         (mprop != glyph_shape->m_properties.end()) ? mprop - glyph_shape->m_properties.begin() : 0;
-                    state_file << "\tbasis_type='PROPERTY', property_index_basis=" << myprop_id << ", " << std::endl;
+                    *mfiles << "\tbasis_type='PROPERTY', property_index_basis=" << myprop_id << ", " << std::endl;
                 }
                 if (glyph_shape->glyph_eigenvalues_type == ChGlyphs::eCh_GlyphEigenvalues::CONSTANT) {
-                    state_file << "\teigenvalues_type='CONST', const_eigenvalues=("
+                    *mfiles << "\teigenvalues_type='CONST', const_eigenvalues=("
                                << glyph_shape->glyph_eigenvalue_constant.x() << ","
                                << glyph_shape->glyph_eigenvalue_constant.y() << ","
                                << glyph_shape->glyph_eigenvalue_constant.z() << "), " << std::endl;  // constant basis
@@ -785,11 +788,11 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
                                      [&](auto const& p) { return p->name == glyph_shape->glyph_eigenvalues_prop; });
                     int myprop_id =
                         (mprop != glyph_shape->m_properties.end()) ? mprop - glyph_shape->m_properties.begin() : 0;
-                    state_file << "\teigenvalues_type='PROPERTY', property_index_eigenvalues=" << myprop_id << ","
+                    *mfiles << "\teigenvalues_type='PROPERTY', property_index_eigenvalues=" << myprop_id << ","
                                << std::endl;
                 }
             }
-            state_file << "\t)" << std::endl;
+            *mfiles << "\t)" << std::endl;
 
             for (auto mprop : glyph_shape->getProperties()) {
                 if (auto mprop_scalar = dynamic_cast<ChPropertyT<double>*>(mprop)) {
@@ -839,18 +842,20 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
                            << mprop_cols->name.c_str() << "', per_instance=True)" << std::endl;
                 }
             }
-            state_file << "new_objects = update_make_glyphs(glyphsetting, '" << shapename << "',";
-            state_file << "(" << blender_frame.GetPos().x() << "," << blender_frame.GetPos().y() << ","
+
+            *mfiles << "new_objects = update_make_glyphs(glyphsetting, '" << shapename << "',";
+            *mfiles << "(" << blender_frame.GetPos().x() << "," << blender_frame.GetPos().y() << ","
                        << blender_frame.GetPos().z() << "),";
-            state_file << "(" << blender_frame.GetRot().e0() << "," << blender_frame.GetRot().e1() << ","
+            *mfiles << "(" << blender_frame.GetRot().e0() << "," << blender_frame.GetRot().e1() << ","
                        << blender_frame.GetRot().e2() << "," << blender_frame.GetRot().e3() << "), " << std::endl;
-            state_file << "  points_" << shapename << "," << std::endl;
-            state_file << "  list_attributes=[ " << std::endl;
+            *mfiles << "  points_" << shapename << "," << std::endl;
+            *mfiles << "  list_attributes=[ " << std::endl;
             for (auto mprop : glyph_shape->getProperties()) {
-                state_file << "   ['" << mprop->name.c_str() << "', data_" << mprop->name.c_str() << "], " << std::endl;
+                *mfiles << "   ['" << mprop->name.c_str() << "', data_" << mprop->name.c_str() << "], "
+                            << std::endl;
             }
-            state_file << "  ], " << std::endl;
-            state_file << ") " << std::endl;
+            *mfiles << "  ], " << std::endl;
+            *mfiles << ") " << std::endl;
 
             m_shapes->insert({(size_t)shape.get(), shape});
         }
@@ -899,6 +904,7 @@ void ChBlender::ExportShapes(std::ofstream& assets_file,
 
             m_shapes->insert({(size_t)shape.get(), shape});
         }
+
     }
 
     // Write cameras. Assume cameras properties (FOV etc.) are not mutable,
@@ -1010,7 +1016,7 @@ void ChBlender::ExportItemState(std::ofstream& state_file,
     bool has_stored_assets = false;
     bool has_stored_cameras = false;
     for (const auto& shape_instance : vis_model->GetShapeInstances()) {
-        const auto& shape = shape_instance.first;
+        const auto& shape = shape_instance.shape;
         if (m_blender_shapes.find((size_t)shape.get()) != m_blender_shapes.end()) {
             has_stored_assets = true;
             break;
@@ -1053,7 +1059,7 @@ void ChBlender::ExportItemState(std::ofstream& state_file,
 
         state_file << "[" << std::endl;
         for (const auto& shape_instance : vis_model->GetShapeInstances()) {
-            const auto& shape = shape_instance.first;
+            const auto& shape = shape_instance.shape;
 
             // Process only "known" shapes (i.e., shapes that were included in the assets file)
             if ((m_blender_shapes.find((size_t)shape.get()) != m_blender_shapes.end()) ||
@@ -1061,7 +1067,7 @@ void ChBlender::ExportItemState(std::ofstream& state_file,
                 ChVector3d aux_scale(0, 0, 0);
 
                 std::string shapename("shape_" + unique_bl_id((size_t)shape.get()));
-                const auto& shape_frame = shape_instance.second;
+                const auto& shape_frame = shape_instance.frame;
 
                 // corner cases for performance reason (in case of multipe sphere asset with different radii, one
                 // blender mesh asset is used anyway, then use scale here)
@@ -1253,13 +1259,14 @@ void ChBlender::ExportData(const std::string& filename) {
                 virtual bool OnReportContact(
                     const ChVector3d& pA,             // contact pA
                     const ChVector3d& pB,             // contact pB
-                    const ChMatrix33<>& plane_coord,  // contact plane coordsystem (A column 'X' is contact normal)
-                    const double& distance,           // contact distance
-                    const double& eff_radius,         // effective radius of curvature at contact
-                    const ChVector3d& react_forces,   // react.forces (in coordsystem 'plane_coord')
-                    const ChVector3d& react_torques,  // react.torques (if rolling friction)
-                    ChContactable* contactobjA,       // model A (note: could be nullptr)
-                    ChContactable* contactobjB        // model B (note: could be nullptr)
+                    const ChMatrix33<>& plane_coord,  // contact frame (X direction is contact normal)
+                    double distance,                  // contact distance
+                    double eff_radius,                // effective radius of curvature at contact
+                    const ChVector3d& react_forces,   // react. forces, expressed in 'plane_coord'
+                    const ChVector3d& react_torques,  // react. torques, if rolling friction
+                    ChContactable* contactobjA,       // first contactable object (may be nullptr)
+                    ChContactable* contactobjB,       // second contactable object (may be nullptr)
+                    int constraint_offset             // NSC only, ignored here
                     ) override {
                     if (fabs(react_forces.x()) > 1e-8 || fabs(react_forces.y()) > 1e-8 ||
                         fabs(react_forces.z()) > 1e-8) {

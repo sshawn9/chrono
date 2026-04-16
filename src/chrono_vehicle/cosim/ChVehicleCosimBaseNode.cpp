@@ -219,11 +219,7 @@ void ChVehicleCosimBaseNode::SetOutDir(const std::string& dir_name, const std::s
     m_outf << std::scientific;
 }
 
-std::string ChVehicleCosimBaseNode::OutputFilename(const std::string& dir,
-                                                   const std::string& root,
-                                                   const std::string& ext,
-                                                   int frame,
-                                                   int frame_digits) {
+std::string ChVehicleCosimBaseNode::OutputFilename(const std::string& dir, const std::string& root, const std::string& ext, int frame, int frame_digits) {
     // Frame number is zero padded for postprocessing
     std::ostringstream filename;
     filename << dir << "/" << root << "_" << std::setw(frame_digits) << std::setfill('0') << frame << "." << ext;
@@ -387,13 +383,10 @@ void ChVehicleCosimBaseNode::SendGeometry(const utils::ChBodyGeometry& geom, int
     */
 
     for (const auto& mesh : geom.coll_meshes) {
-        double data[] = {mesh.pos.x(), mesh.pos.y(), mesh.pos.z()};
-        MPI_Send(data, 3, MPI_DOUBLE, dest, 0, MPI_COMM_WORLD);
-
         const auto& trimesh = mesh.trimesh;
         const auto& vertices = trimesh->GetCoordsVertices();
         const auto& normals = trimesh->GetCoordsNormals();
-        const auto& idx_vertices = trimesh->GetIndicesVertexes();
+        const auto& idx_vertices = trimesh->GetIndicesVertices();
         const auto& idx_normals = trimesh->GetIndicesNormals();
         unsigned int nv = trimesh->GetNumVertices();
         unsigned int nn = trimesh->GetNumNormals();
@@ -402,8 +395,7 @@ void ChVehicleCosimBaseNode::SendGeometry(const utils::ChBodyGeometry& geom, int
         unsigned int surf_props[] = {nv, nn, nt, (unsigned int)mesh.matID};
         MPI_Send(surf_props, 4, MPI_INT, dest, 0, MPI_COMM_WORLD);
         if (m_verbose)
-            cout << "[" << GetNodeTypeString() << "] Send: vertices = " << surf_props[0]
-                 << "  triangles = " << surf_props[2] << endl;
+            cout << "[" << GetNodeTypeString() << "] Send: vertices = " << surf_props[0] << "  triangles = " << surf_props[2] << endl;
 
         double* vert_data = new double[3 * nv + 3 * nn];
         unsigned int* tri_data = new unsigned int[3 * nt + 3 * nt];
@@ -447,8 +439,7 @@ void ChVehicleCosimBaseNode::RecvGeometry(utils::ChBodyGeometry& geom, int sourc
     for (int i = 0; i < num_materials; i++) {
         float props[8];
         MPI_Recv(props, 8, MPI_FLOAT, source, 0, MPI_COMM_WORLD, &status);
-        geom.materials.push_back(
-            ChContactMaterialData(props[0], props[1], props[2], props[3], props[4], props[5], props[6], props[7]));
+        geom.materials.push_back(ChContactMaterialData(props[0], props[1], props[2], props[3], props[4], props[5], props[6], props[7]));
     }
 
     // Receive shape geometry
@@ -489,14 +480,10 @@ void ChVehicleCosimBaseNode::RecvGeometry(utils::ChBodyGeometry& geom, int sourc
     }
 
     for (int i = 0; i < num_meshes; i++) {
-        double data[3];
-        MPI_Recv(data, 3, MPI_DOUBLE, source, 0, MPI_COMM_WORLD, &status);
-        ChVector3d pos(data[0], data[1], data[2]);
-
         auto trimesh = chrono_types::make_shared<ChTriangleMeshConnected>();
         auto& vertices = trimesh->GetCoordsVertices();
         auto& normals = trimesh->GetCoordsNormals();
-        auto& idx_vertices = trimesh->GetIndicesVertexes();
+        auto& idx_vertices = trimesh->GetIndicesVertices();
         auto& idx_normals = trimesh->GetIndicesNormals();
 
         int surf_props[4];
@@ -508,7 +495,7 @@ void ChVehicleCosimBaseNode::RecvGeometry(utils::ChBodyGeometry& geom, int sourc
 
         trimesh->GetCoordsVertices().resize(nv);
         trimesh->GetCoordsNormals().resize(nn);
-        trimesh->GetIndicesVertexes().resize(nt);
+        trimesh->GetIndicesVertices().resize(nt);
         trimesh->GetIndicesNormals().resize(nt);
 
         // Tire mesh vertices & normals and triangle indices
@@ -539,7 +526,7 @@ void ChVehicleCosimBaseNode::RecvGeometry(utils::ChBodyGeometry& geom, int sourc
         delete[] vert_data;
         delete[] tri_data;
 
-        geom.coll_meshes.push_back(utils::ChBodyGeometry::TrimeshShape(pos, trimesh, 0.0, matID));
+        geom.coll_meshes.push_back(utils::ChBodyGeometry::TrimeshShape(VNULL, QUNIT, trimesh, 1.0, 0.0, matID));
     }
 }
 

@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Implementation of a suspension testing mechanism for a wheeld vehicle.
+// Implementation of a suspension testing mechanism for a wheeled vehicle.
 //
 // The reference frame follows the ISO standard: Z-axis up, X-axis
 // pointing forward, and Y-axis towards the left of the vehicle.
@@ -26,8 +26,8 @@
 
 #include "chrono/assets/ChVisualShapeCylinder.h"
 
-#include "chrono_vehicle/ChVehicleModelData.h"
-#include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono_vehicle/ChVehicleDataPath.h"
+#include "chrono_vehicle/utils/ChVehicleUtilsJSON.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 
 #ifdef CHRONO_POSTPROCESS
@@ -140,7 +140,7 @@ ChSuspensionTestRig::ChSuspensionTestRig(const std::string& spec_filename)
     assert(type.compare("SuspensionTestRig") == 0);
 
     assert(d.HasMember("Vehicle Input File"));
-    m_vehicle = chrono_types::make_shared<WheeledVehicle>(vehicle::GetDataFile(d["Vehicle Input File"].GetString()),
+    m_vehicle = chrono_types::make_shared<WheeledVehicle>(GetVehicleDataFile(d["Vehicle Input File"].GetString()),
                                                           ChContactMethod::SMC);
 
     assert(d.HasMember("Test Axle Indices"));
@@ -415,11 +415,12 @@ void ChSuspensionTestRig::LogConstraintViolations() {
 
 // -----------------------------------------------------------------------------
 
-void ChSuspensionTestRig::SetOutput(ChVehicleOutput::Type type,
+void ChSuspensionTestRig::SetOutput(ChOutput::Type type,
+                                    ChOutput::Mode mode,
                                     const std::string& out_dir,
                                     const std::string& out_name,
                                     double output_step) {
-    m_vehicle->SetOutput(type, out_dir, out_name, output_step);
+    m_vehicle->SetOutput(type, mode, out_dir, out_name, output_step);
 }
 
 void ChSuspensionTestRig::SetPlotOutput(double output_step) {
@@ -503,7 +504,8 @@ void ChSuspensionTestRig::PlotOutput(const std::string& out_dir, const std::stri
         {
             postprocess::ChGnuPlot gplot(out_dir + "/plot_actuators.gpl");
 
-            gplot.SetCommand("set terminal wxt size 800, 1200");
+            gplot.SetCanvasSize(800, 1200);
+
             gplot.SetCommand("set multiplot layout 2,1");
 
             gplot.SetTitle("Axle " + std::to_string(ia) + " - Actuator");
@@ -531,7 +533,7 @@ void ChSuspensionTestRig::PlotOutput(const std::string& out_dir, const std::stri
         {
             postprocess::ChGnuPlot gplot(out_dir + "/plot_wheels.gpl");
 
-            gplot.SetCommand("set terminal wxt size 800, 1200");
+            gplot.SetCanvasSize(800, 1200);
             gplot.SetCommand("set multiplot layout 2,1");
 
             gplot.SetTitle("Axle " + std::to_string(ia) + " - Wheel");
@@ -560,8 +562,8 @@ void ChSuspensionTestRig::PlotOutput(const std::string& out_dir, const std::stri
         if (num_tsda > 0) {
             postprocess::ChGnuPlot gplot(out_dir + "/plot_tsdas.gpl");
 
-            gplot.SetCommand("set terminal wxt size 1200, 1200");
-            gplot.SetCommand("set multiplot layout 3," + std::to_string(num_tsda) + " columnsfirst ");
+            gplot.SetCanvasSize(800, 1200);
+            gplot.SetCommand("set multiplot layout 3," + std::to_string(num_tsda) + " columns first ");
 
             gplot.SetCommand("set format y '%4.1f'");
             gplot.SetCommand(lsL);
@@ -599,8 +601,8 @@ void ChSuspensionTestRig::PlotOutput(const std::string& out_dir, const std::stri
         if (num_rsda > 0) {
             postprocess::ChGnuPlot gplot(out_dir + "/plot_rsdas.gpl");
 
-            gplot.SetCommand("set terminal wxt size 1200, 1200");
-            gplot.SetCommand("set multiplot layout 3," + std::to_string(num_rsda) + " columnsfirst ");
+            gplot.SetCanvasSize(800, 1200);
+            gplot.SetCommand("set multiplot layout 3," + std::to_string(num_rsda) + " columns first ");
 
             gplot.SetCommand("set format y '%4.1f'");
             gplot.SetCommand(lsL);

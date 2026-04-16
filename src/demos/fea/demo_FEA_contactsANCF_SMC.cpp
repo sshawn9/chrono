@@ -26,9 +26,10 @@
 
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChBodyEasy.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/input_output/ChWriterCSV.h"
 
 #include "chrono/solver/ChIterativeSolverLS.h"
+
 #include "chrono_pardisomkl/ChSolverPardisoMKL.h"
 
 #include "chrono/fea/ChMesh.h"
@@ -51,8 +52,8 @@ ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
 class PrintContactInfo : public ChContactContainer::AddContactCallback {
   public:
     virtual void OnAddContact(const ChCollisionInfo& cinfo, ChContactMaterialComposite* const material) override {
-        auto contactableA = cinfo.modelA->GetContactable();
-        auto contactableB = cinfo.modelB->GetContactable();
+        ////auto contactableA = cinfo.modelA->GetContactable();
+        ////auto contactableB = cinfo.modelB->GetContactable();
 
         std::cout << "  " << cinfo.vpA.z() << "  |  " << cinfo.vpB.z() << std::endl;
     }
@@ -147,10 +148,17 @@ int main(int argc, char* argv[]) {
 
     // FEA visualization
     {
-        auto fea_vis = chrono_types::make_shared<ChVisualShapeFEA>(mesh_shells);
-        fea_vis->SetFEMdataType(ChVisualShapeFEA::DataType::SURFACE);
-        fea_vis->SetWireframe(true);
-        mesh_shells->AddVisualShapeFEA(fea_vis);
+        auto fea_vis1 = chrono_types::make_shared<ChVisualShapeFEA>();
+        fea_vis1->SetFEMdataType(ChVisualShapeFEA::DataType::NODE_SPEED_NORM);
+        fea_vis1->SetColormap(ChColormap::Type::JET);
+        fea_vis1->SetColormapRange(ChVector2d(0.0, 2.50));
+        fea_vis1->SetSmoothFaces(true);
+        mesh_shells->AddVisualShapeFEA(fea_vis1);
+
+        auto fea_vis2 = chrono_types::make_shared<ChVisualShapeFEA>();
+        fea_vis2->SetFEMdataType(ChVisualShapeFEA::DataType::SURFACE);
+        fea_vis2->SetWireframe(true);
+        mesh_shells->AddVisualShapeFEA(fea_vis2);
     }
 
     // ------------------------------------------
@@ -191,9 +199,9 @@ int main(int argc, char* argv[]) {
 
     // FEA visualization
     {
-        auto fea_vis = chrono_types::make_shared<ChVisualShapeFEA>(mesh_cables);
+        auto fea_vis = chrono_types::make_shared<ChVisualShapeFEA>();
         fea_vis->SetFEMdataType(ChVisualShapeFEA::DataType::NODE_SPEED_NORM);
-        fea_vis->SetColorscaleMinMax(0.0, 5.50);
+        fea_vis->SetColormapRange(0.0, 5.50);
         fea_vis->SetSmoothFaces(true);
         mesh_cables->AddVisualShapeFEA(fea_vis);
     }
@@ -206,7 +214,7 @@ int main(int argc, char* argv[]) {
     // Create run-time visualization system
     // ------------------------------------
 
-    auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Z, sys, "ANCF Contact", ChVector3d(0.4, 0.4, 0.4),
+    auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Z, sys, "ANCF Contact", ChVector3d(0.8, 0.8, 0.8),
                                          ChVector3d(-0.25, -0.25, 0.0));
 
     // -------------------------

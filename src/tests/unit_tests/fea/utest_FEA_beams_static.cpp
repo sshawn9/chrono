@@ -242,7 +242,7 @@ double EULER_test_offset(ChSystem& sys, double tip_load_y, int nelements) {
         Sz,                                                  // shear center z displacement respect to centerline
         density * beam_wy * beam_wz,                         // mass per unit length
         density * ((1. / 12) * beam_wz * std::pow(beam_wy, 3) +
-                   (1. / 12) * beam_wz * std::pow(beam_wy, 3))  // polar inertia Jxx per unit lenght
+                   (1. / 12) * beam_wz * std::pow(beam_wy, 3))  // polar inertia Jxx per unit length
     );
 
     ChBuilderBeamEuler builder;
@@ -425,8 +425,9 @@ double IGA_test_offset_rigidity(ChSystem& sys, double tip_load_y, int nsections,
 int main(int argc, char* argv[]) {
     std::cout << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << std::endl;
 
-    // Create a Chrono::Engine physical system
+    // Create a Chrono physical system
     ChSystemNSC sys;
+    sys.SetGravityY();
 
     // Solver settings
 #ifndef CHRONO_PARDISO_MKL

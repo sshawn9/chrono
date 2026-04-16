@@ -110,6 +110,12 @@ void RandomSurfaceTerrain::ApplyAmplitudes() {
             std::exp(-0.356 * (m_waviness - 2.0) + 0.13 * std::pow(m_waviness - 2.0, 2));
 }
 
+ChVector3d RandomSurfaceTerrain::GetPoint(const ChVector3d& loc) const {
+    ChVector3d loc_ISO = ChWorldFrame::ToISO(loc);
+    ChVector3d vec_ISO(loc_ISO.x(), loc_ISO.y(), GetHeight(loc));
+    return ChWorldFrame::FromISO(vec_ISO);
+}
+
 double RandomSurfaceTerrain::GetHeight(const ChVector3d& loc) const {
     ChVector3d loc_ISO = ChWorldFrame::ToISO(loc);
     if (loc_ISO.x() < m_xmin || loc_ISO.x() > m_xmax)
@@ -457,7 +463,7 @@ void RandomSurfaceTerrain::GenerateMesh() {
 
     m_mesh = chrono_types::make_shared<ChTriangleMeshConnected>();
     auto& coords = m_mesh->GetCoordsVertices();
-    auto& indices = m_mesh->GetIndicesVertexes();
+    auto& indices = m_mesh->GetIndicesVertices();
     auto& normals = m_mesh->GetCoordsNormals();
     auto& normidx = m_mesh->GetIndicesNormals();
 
@@ -514,7 +520,6 @@ void RandomSurfaceTerrain::SetupVisualization(RandomSurfaceTerrain::Visualisatio
 
             auto vmesh = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
             vmesh->SetMesh(m_mesh);
-            vmesh->SetMutable(false);
             vmesh->SetName("ISO_track");
             m_ground->AddVisualShape(vmesh);
 

@@ -19,34 +19,41 @@
 #ifndef CH_FSI_SYSTEM_H
 #define CH_FSI_SYSTEM_H
 
+#include "chrono/ChConfig.h"
+
 #include "chrono/physics/ChSystem.h"
 #include "chrono/fea/ChMesh.h"
 #include "chrono/fea/ChContactSurfaceMesh.h"
 #include "chrono/fea/ChContactSurfaceSegmentSet.h"
 
 #include "chrono_fsi/ChApiFsi.h"
-#include "chrono_fsi/ChConfigFsi.h"
 #include "chrono_fsi/ChFsiInterface.h"
-#include "chrono_fsi/ChFluidSystem.h"
+#include "chrono_fsi/ChFsiFluidSystem.h"
 
 namespace chrono {
 namespace fsi {
 
-/// @addtogroup fsi_physics
+/// @addtogroup fsi_base
 /// @{
 
 /// Base class for a system for fluid-solid interaction problems.
 ///
 /// This class is used to represent fluid-solid interaction problems consisting of fluid dynamics and multibody system.
-/// Each of the two underlying physics is an independent object owned and instantiated by this class. The FSI system
-/// owns other objects to handle the interface between the two systems, boundary condition enforcing markers, and data.
+/// Each of the two underlying physics is an independent object owned and instantiated by this class.
+/// A derived class must always set the FSI interface for coupling the two physics systems.
 class CH_FSI_API ChFsiSystem {
   public:
     /// Destructor for the FSI system.
     virtual ~ChFsiSystem();
 
+    /// Attach a fluid system.
+    void AttachFluidSystem(ChFsiFluidSystem* sys);
+
+    /// Attach a MBS system.
+    void AttachMultibodySystem(ChSystem* sys);
+
     /// Access the associated fluid system.
-    ChFluidSystem& GetFluidSystem() const;
+    ChFsiFluidSystem& GetFluidSystem() const;
 
     /// Access the associated multibody system.
     ChSystem& GetMultibodySystem() const;
@@ -58,7 +65,7 @@ class CH_FSI_API ChFsiSystem {
     /// The default implementation sets the verbose mode for the FSI system and the underlying FSI interface.
     void SetVerbose(bool verbose);
 
-    /// Set gravitational acceleration for the FSI syatem.
+    /// Set gravitational acceleration for the FSI system.
     /// This function sets gravity for both the fluid and multibody systems.
     void SetGravitationalAcceleration(const ChVector3d& gravity);
 
@@ -70,28 +77,66 @@ class CH_FSI_API ChFsiSystem {
     void SetStepsizeMBD(double step);
 
     /// Add a rigid body to the FSI system.
-    /// Returns the index of the FSI body in the internal list.
-    size_t AddFsiBody(std::shared_ptr<ChBody> body);
+    std::shared_ptr<FsiBody> AddFsiBody(std::shared_ptr<ChBody> body,
+                                        std::shared_ptr<ChBodyGeometry> geometry,
+                                        bool check_embedded);
 
     /// Add an FEA mesh to the FSI system.
-    /// Contact surfaces (of type segment_set or tri_mesh) already defined for the FEA mesh are used to generate the
-    /// interface between the solid and fluid phases. If none are defined, one contact surface of each type is created
-    /// (as needed), but these are not attached to the given FEA mesh.
-    void AddFsiMesh(std::shared_ptr<fea::ChMesh> mesh);
+    /// Any SegmentSet contact surfaces already defined for the FEA mesh are used to generate the interface between the
+    /// solid and fluid phases. If none are defined, one contact surface is created, but it is not attached to the FEA
+    /// mesh.
+    std::shared_ptr<FsiMesh1D> AddFsiMesh1D(std::shared_ptr<fea::ChMesh> mesh, bool check_embedded);
+
+    /// Add an FEA mesh to the FSI system.
+    /// Any TriMesh contact surfaces already defined for the FEA mesh are used to generate the interface between the
+    /// solid and fluid phases. If none are defined, one contact surface is created, but it is not attached to the FEA
+    /// mesh.
+    std::shared_ptr<FsiMesh2D> AddFsiMesh2D(std::shared_ptr<fea::ChMesh> mesh, bool check_embedded);
+
+    /// Enable use and set method of obtaining FEA node directions.
+    /// If provided, node direction vectors can be used to provide a more accurate interpolation of positions between
+    /// nodes (piece-wise cubic as opposed to only piece-wise linear). Node directions can be provided by the FEA
+    /// elements and communicated to the fluid solver (NodeDirectionsMode::EXACT), or else approximated by averaging
+    /// direction over all elements incident to the node. The default is set by a concrete ChFsiSystem and the
+    /// associated FSI interface.
+    void UseNodeDirections(NodeDirectionsMode mode);
 
     /// Initialize the FSI system.
     /// A call to this function marks the completion of system construction.
-    /// The default implementation simply checks that an associated FSI interface was created and a value for
-    /// integration step size was provided.
+    /// The default implementation performs the following operations:
+    /// - check that an associated FSI interface was created and a value for integration step size was provided;
+    /// - initialize the FSI interface;
+    /// - get initial solid states from the FSI interface;
+    /// - initialize the associated fluid solver, passing the initial solid states;
     virtual void Initialize();
 
+    /// Class to specify step dynamics for the associated multibody system.
+    class CH_FSI_API MBDCallback {
+      public:
+        virtual ~MBDCallback() {}
+        /// Advance the state of the associated multibody system by the provided step. The MBS integration can take as
+        /// many steps as necessary to reach the final step within the provided threshold.
+        virtual void Advance(double step, double threshold) = 0;
+    };
+
+    /// Set a custom function for advancing the dynamics of the associated multibody system.
+    /// If not provided, the MBS system is integrated with the specified step size (see SetStepsizeMBD) by calling
+    /// ChSystem::DoStepDynamics.
+    void RegisterMBDCallback(std::shared_ptr<MBDCallback> callback) { m_MBD_callback = callback; }
+
     /// Function to advance the FSI system combined state.
-    /// This implements an explicit force-displacement co-simulation step with given meta-step:
-    /// - advance fluid dynamics to new data exchange point
-    /// - apply fluid forces on solid objects
-    /// - advance multibody dynamics to new data exchange point
-    /// - extract new states for FSI solid objects
-    /// The multibody step dynamics is ran in a separate thread and does not block execution.
+    /// This implements an explicit force-displacement co-simulation step:
+    /// - advance fluid dynamics (CFD) to new data exchange point;
+    /// - advance multibody dynamics (MBD) to new data exchange point;
+    /// - extract (from fluid system) and apply (to MBS) fluid forces on FSI solid objects;
+    /// - extract (from MBS) and apply (to fluid system) new states for FSI solid objects;
+    /// Notes:
+    /// - no data exchange is performed before the first step;
+    ///   this assumes that FSI solid states and FSI solid forces are properly initialized
+    /// - CFD advance calls ChFsiFluidSystem::DoStepDynamics multiple times (see SetStepsizeCFD);
+    /// - MBD advance is executed in a separate, concurrent thread and does not block execution;
+    /// - the caller can register a custom callback (of type ChFsiSystem::MBDCallback) to control MBD advance;
+    /// - if MBDCallback not provided, MBD advance calls ChSystem::DoStepDynamics multiple times (see SetStepsizeMBD);
     void DoStepDynamics(double step);
 
     /// Get current simulation time.
@@ -106,14 +151,19 @@ class CH_FSI_API ChFsiSystem {
     /// Get current estimated RTF (real time factor) for the coupled problem.
     double GetRtf() const { return m_RTF; }
 
+    /// Set RTF value for the coupled problem.
+    /// This is necessary for correct reporting if automatic integration of the multibody system dynamics is disabled
+    /// and performed externally.
+    void SetRtf(double rtf) { m_RTF = rtf; }
+
     /// Get current estimated RTF (real time factor) for the fluid system.
-    double GetRtfCFD() const { return m_sysCFD.GetRtf(); }
+    double GetRtfCFD() const;
 
     /// Get current estimated RTF (real time factor) for the multibody system.
-    double GetRtfMBS() const { return m_sysMBS.GetRTF(); }
+    double GetRtfMBD() const;
 
     /// Get ratio of simulation time spent in MBS integration.
-    double GetRatioMBS() const { return m_ratio_MBS; }
+    double GetRatioMBD() const { return m_ratio_MBD; }
 
     // ----------
 
@@ -124,12 +174,15 @@ class CH_FSI_API ChFsiSystem {
     double GetTimerCFD() const { return m_timer_CFD; }
 
     /// Return the time in seconds for multibody dynamics over the last step.
-    double GetTimerMBS() const { return m_timer_MBS; }
+    double GetTimerMBD() const { return m_timer_MBD; }
 
     /// Return the time in seconds for data exchange between phases over the last step.
     double GetTimerFSI() const { return m_timer_FSI(); }
 
     // ----------
+
+    /// Get a list of the FSI rigid bodies.
+    const std::vector<std::shared_ptr<FsiBody>>& GetBodies() const { return m_fsi_interface->GetBodies(); }
 
     //// TODO: change these to take a shared_ptr to a ChBody
 
@@ -144,22 +197,18 @@ class CH_FSI_API ChFsiSystem {
     //// TODO: add functions to get force on FEA nodes
 
   protected:
-    ChFsiSystem(ChSystem& sysMBS, ChFluidSystem& sysCFD);
+    /// Construct an FSI system coupling the provided multibody and fluid systems.
+    /// Derived classes must also construct and set the FSI interface (`m_fsi_interface`).
+    ChFsiSystem(ChSystem* sysMBS, ChFsiFluidSystem* sysCFD);
 
-    ChSystem& m_sysMBS;                               ///< multibody system
-    ChFluidSystem& m_sysCFD;                          ///< FSI fluid solver
+    ChSystem* m_sysMBS;                               ///< multibody system
+    ChFsiFluidSystem* m_sysCFD;                       ///< FSI fluid solver
     std::shared_ptr<ChFsiInterface> m_fsi_interface;  ///< FSI interface system
 
     bool m_verbose;         ///< enable/disable m_verbose terminal output
     bool m_is_initialized;  ///< set to true once the Initialize function is called
 
   private:
-    /// Add a flexible solid with segment set contact to the FSI system.
-    void AddFsiMesh1D(std::shared_ptr<fea::ChContactSurfaceSegmentSet> surface);
-
-    /// Add a flexible solid with surface mesh contact to the FSI system.
-    void AddFsiMesh2D(std::shared_ptr<fea::ChContactSurfaceMesh> surface);
-
     void AdvanceCFD(double step, double threshold);
     void AdvanceMBS(double step, double threshold);
 
@@ -167,15 +216,17 @@ class CH_FSI_API ChFsiSystem {
     double m_step_CFD;  ///< time step for fluid dynamics
     double m_time;      ///< current fluid dynamics simulation time
 
+    std::shared_ptr<MBDCallback> m_MBD_callback;  ///< callback for MBS dynamics
+
     ChTimer m_timer_step;  ///< timer for integration step
     ChTimer m_timer_FSI;   ///< timer for FSI data exchange
     double m_timer_CFD;    ///< timer for fluid dynamics integration
-    double m_timer_MBS;    ///< timer for multibody dynamics integration
+    double m_timer_MBD;    ///< timer for multibody dynamics integration
     double m_RTF;          ///< real-time factor (simulation time / simulated time)
-    double m_ratio_MBS;    ///< fraction of step simulation time for MBS integration
+    double m_ratio_MBD;    ///< fraction of step simulation time for MBS integration
 };
 
-/// @} fsi_physics
+/// @} fsi_base
 
 }  // end namespace fsi
 }  // end namespace chrono

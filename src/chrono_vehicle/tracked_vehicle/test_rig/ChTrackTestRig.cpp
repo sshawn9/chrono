@@ -31,9 +31,9 @@
 #include "chrono/assets/ChVisualShapeCylinder.h"
 
 #include "chrono_vehicle/ChSubsysDefs.h"
-#include "chrono_vehicle/ChVehicleModelData.h"
+#include "chrono_vehicle/ChVehicleDataPath.h"
 #include "chrono_vehicle/chassis/ChRigidChassis.h"
-#include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono_vehicle/utils/ChVehicleUtilsJSON.h"
 
 #include "chrono_vehicle/tracked_vehicle/track_assembly/TrackAssemblyDoublePin.h"
 #include "chrono_vehicle/tracked_vehicle/track_assembly/TrackAssemblySinglePin.h"
@@ -149,7 +149,7 @@ void ChTrackTestRig::Create(bool create_track, bool detracking_control) {
 
     // Create the chassis subsystem
     m_chassis = chrono_types::make_shared<ChTrackTestRigChassis>();
-    m_chassis->Initialize(m_system, ChCoordsys<>(), 0);
+    m_chassis->Initialize(this, ChCoordsys<>(), 0);
     m_chassis->SetFixed(true);
 
     // Disable detracking control if requested
@@ -401,7 +401,7 @@ void ChTrackTestRig::SetTrackAssemblyOutput(bool state) {
     m_track->SetOutput(state);
 }
 
-void ChTrackTestRig::Output(int frame, ChVehicleOutput& database) const {
+void ChTrackTestRig::Output(int frame, ChOutput& database) const {
     database.WriteTime(frame, m_system->GetChTime());
 
     if (m_track->OutputEnabled()) {
@@ -412,7 +412,7 @@ void ChTrackTestRig::Output(int frame, ChVehicleOutput& database) const {
 void ChTrackTestRig::SetPlotOutput(double output_step) {
     m_plot_output = true;
     m_plot_output_step = output_step;
-    m_csv = new utils::ChWriterCSV(" ");
+    m_csv = new ChWriterCSV(" ");
 }
 
 void ChTrackTestRig::CollectPlotData(double time) {
@@ -443,21 +443,18 @@ void ChTrackTestRig::PlotOutput(const std::string& out_dir, const std::string& o
     m_csv->WriteToFile(out_file);
 
 #ifdef CHRONO_POSTPROCESS
-    std::string gplfile = out_dir + "/tmp.gpl";
-    postprocess::ChGnuPlot mplot(gplfile);
-
-    std::string title = "Suspension test rig - Wheel positions";
-    mplot.OutputWindow(0);
-    mplot.SetTitle(title);
-    mplot.SetLabelX("time [s]");
-    mplot.SetLabelY("wheel z [m]");
-    mplot.SetCommand("set format y '%4.1e'");
-    mplot.SetCommand("set terminal wxt size 800, 600");
-    mplot.Plot(out_file, 1, 4, "sprocket", " with lines lw 2");
-    mplot.Plot(out_file, 1, 7, "idler", " with lines lw 2");
+    postprocess::ChGnuPlot gplot(out_dir + "/tmp.gpl");
+    gplot.OutputWindow(0);
+    gplot.SetTitle("Suspension test rig - Wheel positions");
+    gplot.SetLabelX("time [s]");
+    gplot.SetLabelY("wheel z [m]");
+    gplot.SetCommand("set format y '%4.1e'");
+    gplot.SetCanvasSize(800, 600);
+    gplot.Plot(out_file, 1, 4, "sprocket", " with lines lw 2");
+    gplot.Plot(out_file, 1, 7, "idler", " with lines lw 2");
     for (int i = 0; i < m_track->GetNumTrackSuspensions(); i++) {
         std::string label = "wheel #" + std::to_string(i);
-        mplot.Plot(out_file, 1, 7 + 3 * i + 3, label, " with lines lw 2");
+        gplot.Plot(out_file, 1, 7 + 3 * i + 3, label, " with lines lw 2");
     }
 
     //// TODO: spring and shock forces

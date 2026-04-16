@@ -163,9 +163,9 @@ void ChLinkRevoluteSpherical::Initialize(std::shared_ptr<ChBody> body1,
 // -----------------------------------------------------------------------------
 // Link update function
 // -----------------------------------------------------------------------------
-void ChLinkRevoluteSpherical::Update(double time, bool update_assets) {
+void ChLinkRevoluteSpherical::Update(double time, UpdateFlags update_flags) {
     // Inherit time changes of parent class (ChLink)
-    ChLink::Update(time, update_assets);
+    ChLink::Update(time, update_flags);
 
     // Express the body locations and direction in absolute frame
     ChVector3d pos1_abs = m_body1->TransformPointLocalToParent(m_pos1);
@@ -292,6 +292,7 @@ void ChLinkRevoluteSpherical::IntLoadResidual_CqL(const unsigned int off_L,    /
 void ChLinkRevoluteSpherical::IntLoadConstraint_C(const unsigned int off_L,  ///< offset in Qc residual
                                                   ChVectorDynamic<>& Qc,     ///< result: the Qc residual, Qc += c*C
                                                   const double c,            ///< a scaling factor
+                                                  const double c_vel,        ///< the scaling factor if the constraint is at speed level
                                                   bool do_clamp,             ///< apply clamping to c*C?
                                                   double recovery_clamp      ///< value for min/max clamping of c*C
 ) {

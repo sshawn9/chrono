@@ -50,7 +50,7 @@ AssemblyAnalysis::ExitFlag ChAssemblyAnalysis::AssemblyAnalysis(int action, doub
             // [ M         Cq' ] [ dx  ] = [  0]
             // [ Cq        0   ] [ -l  ] = [ -C]
 
-            integrable->LoadConstraint_C(Qc, 1.0);  // sign flipped later in StateSolveCorrection
+            integrable->LoadConstraint_C(Qc, 1.0, 0.0);  // sign flipped later in StateSolveCorrection
 
             if (Qc.lpNorm<Eigen::Infinity>() < m_abs_tol_residual) {
                 exit_flag = AssemblyAnalysis::ExitFlag::ABSTOL_RESIDUAL;
@@ -63,17 +63,18 @@ AssemblyAnalysis::ExitFlag ChAssemblyAnalysis::AssemblyAnalysis(int action, doub
                                              0,        // factor for dF/dx (the stiffness matrix)
                                              X, V, T,  // not needed
                                              false,    // do not scatter Xnew Vnew T+dt before computing correction
-                                             false,    // full update? (not used, since no scatter)
-                                             true      // force a call to the solver's Setup function
+                                             UpdateFlags::UPDATE_ALL_NO_VISUAL,    // no need for full update, since no scatter
+                                             true,     // call the solver's Setup function
+                                             true      // call the solver's Setup analyze phase
             );
 
             X += Dx;
 
-            integrable->StateScatter(X, V, T, true);  // state -> system
+            integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
 
-            double m_last_update_norm = Dx.lpNorm<Eigen::Infinity>();
+            double last_update_norm = Dx.lpNorm<Eigen::Infinity>();
 
-            if (m_last_update_norm < m_abs_tol_update) {
+            if (last_update_norm < m_abs_tol_update) {
                 exit_flag = AssemblyAnalysis::ExitFlag::ABSTOL_UPDATE;
                 break;
             }
@@ -118,8 +119,8 @@ AssemblyAnalysis::ExitFlag ChAssemblyAnalysis::AssemblyAnalysis(int action, doub
 
         integrable->LoadResidual_F(R, dt);
         integrable->LoadResidual_Mv(R, V, 1.0);
-        integrable->LoadConstraint_C(Qc, 1.0 / dt, false);  // sign later flipped in StateSolveCorrection
-        integrable->LoadConstraint_Ct(Qc, 1.0);             // sign later flipped in StateSolveCorrection
+        integrable->LoadConstraint_C(Qc, 1.0 / dt, 1.0, false);  // sign later flipped in StateSolveCorrection
+        integrable->LoadConstraint_Ct(Qc, 1.0, 1.0 * dt);        // sign later flipped in StateSolveCorrection
 
         integrable->StateSolveCorrection(V, L, R, Qc,
                                          1.0,           // factor for  M
@@ -127,11 +128,12 @@ AssemblyAnalysis::ExitFlag ChAssemblyAnalysis::AssemblyAnalysis(int action, doub
                                          -dt * dt,      // factor for  dF/dx
                                          X, V, T + dt,  // not needed
                                          false,         // do not scatter Xnew Vnew T+dt before computing correction
-                                         false,         // full update? (not used, since no scatter)
-                                         true           // force a call to the solver's Setup() function
+                                         UpdateFlags::UPDATE_ALL_NO_VISUAL,  // no need for full update, since no scatter
+                                         true,          // call the solver's Setup function
+                                         true           // call the solver's Setup analyze phase
         );
 
-        integrable->StateScatter(X, V, T, true);  // state -> system
+        integrable->StateScatter(X, V, T, UpdateFlags::UPDATE_ALL);  // state -> system
 
         L *= (1.0 / dt);  // Note it is not -(1.0/dt) because we assume StateSolveCorrection already flips sign of L
 

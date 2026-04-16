@@ -264,8 +264,8 @@ void ChLinkTSDA::ComputeJacobians(double time,                 // current time
 
 // -----------------------------------------------------------------------------
 
-void ChLinkTSDA::Update(double time, bool update_assets) {
-    ChTime = time;
+void ChLinkTSDA::Update(double time, UpdateFlags update_flags) {
+    ChLink::Update(time, update_flags);
 
     // Pack states and state derivatives for the two connected bodies and ODE states (if present)
     ChState state_x(14 + m_nstates, nullptr);
@@ -294,9 +294,6 @@ void ChLinkTSDA::Update(double time, bool update_assets) {
         // Restore the states (may have been perturbed during Jacobian calculation)
         m_states = state_w.segment(12, m_nstates);
     }
-
-    // Update assets
-    ChPhysicsItem::Update(ChTime, update_assets);
 
     // TODO: DARIOM double check if correct
     ChVector3d dir = (m_aloc1 - m_aloc2).GetNormalized();
@@ -345,7 +342,7 @@ void ChLinkTSDA::IntStateScatter(const unsigned int off_x,  // offset in x state
                                  const unsigned int off_v,  // offset in v state vector
                                  const ChStateDelta& v,     // state vector, speed part
                                  const double T,            // time
-                                 bool full_update           // perform complete update
+                                 UpdateFlags update_flags    // perform complete update?
 ) {
     if (!IsActive())
         return;
@@ -355,7 +352,7 @@ void ChLinkTSDA::IntStateScatter(const unsigned int off_x,  // offset in x state
         m_states = v.segment(off_v, m_nstates);
     }
 
-    Update(T, full_update);
+    Update(T, update_flags);
 }
 
 void ChLinkTSDA::IntStateGatherAcceleration(const unsigned int off_a, ChStateDelta& a) {

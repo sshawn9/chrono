@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
 
     // Create a Chrono physical system
     ChSystemNSC sys;
+    sys.SetGravityY();
     sys.SetCollisionSystemType(ChCollisionSystem::Type::BULLET);
 
     // Create a floor that is fixed (that is used also to represent the absolute reference)
@@ -158,14 +159,12 @@ int main(int argc, char* argv[]) {
             auto vis_irr = chrono_types::make_shared<ChVisualSystemIrrlicht>();
             vis_irr->AttachSystem(&sys);
             vis_irr->SetWindowSize(800, 600);
-            vis_irr->SetWindowTitle("Collisions between objects");
+            vis_irr->SetWindowTitle("Earthquake simulation");
             vis_irr->Initialize();
             vis_irr->AddLogo();
             vis_irr->AddSkyBox();
             vis_irr->AddCamera(ChVector3d(1, 3, -10));
             vis_irr->AddTypicalLights();
-            vis_irr->AddLightWithShadow(ChVector3d(1.0, 25.0, -5.0), ChVector3d(0, 0, 0), 35, 0.2, 35, 35, 512,
-                                        ChColor(0.6f, 0.8f, 1.0f));
             vis_irr->EnableShadows();
 
             vis = vis_irr;
@@ -178,15 +177,15 @@ int main(int argc, char* argv[]) {
             auto vis_vsg = chrono_types::make_shared<ChVisualSystemVSG>();
             vis_vsg->AttachSystem(&sys);
             vis_vsg->SetCameraVertical(CameraVerticalDir::Y);
-            vis_vsg->SetWindowSize(ChVector2i(800, 600));
-            vis_vsg->SetWindowPosition(ChVector2i(100, 300));
-            vis_vsg->SetWindowTitle("Chrono VSG Assets");
-            vis_vsg->SetUseSkyBox(true);
+            vis_vsg->SetWindowSize(1280, 800);
+            vis_vsg->SetWindowPosition(100, 100);
+            vis_vsg->SetWindowTitle("Earthquake simulation");
+            vis_vsg->EnableSkyTexture(SkyMode::BOX);
             vis_vsg->AddCamera(ChVector3d(1, 8, -15));
             vis_vsg->SetCameraAngleDeg(50);
             vis_vsg->SetLightIntensity(1.0f);
             vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
-            vis_vsg->SetShadows(true);
+            vis_vsg->EnableShadows();
             vis_vsg->Initialize();
 
             vis = vis_vsg;

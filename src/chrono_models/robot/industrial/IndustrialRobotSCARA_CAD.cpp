@@ -24,7 +24,7 @@ namespace industrial {
 IndustrialRobotSCARA_CAD::IndustrialRobotSCARA_CAD(ChSystem* sys,
                                                    const ChFramed& base_frame,
                                                    unsigned int id,
-                                                   std::vector<std::string> bodynames)
+                                                   const std::vector<std::string>& bodynames)
     : m_id(id), m_bodynames(bodynames) {
     m_sys = sys;
     m_base_frame = base_frame;
@@ -104,7 +104,7 @@ void IndustrialRobotSCARA_CAD::SetupMarkers() {
                     m_marker_TCP};
     m_joint_frames = {};  // no use
 
-    // Lenghts
+    // Lengths
     double H = (m_marker_base_biceps->GetAbsFrame().GetPos() - m_marker_ground_base->GetAbsFrame().GetPos())
                    .z();  // base height
     double L1 = (m_marker_biceps_forearm->GetAbsFrame().GetPos() - m_marker_base_biceps->GetAbsFrame().GetPos())

@@ -11,8 +11,10 @@
     "Method": "WCSPH",
     "Kernel h": 0.02,
     "Initial Spacing": 0.02,
-    "XSPH Coefficient": 0.5,
-    "Shifting Coefficient": 1.0,
+    "Shifting Method": "PPST_XSPH",
+    "XSPH Coefficient": 0.25,
+    "PPST Push Coefficient": 3.0,
+    "PPST Pull Coefficient": 1.0,
     "Viscosity Treatment Type": "Artificial Oppose Separation",
     "Boundary Treatment Type": "Adami",
     "Artificial viscosity alpha": 0.5
@@ -31,9 +33,9 @@
     "particle diameter": 0.005
   },
   "Body Active Domain": [
-    0.5,
-    0.5,
-    1.0
+    1.0,
+    1.0,
+    2.0
   ],
   "Settling Time": 0.0
 }

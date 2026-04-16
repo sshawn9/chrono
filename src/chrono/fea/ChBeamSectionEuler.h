@@ -69,7 +69,7 @@ class ChApi ChBeamSectionEuler : public ChBeamSection {
     /// Get mass per unit length, ex.SI units [kg/m]
     virtual double GetMassPerUnitLength() const = 0;
 
-    /// Get the Jxx component of the inertia per unit length (polar inertia) in the Y Z unrotated reference
+    /// Get the Jxx component of the inertia per unit length (polar inertia) in the Y Z non-rotated reference
     /// frame of the section at centerline. Note: it automatically follows Jxx=Jyy+Jzz for the polar theorem. Also,
     /// Jxx=density*Ixx if constant density.
     virtual double GetInertiaJxxPerUnitLength() const = 0;
@@ -129,7 +129,7 @@ class ChApi ChBeamSectionEuler : public ChBeamSection {
 
     /// The Euler beam model has no rotational inertia per each section, assuming mass is concentrated on
     /// the centerline. However this creates a singular mass matrix, that might end in problems when doing modal
-    /// analysis etc. A solution is to force Jyy and Jzz inertials per unit lengths to be a percent of the mass per unit
+    /// analysis etc. A solution is to force Jyy and Jzz inertias per unit lengths to be a percent of the mass per unit
     /// length. By default it is 1/500. Use this function to set such factor. You can also turn it to zero. Note that
     /// the effect becomes negligible anyway for finer meshing.
     void SetArtificialJyyJzzFactor(double mf) { JzzJyy_factor = mf; }
@@ -166,7 +166,7 @@ class ChApi ChBeamSectionEuler : public ChBeamSection {
     bool compute_inertia_stiffness_matrix = true;
 
     /// Flag for computing the Ri and Ki matrices via numerical differentiation even if
-    /// an analytical expression is provided. Children calsses must take care of this. Default: false.
+    /// an analytical expression is provided. Children classes must take care of this. Default: false.
     bool compute_Ri_Ki_by_num_diff = false;
 
     //
@@ -256,7 +256,7 @@ class ChApi ChBeamSectionEulerSimple : public ChBeamSectionEuler {
         // use Roark's formulas for torsion of rectangular sect:
         double t = std::min(width_y, width_z);
         double b = std::max(width_y, width_z);
-        this->J = b * std::pow(t, 3) * ((1.0 / 3.0) - 0.210 * (t / b) * (1.0 - (1.0 / 12.0) * std::pow((t / b), 4)));
+        this->J = b * std::pow(t, 3) * (CH_1_3 - 0.210 * (t / b) * (1.0 - (1.0 / 12.0) * std::pow((t / b), 4)));
 
         // set Ks using Timoshenko-Gere formula for solid rect.shapes
         double poisson = this->E / (2.0 * this->G) - 1.0;
@@ -351,7 +351,7 @@ class ChApi ChBeamSectionEulerSimple : public ChBeamSectionEuler {
     /// Get mass per unit length, ex.SI units [kg/m]
     virtual double GetMassPerUnitLength() const override { return this->Area * this->density; }
 
-    /// Get the Jxx component of the inertia per unit length (polar inertia) in the Y Z unrotated reference
+    /// Get the Jxx component of the inertia per unit length (polar inertia) in the Y Z non-rotated reference
     /// frame of the section at centerline. Note: it automatically follows Jxx=Jyy+Jzz for the polar theorem. Also,
     /// Jxx=density*Ixx if constant density.
     virtual double GetInertiaJxxPerUnitLength() const override { return (this->Iyy + this->Izz) * this->density; }
@@ -474,7 +474,7 @@ class ChApi ChBeamSectionEulerAdvancedGeneric : public ChBeamSectionEuler {
     ChBeamSectionEulerAdvancedGeneric(
         const double mAx,      ///< axial rigidity
         const double mTxx,     ///< torsion rigidity
-        const double mByy,     ///< bending regidity about yy
+        const double mByy,     ///< bending rigidity about yy
         const double mBzz,     ///< bending rigidity about zz
         const double malpha,   ///< section rotation about elastic center [rad]
         const double mCy,      ///< elastic center y displacement respect to centerline
@@ -482,7 +482,7 @@ class ChApi ChBeamSectionEulerAdvancedGeneric : public ChBeamSectionEuler {
         const double mSy,      ///< shear center y displacement respect to centerline
         const double mSz,      ///< shear center z displacement respect to centerline
         const double mmu,      ///< mass per unit length
-        const double mJxx,     ///< polar inertia Jxx per unit lenght, measured respect to centerline
+        const double mJxx,     ///< polar inertia Jxx per unit length, measured respect to centerline
         const double mMy = 0,  ///< mass center y displacement respect to centerline
         const double mMz = 0   ///< mass center z displacement respect to centerline
         )
@@ -521,7 +521,7 @@ class ChApi ChBeamSectionEulerAdvancedGeneric : public ChBeamSectionEuler {
     /// here you can put a value ad-hoc from a preprocessor
     virtual void SetBendingRigidityZ(const double mv) { Bzz = mv; }
 
-    /// Set the rotation in [rad], abour elastic center, of the Y Z axes for which the
+    /// Set the rotation in [rad], about elastic center, of the Y Z axes for which the
     /// YbendingRigidity and ZbendingRigidity values are defined.
     virtual void SetSectionRotation(const double mv) { alpha = mv; }
 
@@ -632,7 +632,7 @@ class ChApi ChBeamSectionEulerAdvancedGeneric : public ChBeamSectionEuler {
 
 /// A simple specialization of ChBeamSectionEuler if you just need the simplest model
 /// for a rectangular centered beam, with uniform elasticity and uniform density.
-/// This section automatically itializes at construction:
+/// This section automatically initializes at construction:
 /// - elasticity  as rectangular section
 /// - inertia     as rectangular section
 /// - damping:    none   - you can set it later
@@ -648,7 +648,7 @@ class ChApi ChBeamSectionEulerEasyRectangular : public ChBeamSectionEulerSimple 
 
 /// A simple specialization of ChBeamSectionEuler if you just need the simplest model
 /// for a beam with circular centered section, with uniform elasticity and uniform density.
-/// This section automatically itializes at construction:
+/// This section automatically initializes at construction:
 /// - elasticity  as circular section
 /// - inertia     as circular section
 /// - damping:    none   - you can set it later
@@ -751,7 +751,7 @@ class ChApi ChBeamSectionRayleighAdvancedGeneric : public ChBeamSectionEulerAdva
     ChBeamSectionRayleighAdvancedGeneric(
         const double mAx,      ///< axial rigidity
         const double mTxx,     ///< torsion rigidity
-        const double mByy,     ///< bending regidity about yy
+        const double mByy,     ///< bending rigidity about yy
         const double mBzz,     ///< bending rigidity about zz
         const double malpha,   ///< section rotation about elastic center [rad]
         const double mCy,      ///< elastic center y displacement respect to centerline
@@ -759,9 +759,9 @@ class ChApi ChBeamSectionRayleighAdvancedGeneric : public ChBeamSectionEulerAdva
         const double mSy,      ///< shear center y displacement respect to centerline
         const double mSz,      ///< shear center z displacement respect to centerline
         const double mmu,      ///< mass per unit length
-        const double mJyy,     ///< inertia Jyy per unit lenght, in centerline reference, along centerline main axes
-        const double mJzz,     ///< inertia Jzz per unit lenght, in centerline reference, along centerline main axes
-        const double mJyz,     ///< inertia Jyz per unit lenght, in centerline reference, along centerline main axes
+        const double mJyy,     ///< inertia Jyy per unit length, in centerline reference, along centerline main axes
+        const double mJzz,     ///< inertia Jzz per unit length, in centerline reference, along centerline main axes
+        const double mJyz,     ///< inertia Jyz per unit length, in centerline reference, along centerline main axes
         const double mMy = 0,  ///< mass center y displacement respect to centerline
         const double mMz = 0   ///< mass center z displacement respect to centerline
         )

@@ -20,6 +20,7 @@ print( "TEST: tetrahedron FEM dynamics, implicit integration")
 print( "-----------------------------------------------------------")
 
 sys = chrono.ChSystemSMC()
+sys.SetGravityY()
 
 # FEA mesh
 mesh = fea.ChMesh()
@@ -76,13 +77,13 @@ sys.Add(constraint2)
 sys.Add(constraint3)
 
 # FEA mesh visualization settings
-fea_vis_wireframe = chrono.ChVisualShapeFEA(mesh)
+fea_vis_wireframe = chrono.ChVisualShapeFEA()
 fea_vis_wireframe.SetFEMdataType(chrono.ChVisualShapeFEA.DataType_SURFACE)
 fea_vis_wireframe.SetWireframe(True)
 fea_vis_wireframe.SetDrawInUndeformedReference(True)
 mesh.AddVisualShapeFEA(fea_vis_wireframe)
 
-fea_vis_surface = chrono.ChVisualShapeFEA(mesh)
+fea_vis_surface = chrono.ChVisualShapeFEA()
 fea_vis_surface.SetFEMglyphType(chrono.ChVisualShapeFEA.GlyphType_NONE)
 fea_vis_surface.SetFEMdataType(chrono.ChVisualShapeFEA.DataType_SURFACE)
 fea_vis_surface.SetZbufferHide(False)
@@ -94,7 +95,7 @@ vis.AttachSystem(sys)
 vis.SetWindowSize(1024,768)
 vis.SetWindowTitle('Tetra Element')
 vis.Initialize()
-vis.AddLogo(chrono.GetChronoDataFile('logo_pychrono_alpha.png'))
+vis.AddLogo(chrono.GetChronoDataFile('logo_chrono_alpha.png'))
 vis.AddSkyBox()
 vis.AddCamera(chrono.ChVector3d(2, 0.25, -0.25), chrono.ChVector3d(0, 0.25, 0))
 vis.AddTypicalLights()

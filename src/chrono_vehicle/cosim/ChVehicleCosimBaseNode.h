@@ -26,10 +26,13 @@
 
 #include <mpi.h>
 
+#include "chrono/ChConfig.h"
 #include "chrono/core/ChTimer.h"
 #include "chrono/core/ChVector3.h"
 #include "chrono/core/ChQuaternion.h"
-
+#include "chrono/physics/ChSystem.h"
+#include "chrono/input_output/ChWriterCSV.h"
+#include "chrono/input_output/ChUtilsInputOutput.h"
 #include "chrono/utils/ChBodyGeometry.h"
 
 #include "chrono_vehicle/ChApiVehicle.h"

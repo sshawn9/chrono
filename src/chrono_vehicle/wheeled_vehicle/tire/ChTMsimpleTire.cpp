@@ -23,14 +23,14 @@
 //  - FED-Alpha vehicle model
 //  - Tire data sets gained by conversion of Pac02 TIR parameter files
 //  - Steady state cornering test and test results from Keweenah Research Center (KRC)
-//  - unvalidateble functionality has been removed
+//  - non-validated functionality has been removed
 // ===================================================================================
 
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 
-#include "chrono/core/ChGlobal.h"
+#include "chrono/core/ChDataPath.h"
 #include "chrono/functions/ChFunctionSineStep.h"
 
 #include "chrono_vehicle/wheeled_vehicle/tire/ChTMsimpleTire.h"
@@ -131,7 +131,7 @@ void ChTMsimpleTire::Synchronize(double time, const ChTerrain& terrain) {
         m_data.normal_force = Fn_mag;
         double r_stat = m_unloaded_radius - m_data.depth;
         m_states.omega = wheel_state.omega;
-        m_states.R_eff = (2.0 * m_unloaded_radius + r_stat) / 3.0;
+        m_states.R_eff = (2.0 * m_unloaded_radius + r_stat) * CH_1_3;
         m_states.P_len = 2.0 * std::sqrt(m_unloaded_radius * m_data.depth);
         m_states.vta = m_states.R_eff * std::abs(m_states.omega) + m_vnum;
         m_states.vsx = m_data.vel.x() - m_states.omega * m_states.R_eff;
@@ -206,7 +206,7 @@ void ChTMsimpleTire::Advance(double step) {
 void ChTMsimpleTire::CombinedCoulombForces(double& fx, double& fy, double fz, double muscale) {
     ChVector2d F;
     /*
-     The Dahl Friction Model elastic tread blocks representated by a single bristle. At tire stand still it acts
+     The Dahl Friction Model elastic tread blocks represented by a single bristle. At tire stand still it acts
      like a spring which enables holding of a vehicle on a slope without creeping (hopefully). Damping terms
      have been added to calm down the oscillations of the pure spring.
 
@@ -218,7 +218,7 @@ void ChTMsimpleTire::CombinedCoulombForces(double& fx, double& fy, double fz, do
      differential equation:
          dz/dt = v - sigma0*z*abs(v)/fc
 
-     When z is known, the friction force F can be calulated to:
+     When z is known, the friction force F can be calculated to:
         F = sigma0 * z
 
      For practical use some damping is needed, that leads to:
@@ -541,7 +541,7 @@ void ChTMsimpleTire::GuessPassCar70Par(double tireLoad,       // tire load force
     SetHorizontalCoefficients();
 }
 
-// Do some rough constency checks
+// Do some rough consistency checks
 bool ChTMsimpleTire::CheckParameters() {
     // Nominal Load set?
     if (m_par.pn < GetTireMaxLoad(0)) {

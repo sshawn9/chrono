@@ -50,16 +50,19 @@ int main(int argc, char* argv[]) {
     std::cout << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << std::endl;
 
     // Select demo
+    std::string input;
+    int demo = 2;
     std::cout << "Demo options:" << std::endl;
     std::cout << "1  : single BSTshell element" << std::endl;
-    std::cout << "2  : rectangular mesh of BSTshell elements" << std::endl;
+    std::cout << "2  : rectangular mesh of BSTshell elements [DEFAULT]" << std::endl;
     std::cout << "3  : mesh of BSTshell elements intialized from OBJ file" << std::endl;
     std::cout << "\nSelect option (1, 2, or 3): ";
-
-    int demo = 1;
-    std::cin >> demo;
-    std::cout << std::endl;
-    ChClampValue(demo, 1, 3);
+    std::getline(std::cin, input);
+    if (!input.empty()) {
+        std::istringstream stream(input);
+        stream >> demo;
+        ChClampValue(demo, 1, 3);
+    }
 
     // Create (if needed) output directory
     const std::string out_dir = GetChronoOutputPath() + "FEA_SHELLS";
@@ -68,9 +71,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Create a Chrono::Engine physical system
+    // Create a Chrono physical system
     ChSystemSMC sys;
-
+    sys.SetGravityY();
     sys.SetNumThreads(std::min(4, ChOMP::GetNumProcs()), 0, 1);
 
     // Create a mesh, that is a container for groups
@@ -141,7 +144,7 @@ int main(int argc, char* argv[]) {
 
         // TEST
         sys.Setup();
-        sys.Update();
+        sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
         std::cout << "BST initial: \n"
                   << "Area: " << element->area << "\n"
                   << "l0: " << element->l0 << "\n"
@@ -152,7 +155,7 @@ int main(int argc, char* argv[]) {
         node1->SetPos(node1->GetPos() + ChVector3d(0.1, 0, 0));
         node1->SetFixed(true);
 
-        sys.Update();
+        sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
         ChVectorDynamic<double> Fi(element->GetNumCoordsPosLevel());
         element->ComputeInternalForces(Fi);
         std::cout << "BST updated: \n"
@@ -202,7 +205,7 @@ int main(int argc, char* argv[]) {
         std::vector<std::shared_ptr<ChNodeFEAxyz>> nodes;  // for future loop when adding elements
         for (size_t iz = 0; iz <= nsections_z; ++iz) {
             for (size_t ix = 0; ix <= nsections_x; ++ix) {
-                ChVector3d p(L_x-ix * (L_x / nsections_x), 0, iz * (L_z / nsections_z));
+                ChVector3d p(ix * (L_x / nsections_x), 0, iz * (L_z / nsections_z));
 
                 auto node = chrono_types::make_shared<ChNodeFEAxyz>(p);
 
@@ -299,21 +302,21 @@ int main(int argc, char* argv[]) {
     }
 
     // Visualization of the FEM mesh.
-    auto vis_shell_mesh = chrono_types::make_shared<ChVisualShapeFEA>(mesh);
+    auto vis_shell_mesh = chrono_types::make_shared<ChVisualShapeFEA>();
     vis_shell_mesh->SetFEMdataType(ChVisualShapeFEA::DataType::SURFACE);
     vis_shell_mesh->SetWireframe(true);
     vis_shell_mesh->SetShellResolution(2);
     ////vis_shell_mesh->SetBackfaceCull(true);
     mesh->AddVisualShapeFEA(vis_shell_mesh);
 
-    auto vis_shell_speed = chrono_types::make_shared<ChVisualShapeFEA>(mesh);
+    auto vis_shell_speed = chrono_types::make_shared<ChVisualShapeFEA>();
     vis_shell_speed->SetFEMdataType(ChVisualShapeFEA::DataType::NODE_SPEED_NORM);
-    vis_shell_speed->SetColorscaleMinMax(0.0, 7.5);
+    vis_shell_speed->SetColormapRange(0.0, 7.5);
     vis_shell_speed->SetWireframe(false);
     vis_shell_speed->SetShellResolution(3);
     mesh->AddVisualShapeFEA(vis_shell_speed);
 
-    auto vis_shell_nodes = chrono_types::make_shared<ChVisualShapeFEA>(mesh);
+    auto vis_shell_nodes = chrono_types::make_shared<ChVisualShapeFEA>();
     vis_shell_nodes->SetFEMdataType(ChVisualShapeFEA::DataType::NONE);
     vis_shell_nodes->SetFEMglyphType(ChVisualShapeFEA::GlyphType::NODE_DOT_POS);
     vis_shell_nodes->SetSymbolsThickness(0.006);
@@ -348,7 +351,7 @@ int main(int argc, char* argv[]) {
 
     // Create the run-time visualization system
     auto vis = CreateVisualizationSystem(vis_type, CameraVerticalDir::Y, sys, "BST triangle shell",
-                                         ChVector3d(1, 0.3, 1.3), ChVector3d(0.5, -0.3, 0.5));
+                                         ChVector3d(2.0, 0.6, 2.6), ChVector3d(0.5, -0.3, 0.5));
 
     // Change solver to PardisoMKL
     auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
@@ -362,7 +365,7 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     double timestep = 0.005;
     sys.Setup();
-    sys.Update();
+    sys.Update(UpdateFlags::UPDATE_ALL & ~UpdateFlags::VISUAL_ASSETS);
 
     ChFunctionInterp rec_X;
     ChFunctionInterp rec_Y;
@@ -383,21 +386,19 @@ int main(int argc, char* argv[]) {
     // time step, so each time step has less CPU overhead, but this comes at a cost: very short time steps must
     // be used otherwise the integration will diverge - especially if the system has high stiffness and/or low masses.
     // For the case of the falling cloth, we succesfully tested
-    //   ChTimestepperEulerExplIIorder  timestep = 0.00002  (not suggested, better use higher order)
+    //   ChTimestepperEulerExplicitIIorder  timestep = 0.00002  (not suggested, better use higher order)
     //   ChTimestepperHeun              timestep = 0.0001   (Heun is like a 2nd order Runge Kutta)
-    //   ChTimestepperRungeKuttaExpl    timestep = 0.0005   (the famous 4th order Runge Kutta, of course slower)
+    //   ChTimestepperRungeKutta    timestep = 0.0005   (the famous 4th order Runge Kutta, of course slower)
     //
     // You will see that the explicit integrator does not introduce numerical damping unlike implicit integrators,
     // so the motion will be more oscillatory and undamped, thus amplificating the risk of divergence (if you add �
     // structural damping, this might help with stability, by the way)
     //
-    // IMPORTANT OPTIMIZATION. In explicit integrators, you can use a ChSolverLumped solver to work with lumped masses (diagonal mass matrix)
-    // This type of solver requires to get rid of constraint jacobians, this can be done using SetConstraintsAsPenaltyON(), 
-    // Just remember:
+    // In explicit integrators, you can optionally enable mass lumping via  SetDiagonalLumpingON() , just remember:
     // - this helps reducing CPU overhead because it does not lead to linear systems
-    // - not all finite elements/bodies support lumping: nodes with non-diagonal inertias lead to approximation in lumping
-    // - to avoid linear systems, SetConstraintsAsPenaltyON() is needed. Constraints, if any,
-    //   will turn into penalty forces. Penalty factors can be set as optional parameters in SetConstraintsAsPenaltyON(..)
+    // - not all finite elements/bodies support this: nodes with non-diagonal inertias lead to approximation in lumping
+    // - to avoid linear systems, this option also enables "constraints by penalty". Constraints, if any,
+    //   will turn into penalty forces. Penalty factors can be set as optional parameters in SetDiagonalLumpingON(..)
     //   It is not the case of this demo, but if you add constraints, you'll see that they will be satisfied
     //   approximately with some oscillatory clearance. The higher the penalty, the smaller the amplitude of such
     //   clearances, but the higher the risk of divergence.
@@ -406,7 +407,7 @@ int main(int argc, char* argv[]) {
     // video rendering could become the real bottleneck.
     /*
     auto explicit_timestepper = chrono_types::make_shared<ChTimestepperHeun>(&sys);
-    explicit_timestepper->SetConstraintsAsPenaltyON(); // use diagonal mass lumping, skip linear systems completely
+    explicit_timestepper->SetDiagonalLumpingON(); // use diagonal mass lumping, skip linear systems completely
     sys.SetTimestepper(explicit_timestepper);
     auto lumped_solver = chrono_types::make_shared<ChSolverLumped>();
     sys.SetSolver(lumped_solver);

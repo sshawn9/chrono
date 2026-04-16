@@ -51,7 +51,7 @@ void PerformExternalCosimulation(const std::vector<ChVector3d>& input_vert_pos,
     vert_output_indexes.clear();
     double ky = 10000;  // upward stiffness
     double ry = 20;     // upward damping
-    // simple example: scan through all vertexes in the mesh, see if they sink below zero,
+    // simple example: scan through all vertices in the mesh, see if they sink below zero,
     // apply a penalty upward spring force if so.
     for (int iv = 0; iv < input_vert_pos.size(); ++iv) {
         if (input_vert_pos[iv].y() < 0) {
@@ -107,6 +107,7 @@ int main(int argc, char* argv[]) {
 
     // Create a Chrono physical system and the associated collision system
     ChSystemSMC sys;
+    sys.SetGravityY();
     sys.SetCollisionSystemType(ChCollisionSystem::Type::BULLET);
 
     sys.SetNumThreads(std::min(4, ChOMP::GetNumProcs()), 0, 1);
@@ -167,9 +168,9 @@ int main(int argc, char* argv[]) {
     // This will automatically update a triangle mesh (a ChVisualShapeTriangleMesh
     // asset that is internally managed) by setting  proper
     // coordinates and vertex colors as in the FEM elements.
-    auto mvisualizemesh = chrono_types::make_shared<ChVisualShapeFEA>(my_mesh);
+    auto mvisualizemesh = chrono_types::make_shared<ChVisualShapeFEA>();
     mvisualizemesh->SetFEMdataType(ChVisualShapeFEA::DataType::NODE_SPEED_NORM);
-    mvisualizemesh->SetColorscaleMinMax(0.0, 10);
+    mvisualizemesh->SetColormapRange(0.0, 10);
     mvisualizemesh->SetSmoothFaces(true);
     my_mesh->AddVisualShapeFEA(mvisualizemesh);
 
@@ -205,8 +206,6 @@ int main(int argc, char* argv[]) {
     vis->AddLogo();
     vis->AddSkyBox();
     vis->AddTypicalLights();
-    vis->AddLightWithShadow(ChVector3d(1.5, 5.5, -2.5), ChVector3d(0, 0, 0), 3, 2.2, 7.2, 40, 512,
-                            ChColor(0.8f, 0.8f, 1.0f));
     vis->AddCamera(ChVector3d(1.0, 1.4, -1.2), ChVector3d(0, tire_rad, 0));
 
     vis->EnableShadows();

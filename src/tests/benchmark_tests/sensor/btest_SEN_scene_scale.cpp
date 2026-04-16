@@ -61,6 +61,7 @@ int main(int argc, char* argv[]) {
     // Create the system
     // -----------------
     ChSystemNSC sys;
+    sys.SetGravityY();
 
     auto manager = std::make_shared<ChSensorManager>(&sys);
     manager->scene->AddPointLight({100, 100, 100}, {1, 1, 1}, 5000);
@@ -86,11 +87,6 @@ int main(int argc, char* argv[]) {
 
     int curr_item_cnt = 0;
 
-    // ChBox box_asset = ChBox({0, 0, 0}, ChMatrix33<>(1), {1, 1, 1});
-    //
-    // auto box_shape = chrono_types::make_shared<ChBoxShape>(box_asset);
-    // box_shape->SetMutable(false);
-
     for (int q = start_exp; q <= stop_exp; q++) {
         int target_item_cnt = pow(2, q);
         std::cout << "Box Count: " << target_item_cnt << std::endl;
@@ -108,7 +104,7 @@ int main(int argc, char* argv[]) {
                 vis_mat->SetAmbientColor({0.f, 0.f, 0.f});
                 vis_mat->SetDiffuseColor({(float)ChRandom::Get(), (float)ChRandom::Get(), (float)ChRandom::Get()});
                 vis_mat->SetSpecularColor({.2f, .2f, .2f});
-                cyl->GetVisualModel()->GetShapeInstances()[0].first->AddMaterial(vis_mat);
+                cyl->GetVisualModel()->GetShapeInstances()[0].shape->AddMaterial(vis_mat);
 
                 sys.Add(cyl);
                 curr_item_cnt++;
@@ -122,7 +118,7 @@ int main(int argc, char* argv[]) {
                 vis_mat->SetAmbientColor({0.f, 0.f, 0.f});
                 vis_mat->SetDiffuseColor({(float)ChRandom::Get(), (float)ChRandom::Get(), (float)ChRandom::Get()});
                 vis_mat->SetSpecularColor({.2f, .2f, .2f});
-                sphere->GetVisualModel()->GetShapeInstances()[0].first->AddMaterial(vis_mat);
+                sphere->GetVisualModel()->GetShapeInstances()[0].shape->AddMaterial(vis_mat);
 
                 sys.Add(sphere);
                 curr_item_cnt++;
@@ -136,7 +132,7 @@ int main(int argc, char* argv[]) {
                 vis_mat->SetAmbientColor({0.f, 0.f, 0.f});
                 vis_mat->SetDiffuseColor({(float)ChRandom::Get(), (float)ChRandom::Get(), (float)ChRandom::Get()});
                 vis_mat->SetSpecularColor({.2f, .2f, .2f});
-                box->GetVisualModel()->GetShapeInstances()[0].first->AddMaterial(vis_mat);
+                box->GetVisualModel()->GetShapeInstances()[0].shape->AddMaterial(vis_mat);
 
                 sys.Add(box);
                 curr_item_cnt++;

@@ -19,10 +19,11 @@
 #include <cmath>
 #include <limits>
 
+#include "chrono/core/ChApiCE.h"
 #include "chrono/core/ChClassFactory.h"
 #include "chrono/core/ChMatrix.h"
 #include "chrono/serialization/ChArchive.h"
-#include "chrono/serialization/ChOutputASCII.h"
+#include "chrono/serialization/ChArchiveASCII.h"
 
 namespace chrono {
 
@@ -57,7 +58,7 @@ class ChVector3 {
     Real* data() { return m_data; }
     const Real* data() const { return m_data; }
 
-    // EIGEN INTER-OPERABILITY
+    // EIGEN INTEROPERABILITY
 
     /// Construct a 3d vector from an Eigen vector expression.
     template <typename Derived>
@@ -198,6 +199,9 @@ class ChVector3 {
     /// Scale this vector by a scalar: this *= s
     void Scale(Real s);
 
+    /// Set this vector to its component-wise absolute values.
+    void Abs();
+
     /// Set this vector to the cross product of A and B: this = A x B
     void Cross(const ChVector3<Real>& A, const ChVector3<Real>& B);
 
@@ -220,7 +224,7 @@ class ChVector3 {
     void SetLength(Real s);
 
     /// Output three orthonormal vectors considering this vector along X axis.
-    /// Optionally, the \a z_sugg vector can be used to suggest the Z axis.
+    /// Optionally, the \a y_sugg vector can be used to suggest the Y axis.
     /// It is recommended to set \a y_sugg to be not parallel to this vector.
     /// The Z axis will be orthogonal to X and \a y_sugg.
     /// Rely on Gram-Schmidt orthonormalization.
@@ -238,7 +242,7 @@ class ChVector3 {
                              ChVector3<Real>& Vz,
                              ChVector3<Real> z_sugg = ChVector3<Real>(0, 0, 1)) const;
 
-    /// Output three orthonormal vectors considering this vector along Y axis.
+    /// Output three orthonormal vectors considering this vector along Z axis.
     /// Optionally, the \a x_sugg vector can be used to suggest the X axis.
     /// It is recommended to set \a x_sugg to be not parallel to this vector.
     /// Rely on Gram-Schmidt orthonormalization.
@@ -825,6 +829,13 @@ inline void ChVector3<Real>::Scale(Real s) {
 }
 
 template <class Real>
+inline void ChVector3<Real>::Abs() {
+    m_data[0] = std::abs(m_data[0]);
+    m_data[1] = std::abs(m_data[1]);
+    m_data[2] = std::abs(m_data[2]);
+}
+
+template <class Real>
 inline void ChVector3<Real>::Cross(const ChVector3<Real>& A, const ChVector3<Real>& B) {
     m_data[0] = (A.m_data[1] * B.m_data[2]) - (A.m_data[2] * B.m_data[1]);
     m_data[1] = (A.m_data[2] * B.m_data[0]) - (A.m_data[0] * B.m_data[2]);
@@ -931,7 +942,7 @@ inline void ChVector3<Real>::GetDirectionAxesAsY(ChVector3<Real>& Vx,
         }
     }
 
-    Vy.Cross(Vz, Vx);
+    Vz.Cross(Vx, Vy);
 }
 
 template <class Real>
@@ -1016,11 +1027,14 @@ inline void ChVector3<Real>::ArchiveIn(ChArchiveIn& archive_in) {
 // -----------------------------------------------------------------------------
 // Reversed operators
 
-/// Operator for scaling the vector by a scalar value, as s*V
+/// Operator for scaling the vector by a scalar value, as s*V.
 template <class Real>
 ChVector3<Real> operator*(Real s, const ChVector3<Real>& V) {
     return ChVector3<Real>(V.x() * s, V.y() * s, V.z() * s);
 }
+
+/// Operator for scaling an integer vector by a double scalar, as s*V.
+ChApi ChVector3d operator*(double s, const ChVector3i& V);
 
 }  // end namespace chrono
 

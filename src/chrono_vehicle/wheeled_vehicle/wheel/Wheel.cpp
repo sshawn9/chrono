@@ -19,8 +19,8 @@
 #include <algorithm>
 
 #include "chrono_vehicle/wheeled_vehicle/wheel/Wheel.h"
-#include "chrono_vehicle/ChVehicleModelData.h"
-#include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono_vehicle/ChVehicleDataPath.h"
+#include "chrono_vehicle/utils/ChVehicleUtilsJSON.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
 using namespace rapidjson;

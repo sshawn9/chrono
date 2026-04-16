@@ -16,11 +16,12 @@
 #include <vector>
 #include <irrlicht.h>
 
+#include "chrono/assets/ChVisualMaterial.h"
+#include "chrono/assets/ChColormap.h"
 #include "chrono/core/ChCoordsys.h"
 #include "chrono/core/ChMatrix.h"
 #include "chrono/core/ChVector3.h"
 #include "chrono/core/ChFrame.h"
-#include "chrono/assets/ChVisualMaterial.h"
 #include "chrono/functions/ChFunctionBase.h"
 #include "chrono/physics/ChSystem.h"
 
@@ -117,7 +118,7 @@ ChApiIrr int drawAllContactPoints(ChVisualSystemIrrlicht* vis,
                                   double mlen = 1.0,
                                   ContactsDrawMode drawtype = ContactsDrawMode::CONTACT_NORMALS);
 
-/// Draw contact informations as labels at the contact point.
+/// Draw contact information as labels at the contact point.
 ChApiIrr int drawAllContactLabels(ChVisualSystemIrrlicht* vis,
                                   ContactsLabelMode labeltype = ContactsLabelMode::CONTACT_FORCES_N_VAL,
                                   ChColor col = ChColor(1.f, 1.f, 1.f));
@@ -127,7 +128,7 @@ ChApiIrr int drawAllLinks(ChVisualSystemIrrlicht* vis,
                           double mlen = 1.0,
                           LinkDrawMode drawtype = LinkDrawMode::LINK_REACT_FORCE);
 
-/// Draw contact informations as labels at the contact point.
+/// Draw contact information as labels at the contact point.
 ChApiIrr int drawAllLinkLabels(ChVisualSystemIrrlicht* vis,
                                LinkLabelMode labeltype = LinkLabelMode::LINK_REACT_FORCE_X,
                                ChColor col = ChColor(1.f, 1.f, 1.f));
@@ -144,7 +145,7 @@ ChApiIrr int drawAllLinkframes(ChVisualSystemIrrlicht* vis, double scale = 0.01)
 /// Draw the plot of solver violations.
 /// Each vertical red bar of the plot represents the residual during the solver iterations.
 /// The rightmost red bar represents the residual after the latest iteration.
-/// The red horizontal line respresents the tolerance requested to the solver.
+/// The red horizontal line represents the tolerance requested to the solver.
 /// If the last red bar does not fall below the red line, the solver did not converge.
 /// The Y axis is logarithmic for the error (residual) and ranges from log10(tol)-1 to log10(tol)+2.
 /// If the tolerance is set to 0 the graphics will consider a default tolerance of 1e-6.
@@ -230,6 +231,7 @@ ChApiIrr void drawGrid(ChVisualSystemIrrlicht* vis,
 /// Draw color bar with a color map and 2D legend.
 /// Plot widget coordinates are considered from top-left corner of the Irrlicht window.
 ChApiIrr void drawColorbar(ChVisualSystemIrrlicht* vis,  ///< visual system
+                           const ChColormap& colormap,   ///< current colormap
                            double value_min,             ///< minimum value of the color map
                            double value_max,             ///< maximum value of the color map
                            const std::string& label,     ///< label of the color bar

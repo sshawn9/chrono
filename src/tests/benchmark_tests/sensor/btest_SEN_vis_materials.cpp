@@ -48,6 +48,7 @@ int main(int argc, char* argv[]) {
     // Create the system
     // -----------------
     ChSystemNSC sys;
+    sys.SetGravityY();
 
     int x_dim = 11;
     int y_dim = 7;
@@ -65,7 +66,7 @@ int main(int argc, char* argv[]) {
             color->SetRoughness(1 - (float)j / y_dim);
             color->SetUseSpecularWorkflow(false);
 
-            sphere1->GetVisualModel()->GetShapeInstances()[0].first->AddMaterial(color);
+            sphere1->GetVisualModel()->GetShapeInstances()[0].shape->AddMaterial(color);
 
             sys.Add(sphere1);
         }

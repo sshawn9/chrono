@@ -15,11 +15,12 @@
 #ifndef CH_CONTACT_SURFACE_SEGMENT_SET_H
 #define CH_CONTACT_SURFACE_SEGMENT_SET_H
 
+#include "chrono/physics/ChContactable.h"
+#include "chrono/physics/ChLoaderU.h"
 #include "chrono/collision/ChCollisionModel.h"
 #include "chrono/fea/ChContactSurface.h"
 #include "chrono/fea/ChNodeFEAxyz.h"
 #include "chrono/fea/ChNodeFEAxyzrot.h"
-#include "chrono/physics/ChLoaderU.h"
 
 namespace chrono {
 namespace fea {
@@ -31,9 +32,11 @@ namespace fea {
 
 /// Contact segment for FEA elements that use XYZ nodes.
 /// Used to 'tessellate' FEA meshes with 1-D elements for collision purposes.
-class ChApi ChContactSegmentXYZ : public ChContactable_2vars<3, 3> {
+class ChApi ChContactSegmentXYZ : public ChContactable {
   public:
-    ChContactSegmentXYZ();
+    ChContactSegmentXYZ(std::shared_ptr<ChNodeFEAxyz> node1,
+                        std::shared_ptr<ChNodeFEAxyz> node2,
+                        ChContactSurface* container = nullptr);
     ChContactSegmentXYZ(const std::array<std::shared_ptr<ChNodeFEAxyz>, 2>& nodes,
                         ChContactSurface* container = nullptr);
 
@@ -43,11 +46,17 @@ class ChApi ChContactSegmentXYZ : public ChContactable_2vars<3, 3> {
     /// Set node ownership.
     void SetNodeOwnership(const ChVector2b& owns_node) { m_owns_node = owns_node; }
 
-    /// Acccess the specified FEA node for which this is a proxy.
+    /// Access the specified FEA node for which this is a proxy.
     std::shared_ptr<ChNodeFEAxyz> GetNode(int i) const { return m_nodes[i]; }
 
     /// Returns true if the specified node is owned by this segment.
     bool OwnsNode(int i) const { return m_owns_node[i]; }
+
+    /// Get the current position of first node.
+    const ChVector3d& GetPos1() const { return m_nodes[0]->GetPos(); }
+
+    /// Get the current position of second node.
+    const ChVector3d& GetPos2() const { return m_nodes[1]->GetPos(); }
 
     /// Get the contact surface container.
     ChContactSurface* GetContactSurface() const { return m_container; }
@@ -58,13 +67,11 @@ class ChApi ChContactSegmentXYZ : public ChContactable_2vars<3, 3> {
     // Interface to ChContactable
 
     /// Return the type of contactable (here, a contactable with 2 variables, each with 3 DOFs).
-    virtual ChContactable::eChContactableType GetContactableType() const override { return CONTACTABLE_33; }
+    virtual ChContactable::Type GetContactableType() const override { return ChContactable::Type::TWO_33; }
 
-    /// Access variables for node 1.
-    virtual ChVariables* GetVariables1() override { return &m_nodes[0]->Variables(); }
-
-    /// Access variables for node 2.
-    virtual ChVariables* GetVariables2() override { return &m_nodes[1]->Variables(); }
+    virtual ChConstraintTuple* CreateConstraintTuple() override {
+        return new ChConstraintTuple_2vars<3, 3>(&m_nodes[0]->Variables(), &m_nodes[1]->Variables());
+    }
 
     /// Indicate if the object must be considered in collision detection.
     virtual bool IsContactActive() override { return true; }
@@ -124,9 +131,9 @@ class ChApi ChContactSegmentXYZ : public ChContactable_2vars<3, 3> {
     /// if the contactable is a ChBody, this should update the corresponding 1x6 jacobian.
     virtual void ComputeJacobianForContactPart(const ChVector3d& abs_point,
                                                ChMatrix33<>& contact_plane,
-                                               type_constraint_tuple& jacobian_tuple_N,
-                                               type_constraint_tuple& jacobian_tuple_U,
-                                               type_constraint_tuple& jacobian_tuple_V,
+                                               ChConstraintTuple* jacobian_tuple_N,
+                                               ChConstraintTuple* jacobian_tuple_U,
+                                               ChConstraintTuple* jacobian_tuple_V,
                                                bool second) override;
 
     /// Return mass of contactable object.
@@ -154,9 +161,11 @@ class ChApi ChContactSegmentXYZ : public ChContactable_2vars<3, 3> {
 
 /// Contact segment for FEA elements that use XYZRot nodes.
 /// Used to 'tessellate' FEA meshes with 1-D elements for collision purposes.
-class ChApi ChContactSegmentXYZRot : public ChContactable_2vars<3, 3> /*, public ChLoadableU*/ {
+class ChApi ChContactSegmentXYZRot : public ChContactable /*, public ChLoadableU*/ {
   public:
-    ChContactSegmentXYZRot();
+    ChContactSegmentXYZRot(std::shared_ptr<ChNodeFEAxyzrot> node1,
+                           std::shared_ptr<ChNodeFEAxyzrot> node2,
+                           ChContactSurface* container = nullptr);
     ChContactSegmentXYZRot(const std::array<std::shared_ptr<ChNodeFEAxyzrot>, 2>& nodes,
                            ChContactSurface* container = nullptr);
 
@@ -166,11 +175,17 @@ class ChApi ChContactSegmentXYZRot : public ChContactable_2vars<3, 3> /*, public
     /// Set node ownership.
     void SetNodeOwnership(const ChVector2b& owns_node) { m_owns_node = owns_node; }
 
-    /// Acccess the specified FEA node for which this is a proxy.
+    /// Access the specified FEA node for which this is a proxy.
     std::shared_ptr<ChNodeFEAxyzrot> GetNode(int i) const { return m_nodes[i]; }
 
     /// Returns true if the specified node is owned by this segment.
     bool OwnsNode(int i) const { return m_owns_node[i]; }
+
+    /// Get the current position of first node.
+    const ChVector3d& GetPos1() const { return m_nodes[0]->GetPos(); }
+
+    /// Get the current position of second node.
+    const ChVector3d& GetPos2() const { return m_nodes[1]->GetPos(); }
 
     /// Get the contact surface container.
     ChContactSurface* GetContactSurface() const { return m_container; }
@@ -181,13 +196,11 @@ class ChApi ChContactSegmentXYZRot : public ChContactable_2vars<3, 3> /*, public
     // Interface to ChContactable
 
     /// Return the type of contactable (here, a contactable with 2 variables, each with 6 DOFs).
-    virtual ChContactable::eChContactableType GetContactableType() const override { return CONTACTABLE_66; }
+    virtual ChContactable::Type GetContactableType() const override { return ChContactable::Type::TWO_66; }
 
-    /// Access variables for node 1.
-    virtual ChVariables* GetVariables1() override { return &m_nodes[0]->Variables(); }
-
-    /// Access variables for node 2.
-    virtual ChVariables* GetVariables2() override { return &m_nodes[1]->Variables(); }
+    virtual ChConstraintTuple* CreateConstraintTuple() override {
+        return new ChConstraintTuple_2vars<6, 6>(&m_nodes[0]->Variables(), &m_nodes[1]->Variables());
+    }
 
     /// Indicate if the object must be considered in collision detection.
     virtual bool IsContactActive() override { return true; }
@@ -247,9 +260,9 @@ class ChApi ChContactSegmentXYZRot : public ChContactable_2vars<3, 3> /*, public
     /// if the contactable is a ChBody, this should update the corresponding 1x6 jacobian.
     virtual void ComputeJacobianForContactPart(const ChVector3d& abs_point,
                                                ChMatrix33<>& contact_plane,
-                                               type_constraint_tuple& jacobian_tuple_N,
-                                               type_constraint_tuple& jacobian_tuple_U,
-                                               type_constraint_tuple& jacobian_tuple_V,
+                                               ChConstraintTuple* jacobian_tuple_N,
+                                               ChConstraintTuple* jacobian_tuple_U,
+                                               ChConstraintTuple* jacobian_tuple_V,
                                                bool second) override;
 
     /// Return mass of contactable object.
@@ -283,6 +296,27 @@ class ChApi ChContactSurfaceSegmentSet : public ChContactSurface {
 
     virtual ~ChContactSurfaceSegmentSet() {}
 
+    /// Utility function to add segments for all 1D elements of the specified FEA mesh to this collision set.
+    void AddAllSegments(const ChMesh& mesh, double sphere_swept = 0.0);
+
+    /// Get the current axis-aligned bounding box.
+    virtual ChAABB GetAABB() const override;
+
+    /// Get the list of segments.
+    std::vector<std::shared_ptr<ChContactSegmentXYZ>>& GetSegmentsXYZ() { return m_segments; }
+
+    /// Get the list of segments for nodes with rotational DOFs.
+    std::vector<std::shared_ptr<ChContactSegmentXYZRot>>& GetSegmentsXYZRot() { return m_segments_rot; }
+
+    /// Get the total number of segments.
+    unsigned int GetNumSegments() const { return (unsigned int)(m_segments.size() + m_segments_rot.size()); }
+
+    // Functions to interface this with ChPhysicsItem container.
+    virtual void SyncCollisionModels() const override;
+    virtual void AddCollisionModelsToSystem(ChCollisionSystem* coll_sys) const override;
+    virtual void RemoveCollisionModelsFromSystem(ChCollisionSystem* coll_sys) const override;
+
+  private:
     /// Add the segment specified by the two given XYZ nodes to this contact surface.
     void AddSegment(std::shared_ptr<ChNodeFEAxyz> node1,  ///< segment node1
                     std::shared_ptr<ChNodeFEAxyz> node2,  ///< segment node2
@@ -298,23 +332,6 @@ class ChApi ChContactSurfaceSegmentSet : public ChContactSurface {
                     bool owns_node2,                         ///< collision segment owns node2
                     double sphere_swept = 0.0                ///< thickness (radius of sweeping sphere)
     );
-
-    /// Utility function to add segments for all 1D elements of the specified FEA mesh to this collision set.
-    void AddAllSegments(const ChMesh& mesh, double sphere_swept = 0.0);
-
-    /// Get the list of segments.
-    std::vector<std::shared_ptr<ChContactSegmentXYZ>>& GetSegmentsXYZ() { return m_segments; }
-
-    /// Get the list of segments for nodes with rotational DOFs.
-    std::vector<std::shared_ptr<ChContactSegmentXYZRot>>& GetSegmentsXYZRot() { return m_segments_rot; }
-
-    /// Get the total number of segments.
-    unsigned int GetNumSegments() const { return (unsigned int)(m_segments.size() + m_segments_rot.size()); }
-
-    // Functions to interface this with ChPhysicsItem container.
-    virtual void SyncCollisionModels() const override;
-    virtual void AddCollisionModelsToSystem(ChCollisionSystem* coll_sys) const override;
-    virtual void RemoveCollisionModelsFromSystem(ChCollisionSystem* coll_sys) const override;
 
   private:
     std::vector<std::shared_ptr<ChContactSegmentXYZ>> m_segments;         // segments with XYZ nodes

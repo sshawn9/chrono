@@ -7,13 +7,13 @@ set(FEA_DEMOS
 )
 
 # Add demos that require IRRLICHT run-time visualization
-if(ENABLE_MODULE_IRRLICHT)
+if(CH_ENABLE_MODULE_IRRLICHT)
 
     set(FEA_DEMOS ${FEA_DEMOS}
         demo_FEA_truss
     )
 
-    if(ENABLE_MODULE_PARDISO_MKL)
+    if(CH_ENABLE_MODULE_PARDISO_MKL)
     set(FEA_DEMOS ${FEA_DEMOS}
         demo_FEA_beams_static
         demo_FEA_beams_extrude
@@ -22,37 +22,44 @@ if(ENABLE_MODULE_IRRLICHT)
     )
     endif()
 
-    if(ENABLE_MODULE_MUMPS)
+endif()
+
+# Add demos that require VSG run-time visualization
+if(CH_ENABLE_MODULE_VSG)
+    if(CH_ENABLE_MODULE_PARDISO_MKL)
     set(FEA_DEMOS ${FEA_DEMOS}
-        demo_FEA_cablesMUMPS
+        demo_FEA_checkpoint
     )
     endif()
-
 endif()
 
 # Add demos that require run-time visualization (IRRLICHT or VSG)
-if(ENABLE_MODULE_IRRLICHT OR ENABLE_MODULE_VSG)
+if(CH_ENABLE_MODULE_IRRLICHT OR CH_ENABLE_MODULE_VSG)
 
     set(FEA_DEMOS ${FEA_DEMOS}
         demo_FEA_thermal
         demo_FEA_electrostatics
         demo_FEA_contacts_SMC
         demo_FEA_cables
-        demo_FEA_shellsANCF_3423
+        demo_FEA_shellsANCF_3423_3443
         demo_FEA_shellsANCF_3833
         demo_FEA_hexaANCF_3813
         demo_FEA_loads_dynamics
     )
     
-    # Add demos that require Matlab
-    if(ENABLE_MODULE_MATLAB)
+    if(CH_ENABLE_MODULE_MUMPS)
+    set(FEA_DEMOS ${FEA_DEMOS}
+        demo_FEA_cablesMUMPS
+    )
+    endif()
+
+    if(CH_ENABLE_MODULE_MATLAB)
     set(FEA_DEMOS ${FEA_DEMOS}
         demo_FEA_cablesMATLAB
     )
     endif()
     
-    # Add demos that require MKL
-    if(ENABLE_MODULE_PARDISO_MKL)
+    if(CH_ENABLE_MODULE_PARDISO_MKL)
     set(FEA_DEMOS ${FEA_DEMOS}
         demo_FEA_beamsEuler
         demo_FEA_beams_constr
@@ -64,11 +71,13 @@ if(ENABLE_MODULE_IRRLICHT OR ENABLE_MODULE_VSG)
         demo_FEA_contactsANCF_SMC
         demo_FEA_hexaANCF_3813_9
         demo_FEA_beamsANCF
+        demo_FEA_multiphysics
+        demo_FEA_multiphysics_custom
     )
     endif()
     
     # Add demos that require MKL and postprocess
-    if(ENABLE_MODULE_PARDISO_MKL AND ENABLE_MODULE_POSTPROCESS)
+    if(CH_ENABLE_MODULE_PARDISO_MKL AND CH_ENABLE_MODULE_POSTPROCESS)
     set(FEA_DEMOS ${FEA_DEMOS}
         demo_FEA_beams_rotor
     )
@@ -76,69 +85,57 @@ if(ENABLE_MODULE_IRRLICHT OR ENABLE_MODULE_VSG)
 
 endif()
 
+set(UTILS "FEAvisualization.h")
+
 #--------------------------------------------------------------
 
 # Set include paths, compiler & linker flags, and libraries
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+list(APPEND LIBS Chrono_core)
 
-include_directories(${CH_INCLUDES})
-set(COMPILER_FLAGS "${CH_CXX_FLAGS}")
-set(LINKER_FLAGS "${CH_LINKERFLAG_EXE}")
-list(APPEND LIBS "ChronoEngine")
-
-if(ENABLE_MODULE_IRRLICHT)
-  include_directories(${CH_IRRLICHT_INCLUDES})
-  set(COMPILER_FLAGS "${COMPILER_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}")
-  list(APPEND LIBS "ChronoEngine_irrlicht")
+if(CH_ENABLE_MODULE_IRRLICHT)
+  list(APPEND LIBS "Chrono_irrlicht")
 endif()
 
-if(ENABLE_MODULE_VSG)
-  include_directories(${CH_VSG_INCLUDES})
-  list(APPEND LIBS "ChronoEngine_vsg")
+if(CH_ENABLE_MODULE_VSG)
+  list(APPEND LIBS "Chrono_vsg")
 endif()
 
-if(ENABLE_MODULE_PARDISO_MKL)
-  include_directories(${CH_MKL_INCLUDES})
-  set(COMPILER_FLAGS "${COMPILER_FLAGS} ${CH_MKL_CXX_FLAGS}")
-  set(LINKER_FLAGS "${LINKER_FLAGS} ${CH_MKL_LINK_FLAGS}")
-  list(APPEND LIBS "ChronoEngine_pardisomkl")
+if(CH_ENABLE_MODULE_PARDISO_MKL)
+  list(APPEND LIBS "Chrono_pardisomkl")
 endif()
 
-if(ENABLE_MODULE_MUMPS)
-  include_directories(${CH_MUMPS_INCLUDES})
-  list(APPEND LIBS "ChronoEngine_mumps")
+if(CH_ENABLE_MODULE_MUMPS)
+  list(APPEND LIBS "Chrono_mumps")
 endif()
 
-if(ENABLE_MODULE_MATLAB)
-  include_directories(${CH_MATLABINC})
-  list(APPEND LIBS "ChronoEngine_matlab")
+if(CH_ENABLE_MODULE_MATLAB)
+  list(APPEND LIBS "Chrono_matlab")
 endif()
 
-if(ENABLE_MODULE_POSTPROCESS)
-  list(APPEND LIBS "ChronoEngine_postprocess")
+if(CH_ENABLE_MODULE_POSTPROCESS)
+  list(APPEND LIBS "Chrono_postprocess")
 endif()
 
 #--------------------------------------------------------------
 
-message(STATUS "Demo programs for FEA module...")
+message(STATUS "Add demo programs for FEA module")
 
 foreach(PROGRAM ${FEA_DEMOS})
-    message(STATUS "...add ${PROGRAM}")
+    add_executable(${PROGRAM} ${PROGRAM}.cpp ${UTILS})
+    source_group(""  FILES ${PROGRAM}.cpp ${UTILS})
 
-    add_executable(${PROGRAM}  "${PROGRAM}.cpp")
-    source_group(""  FILES "${PROGRAM}.cpp")
-
-    set_target_properties(${PROGRAM} PROPERTIES
-        FOLDER demos
-        COMPILE_FLAGS "${COMPILER_FLAGS}"
-        LINK_FLAGS "${LINKER_FLAGS}")
+    set_target_properties(${PROGRAM} PROPERTIES FOLDER demos)
     if(APPLE)
       set_target_properties(${PROGRAM} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${MACOSX_BUNDLE_INFO_PLIST})
     endif()
     set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
     target_link_libraries(${PROGRAM} ${LIBS})
+    if(MSVC)
+      set_target_properties(${PROGRAM} PROPERTIES MSVC_RUNTIME_LIBRARY ${CH_MSVC_RUNTIME_LIBRARY})
+    endif()
     
-    install(TARGETS ${PROGRAM} DESTINATION ${CH_INSTALL_DEMO})
+    install(TARGETS ${PROGRAM} CONFIGURATIONS Release DESTINATION ${CH_INSTALL_DEMO})
 endforeach(PROGRAM)
 

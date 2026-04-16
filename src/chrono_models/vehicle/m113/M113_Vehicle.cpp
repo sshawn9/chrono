@@ -18,9 +18,9 @@
 
 #include "chrono/assets/ChVisualShapeSphere.h"
 #include "chrono/assets/ChVisualShapeTriangleMesh.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/input_output/ChWriterCSV.h"
 
-#include "chrono_vehicle/ChVehicleModelData.h"
+#include "chrono_vehicle/ChVehicleDataPath.h"
 
 #include "chrono_models/vehicle/m113/M113_Vehicle.h"
 #include "chrono_models/vehicle/m113/M113_Chassis.h"
@@ -90,8 +90,8 @@ M113_Vehicle_SinglePin::M113_Vehicle_SinglePin(bool fixed,
                                                CollisionType chassis_collision_type)
     : M113_Vehicle(fixed,
                    TrackShoeType::SINGLE_PIN,
-                   DoublePinTrackShoeType::ONE_CONNECTOR,     // unused
-                   ChTrackShoeBandANCF::ElementType::ANCF_4,  // unusued
+                   DoublePinTrackShoeType::ONE_CONNECTOR,     // not used
+                   ChTrackShoeBandANCF::ElementType::ANCF_4,  // not used
                    false,                                     // not used
                    0,                                         // not used
                    0,                                         // not used
@@ -329,7 +329,7 @@ void M113_Vehicle::Create(bool fixed,
 
 void M113_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFwdVel) {
     // Initialize the chassis subsystem.
-    m_chassis->Initialize(m_system, chassisPos, chassisFwdVel, WheeledCollisionFamily::CHASSIS);
+    m_chassis->Initialize(this, chassisPos, chassisFwdVel, VehicleCollisionFamily::CHASSIS_FAMILY);
 
     // Initialize the left and right track assemblies.
     double track_offset = 1.0795;

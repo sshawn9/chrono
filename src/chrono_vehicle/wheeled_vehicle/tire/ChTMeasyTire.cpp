@@ -13,18 +13,18 @@
 // =============================================================================
 //
 // Template for the "Tire Model made Easy". Our implementation is a basic version
-// of the algorithms in http://www.tmeasy.de/, a comercial tire simulation code
+// of the algorithms in http://www.tmeasy.de/, a commercial tire simulation code
 // developed by Prof. Dr. Georg Rill.
 //
 //
-// Ref: Georg Rill, "Road Vehicle Dynamics - Fundamentals and Modelling",
+// Ref: Georg Rill, "Road Vehicle Dynamics - Fundamentals and Modeling",
 //          https://www.routledge.com/Road-Vehicle-Dynamics-Fundamentals-and-Modeling-with-MATLAB/Rill-Castro/p/book/9780367199739
 //      Georg Rill, "An Engineer's Guess On Tyre Model Parameter Made Possible With TMeasy",
 //          https://www.researchgate.net/publication/317036908_An_Engineer's_Guess_on_Tyre_Parameter_made_possible_with_TMeasy
 //      Georg Rill, "Simulation von Kraftfahrzeugen",
 //          https://www.researchgate.net/publication/317037037_Simulation_von_Kraftfahrzeugen
 //
-// Known differences to the comercial version:
+// Known differences to the commercial version:
 //  - No parking slip calculations
 //  - No dynamic parking torque
 //  - No dynamic tire inflation pressure
@@ -37,14 +37,14 @@
 //  - FED-Alpha vehicle model
 //  - Tire data sets gained by conversion of Pac02 TIR parameter files
 //  - Steady state cornering test and test results from Keweenah Research Center (KRC)
-//  - unvalidateble functionality has been removed
+//  - non-validated functionality has been removed
 // ===================================================================================
 
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 
-#include "chrono/core/ChGlobal.h"
+#include "chrono/core/ChDataPath.h"
 #include "chrono/functions/ChFunctionSineStep.h"
 
 #include "chrono_vehicle/wheeled_vehicle/tire/ChTMeasyTire.h"
@@ -150,7 +150,7 @@ void ChTMeasyTire::Synchronize(double time, const ChTerrain& terrain) {
         m_states.q = ChClamp(Fn_mag, 0.0, m_par.pn_max) / m_par.pn;
         double r_stat = m_unloaded_radius - m_data.depth;
         m_states.omega = wheel_state.omega;
-        m_states.R_eff = (2.0 * m_unloaded_radius + r_stat) / 3.0;
+        m_states.R_eff = (2.0 * m_unloaded_radius + r_stat) * CH_1_3;
         m_states.P_len = 2.0 * std::sqrt(m_unloaded_radius * m_data.depth);
         m_states.vta = m_states.R_eff * std::abs(m_states.omega) + m_vnum;
         m_states.vsx = m_data.vel.x() - m_states.omega * m_states.R_eff;
@@ -278,7 +278,7 @@ void ChTMeasyTire::Advance(double step) {
 void ChTMeasyTire::CombinedCoulombForces(double& fx, double& fy, double fz, double muscale) {
     ChVector2d F;
     /*
-     The Dahl Friction Model elastic tread blocks representated by a single bristle. At tire stand still it acts
+     The Dahl Friction Model elastic tread blocks represented by a single bristle. At tire stand still it acts
      like a spring which enables holding of a vehicle on a slope without creeping (hopefully). Damping terms
      have been added to calm down the oscillations of the pure spring.
 
@@ -290,7 +290,7 @@ void ChTMeasyTire::CombinedCoulombForces(double& fx, double& fy, double fz, doub
      differential equation:
          dz/dt = v - sigma0*z*abs(v)/fc
 
-     When z is known, the friction force F can be calulated to:
+     When z is known, the friction force F can be calculated to:
         F = sigma0 * z
 
      For practical use some damping is needed, that leads to:
@@ -627,7 +627,7 @@ void ChTMeasyTire::GuessPassCar70Par(double tireLoad,       // tire load force [
     m_par.sqe_p2n = 1.0714;
 }
 
-// Do some rough constency checks
+// Do some rough consistency checks
 bool ChTMeasyTire::CheckParameters() {
     // Nominal Load set?
     if (m_par.pn < GetTireMaxLoad(0)) {

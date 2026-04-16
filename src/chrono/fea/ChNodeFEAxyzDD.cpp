@@ -86,7 +86,7 @@ bool ChNodeFEAxyzDD::IsSlope2Fixed() const {
 }
 
 void ChNodeFEAxyzDD::SetupInitial(ChSystem* system) {
-    // If the 2nd derivative vectore is free, ensure the 1st derivative vector is also free.
+    // If the 2nd derivative vector is free, ensure the 1st derivative vector is also free.
     if (!IsSlope2Fixed())
         SetSlope1Fixed(false);
 

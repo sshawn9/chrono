@@ -18,19 +18,48 @@
 #include <algorithm>
 #include <cmath>
 
+#include "chrono/ChConfig.h"
 #include "chrono/core/ChApiCE.h"
 #include "chrono/utils/ChConstants.h"
 
 namespace chrono {
 
+#ifndef SOURCE_PATH_SIZE
+    #define SOURCE_PATH_SIZE 0
+#endif
+
+#define __FILENAME__ ((__FILE__) + (SOURCE_PATH_SIZE))
+
+#ifdef DEBUG_LOG
+    #define ChDebugLog(x)                                                                       \
+        do {                                                                                    \
+            std::cerr << "[DBG " << __FILENAME__ << "::" << __func__ << "] " << x << std::endl; \
+        } while (0)
+#else
+    #define ChDebugLog(x)
+#endif
+
 #define ChAssertAlways(exp)                                                                                    \
     {                                                                                                          \
         if (!(exp)) {                                                                                          \
-            char msg[100];                                                                                     \
+            char msg[300];                                                                                     \
             std::sprintf(msg, "Expression '%s' returned false - file %s, line %d.", #exp, __FILE__, __LINE__); \
+            std::cerr << msg << std::endl;                                                                     \
             throw std::runtime_error(msg);                                                                     \
         }                                                                                                      \
     }
+
+/// Convert a string to upper case.
+inline std::string ChToUpper(std::string in) {
+    std::transform(in.begin(), in.end(), in.begin(), ::toupper);
+    return in;
+}
+
+/// Convert a string to lower case.
+inline std::string ChToLower(std::string in) {
+    std::transform(in.begin(), in.end(), in.begin(), ::tolower);
+    return in;
+}
 
 /// Clamp and modify the specified value to lie within the given limits.
 template <typename T>

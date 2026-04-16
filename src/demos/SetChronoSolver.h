@@ -36,7 +36,8 @@
 bool SetChronoSolver(chrono::ChSystem& sys,
                      const chrono::ChSolver::Type& solver_type,
                      const chrono::ChTimestepper::Type& integrator_type,
-                     bool verbose = true) {
+                     int num_threads_mkl = 1,
+                     bool verbose = false) {
     auto contact_method = sys.GetContactMethod();
     auto slvr_type = solver_type;
     auto intg_type = integrator_type;
@@ -53,15 +54,16 @@ bool SetChronoSolver(chrono::ChSystem& sys,
 
             if (slvr_type != chrono::ChSolver::Type::BARZILAIBORWEIN &&  //
                 slvr_type != chrono::ChSolver::Type::APGD &&             //
-                slvr_type != chrono::ChSolver::Type::PSOR &&             //
-                slvr_type != chrono::ChSolver::Type::PSSOR)
+                slvr_type != chrono::ChSolver::Type::PSOR)
                 cout << prefix << "NSC system - recommended solver: BARZILAIBORWEIN" << endl;
         }
     }
 
     // Barzilai-Borwein cannot be used with stiffness matrices
-    if (slvr_type == chrono::ChSolver::Type::BARZILAIBORWEIN && sys.GetSystemDescriptor()->GetKRMBlocks().size() > 0) {
-        cout << prefix << "BARZILAIBORWEIN cannot be used for a system that includes stiffness matrices" << endl;
+    if (slvr_type == chrono::ChSolver::Type::BARZILAIBORWEIN && !sys.GetSystemDescriptor()->SupportsSchurComplement()) {
+        cout << prefix << "BARZILAIBORWEIN cannot be used if:\n"
+             << " - there are stiffness or damping matrices, or\n "
+             << " - no inverse mass matrix was provided" << endl;
         return false;
     }
 
@@ -78,9 +80,10 @@ bool SetChronoSolver(chrono::ChSystem& sys,
 #endif
     }
 
+    // Set solver
     if (slvr_type == chrono::ChSolver::Type::PARDISO_MKL) {
 #ifdef CHRONO_PARDISO_MKL
-        auto solver = chrono_types::make_shared<chrono::ChSolverPardisoMKL>();
+        auto solver = chrono_types::make_shared<chrono::ChSolverPardisoMKL>(num_threads_mkl);
         solver->LockSparsityPattern(true);
         sys.SetSolver(solver);
         if (verbose)
@@ -131,6 +134,7 @@ bool SetChronoSolver(chrono::ChSystem& sys,
         }
     }
 
+    // Set integrator
     sys.SetTimestepperType(intg_type);
     if (verbose)
         cout << prefix << "Setting integrator " << chrono::ChTimestepper::GetTypeAsString(intg_type) << endl;
@@ -141,7 +145,8 @@ bool SetChronoSolver(chrono::ChSystem& sys,
             integrator->SetMaxIters(50);
             integrator->SetAbsTolerances(1e-4, 1e2);
             integrator->SetStepControl(false);
-            integrator->SetModifiedNewton(false);
+            integrator->SetJacobianUpdateMethod(
+                chrono::ChTimestepperImplicit::JacobianUpdate::EVERY_ITERATION);
             break;
         }
         case chrono::ChTimestepper::Type::EULER_IMPLICIT: {

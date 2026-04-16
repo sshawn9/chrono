@@ -1,183 +1,284 @@
 #=============================================================================
-# CMake configuration file for Chrono FSI module
+# CMake configuration file for the Chrono::SPH FSI module
 #
 # Cannot be used stand-alone (it is loaded by parent CMake configuration file)
 #=============================================================================
 
-message(STATUS "Add SPH-based Chrono::FSI submodule")
+cmake_dependent_option(CH_ENABLE_MODULE_FSI_SPH "Enable the Chrono::SPH FSI module" ON
+                       "CH_ENABLE_MODULE_FSI" ON)
+                 
+if(NOT CH_ENABLE_MODULE_FSI_SPH)
+  mark_as_advanced(FORCE CH_USE_SPH_DOUBLE)
+  return()
+else()
+  mark_as_advanced(CLEAR CH_USE_SPH_DOUBLE)
+endif()
+
+message(STATUS "SPH-based Chrono::FSI submodule")
 
 # Return now if Eigen version < 3.3.6
 if(EIGEN3_VERSION VERSION_LESS "3.3.6")
     message(WARNING "Eigen version (${EIGEN3_VERSION}) is less than the required version (3.3.6); disabling Chrono::FSI")
-    set(ENABLE_MODULE_FSI OFF CACHE BOOL "Enable the Chrono FSI module" FORCE)
+    set(CH_ENABLE_MODULE_FSI_SPH OFF CACHE BOOL "Enable the Chrono::SPH FSI module" FORCE)
     return()
 endif()
 
 # Return now if CUDA is not available
-if(NOT CUDA_FOUND)
-    message("Chrono::FSI requires CUDA, but CUDA was not found; disabling Chrono::FSI")
-    set(ENABLE_MODULE_FSI OFF CACHE BOOL "Enable the Chrono FSI module" FORCE)
+if(NOT CHRONO_CUDA_FOUND)
+    message(WARNING "Chrono::FSI::SPH requires CUDA, but CUDA was not found; disabling Chrono::FSI::SPH")
+    set(CH_ENABLE_MODULE_FSI_SPH OFF CACHE BOOL "Enable the Chrono::SPH FSI module" FORCE)
     return()
 endif()
 
-message(STATUS "  Use double precision? " ${FSI_USE_DOUBLE})
+message(STATUS "  Chrono CUDA architectures: ${CHRONO_CUDA_ARCHITECTURES}")
 
-# ----------------------------------------------------------------------------
-# Collect additional include directories necessary for the FSI-SPH module
-# ----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
-set(CH_FSI_INCLUDES "${CH_FSI_INCLUDES} ${CUDA_TOOLKIT_ROOT_DIR}/include")
+# Additional options for this module
+option(CH_USE_SPH_DOUBLE "Compile Chrono::SPH with double precision math" OFF)
+if(CH_USE_SPH_DOUBLE)
+  set(CHRONO_SPH_USE_DOUBLE "#define CHRONO_SPH_USE_DOUBLE")
+endif()
 
-list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_FRAMEWORK})
-list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_cudadevrt_LIBRARY})
-list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_CUDART_LIBRARY})
-list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_cusparse_LIBRARY})
-list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_cublas_LIBRARY})
+message(STATUS "  Use double precision? ${CH_USE_SPH_DOUBLE}")
 
-message(STATUS "  FSI-SPH libraries: ${CH_FSI_LINKED_LIBRARIES}")
+#-----------------------------------------------------------------------------
 
-# Make some variables visible from parent directory
+find_package(Splashsurf QUIET)
+if(SPLASHSURF_FOUND)
+    message(STATUS "  Splashsurf executable: ${SPLASHSURF_EXECUTABLE}")
+    message(STATUS "  Splashsurf version:    ${SPLASHSURF_VERSION_STRING}")
 
-set(CH_FSI_INCLUDES "${CH_FSI_INCLUDES}" PARENT_SCOPE)
-set(CH_FSI_LINKED_LIBRARIES "${CH_FSI_LINKED_LIBRARIES}" PARENT_SCOPE)
+    # Prepare replacement variables
+    set(CHRONO_HAS_SPLASHSURF "#define CHRONO_HAS_SPLASHSURF")
+    set(CHRONO_SPLASHSURF_EXECUTABLE "#define SPLASHSURF_EXECUTABLE \"${SPLASHSURF_EXECUTABLE}\"")
+else()
+    message(STATUS "  Splashsurf NOT found. Surface reconstruction utility disabled.")
+
+    set(CHRONO_HAS_SPLASHSURF "#undef CHRONO_HAS_SPLASHSURF")
+    set(CHRONO_SPLASHSURF_EXECUTABLE "#undef SPLASHSURF_EXECUTABLE")
+endif()
 
 #-----------------------------------------------------------------------------
 # List all files for the SPH-based Chrono::FSI library
 #-----------------------------------------------------------------------------
 
-set(ChronoEngine_FSI_BASE_FILES
-    ../ChApiFsi.h
-    ../ChFsiDefinitions.h
-    ../ChFsiSystem.h
-    ../ChFsiSystem.cpp
-    ../ChFluidSystem.h
-    ../ChFluidSystem.cpp
-    ../ChFsiInterface.h
-    ../ChFsiInterface.cpp
-)
+# --------------- SPH FSI FILES
 
-set(ChronoEngine_FSI_FILES
+set(FSISPH_BASE_FILES
+    ChFsiDataTypesSPH.h
     ChFsiDefinitionsSPH.h
-    ChFsiSystemSPH.h
-    ChFsiSystemSPH.cpp
-    ChFluidSystemSPH.h
-    ChFluidSystemSPH.cpp
-    ChFsiInterfaceSPH.h
-    ChFsiInterfaceSPH.cpp
+    ChFsiParamsSPH.h
     ChFsiProblemSPH.h
+    ChFsiSystemSPH.h
+    ChFsiInterfaceSPH.h
+    ChFsiFluidSystemSPH.h
+    ChFsiPrintUtilsSPH.h
+    ChFsiSplashsurfSPH.h
+
     ChFsiProblemSPH.cpp
+    ChFsiSystemSPH.cpp
+    ChFsiInterfaceSPH.cpp
+    ChFsiFluidSystemSPH.cpp
+    ChFsiSplashsurfSPH.cpp
 )
+source_group("" FILES ${FSISPH_BASE_FILES})
 
-source_group("" FILES ${ChronoEngine_FSI_BASE_FILES} ${ChronoEngine_FSI_FILES})
-
-set(ChronoEngine_FSI_PHYSICS_FILES
-    physics/ChParams.h
-    physics/ChMarkerType.cuh
-    physics/FsiDataManager.cuh
-    physics/BceManager.cuh
-    physics/ChFluidDynamics.cuh
-    physics/ChCollisionSystemFsi.cuh
-    physics/ChFsiForce.cuh    
-    physics/ChFsiForceExplicitSPH.cuh
-    physics/ChFsiForceI2SPH.cuh
-    physics/ChSphGeneral.cuh
-
-    physics/FsiDataManager.cu
- 	physics/BceManager.cu
-    physics/ChFluidDynamics.cu
-    physics/ChCollisionSystemFsi.cu
-    physics/ChFsiForce.cu
-    physics/ChFsiForceExplicitSPH.cu
-    physics/ChFsiForceI2SPH.cu
-    physics/ChSphGeneral.cu
+set(FSISPH_PHYSICS_FILES
+    physics/SphBceManager.cuh
+    physics/SphCollisionSystem.cuh
+    physics/SphDataManager.cuh
+    physics/SphFluidDynamics.cuh
+    physics/SphForce.cuh    
+    physics/SphForceWCSPH.cuh
+    physics/SphForceISPH.cuh
+    physics/SphFsiInterface.cuh
+    physics/SphGeneral.cuh
+    physics/SphMarkerType.cuh
+    physics/SphParticleRelocator.cuh
+    #
+    physics/SphBceManager.cu
+    physics/SphCollisionSystem.cu
+    physics/SphDataManager.cu
+    physics/SphFluidDynamics.cu
+    physics/SphForce.cu
+    physics/SphForceWCSPH.cu
+    physics/SphForceISPH.cu
+    physics/SphFsiInterface.cu
+    physics/SphGeneral.cu
+    physics/SphParticleRelocator.cu
 )
+source_group("physics" FILES ${FSISPH_PHYSICS_FILES})
 
-source_group(physics FILES ${ChronoEngine_FSI_PHYSICS_FILES})
+set(FSISPH_MATH_FILES
+    math/SphLinearSolver.h
+    #math/SphLinearSolverBiCGStab.h
+    #math/SphLinearSolverGMRES.h
 
-set(ChronoEngine_FSI_MATH_FILES
-    math/CustomMath.h
-    math/ExactLinearSolvers.cuh
-    math/ChFsiLinearSolver.h
-    math/ChFsiLinearSolverBiCGStab.h
-    math/ChFsiLinearSolverGMRES.h
+    math/SphCustomMath.cuh
+    math/SphExactLinearSolvers.cuh
 
-    math/ChFsiLinearSolverBiCGStab.cpp
-    math/ChFsiLinearSolverGMRES.cpp
+    #math/SphLinearSolverBiCGStab.cpp
+    #math/SphLinearSolverGMRES.cpp
 )
+source_group("math" FILES ${FSISPH_MATH_FILES})
 
-source_group(math FILES ${ChronoEngine_FSI_MATH_FILES})
-
-set(ChronoEngine_FSI_UTILS_FILES
-    utils/ChUtilsPrintStruct.h
-    utils/ChUtilsPrintSph.cuh
-    utils/ChUtilsDevice.cuh
-    utils/ChUtilsTypeConvert.h
-
-    utils/ChUtilsPrintSph.cu
-    utils/ChUtilsDevice.cu
-    ../utils/ChBenchmark.h
+set(FSISPH_UTILS_FILES
+    utils/SphUtilsDevice.cuh
+    utils/SphUtilsDevice.cu
+    utils/SphUtilsTypeConvert.cuh
+    utils/SphUtilsPrint.cuh
+    utils/SphUtilsPrint.cu
+    utils/SphUtilsLogging.cuh
 )
+source_group("utils" FILES ${FSISPH_UTILS_FILES})
 
-source_group(utils FILES ${ChronoEngine_FSI_UTILS_FILES})
+# --------------- 3rd party STB FILES
 
-set(ChronoEngine_FSI_VIS_FILES
-    visualization/ChFsiVisualization.h
-    visualization/ChFsiVisualization.cpp
-)
-
-if(ENABLE_MODULE_OPENGL)
-    set(ChronoEngine_FSI_VIS_FILES ${ChronoEngine_FSI_VIS_FILES}
-        visualization/ChFsiVisualizationGL.h
-        visualization/ChFsiVisualizationGL.cpp
-    )
-endif()
-
-if(ENABLE_MODULE_VSG)
-    set(ChronoEngine_FSI_VIS_FILES ${ChronoEngine_FSI_VIS_FILES}
-        visualization/ChFsiVisualizationVSG.h
-        visualization/ChFsiVisualizationVSG.cpp
-    )
-endif()
-
-source_group(visualization FILES ${ChronoEngine_FSI_VIS_FILES})
-
-set(ChronoEngine_FSI_STB_FILES
+set(FSISPH_STB_FILES
     ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/stb/stb.h
     ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/stb/stb_image.h
     ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/stb/stb_image.cpp
     ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/stb/stb_image_write.h
     ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/stb/stb_image_write.cpp
 )
-source_group("utils\\stb" FILES ${ChronoEngine_FSI_STB_FILES})
+source_group("stb" FILES ${FSISPH_STB_FILES})
+
+# --------------- SPH FSI VSG INTERFACE
+
+if(CH_ENABLE_MODULE_VSG)
+    set(FSISPH_VSG_FILES
+        visualization/ChSphVisualizationVSG.h
+        visualization/ChSphVisualizationVSG.cpp
+    )
+else()
+    set(FSISPH_VSG_FILES "")
+endif()
+source_group("" FILES ${FSISPH_VSG_FILES})
+
+# ------------------------------------------------------------------------------
+# Set dependencies on other Chrono modules
+# ------------------------------------------------------------------------------
+
+set(DEPENDENCIES_FSI_SPH "FSI")
+if(CH_ENABLE_MODULE_VSG)
+  list (APPEND DEPENDENCIES_FSI_SPH "VSG")
+endif()
+
+set(DEPENDENCIES_FSI_SPH ${DEPENDENCIES_FSI_SPH} PARENT_SCOPE)
 
 #-----------------------------------------------------------------------------
-# Create the ChronoEngine_fsi_sph library
+# Generate and install configuration file
 #-----------------------------------------------------------------------------
 
-cuda_add_library(ChronoEngine_fsi_sph
-    ${ChronoEngine_FSI_BASE_FILES}
-    ${ChronoEngine_FSI_FILES}
-    ${ChronoEngine_FSI_PHYSICS_FILES}
-    ${ChronoEngine_FSI_MATH_FILES}
-    ${ChronoEngine_FSI_UTILS_FILES}
-    ${ChronoEngine_FSI_VIS_FILES}
-    ${ChronoEngine_FSI_STB_FILES}
+set(FSISPH_CONFIG_FILE ${PROJECT_BINARY_DIR}/chrono_fsi/sph/ChFsiConfigSPH.h)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ChFsiConfigSPH.h.in ${FSISPH_CONFIG_FILE} @ONLY)
+
+source_group("" FILES ${FSISPH_CONFIG_FILE})
+
+install(FILES ${FSISPH_CONFIG_FILE} DESTINATION include/chrono_fsi/sph)
+
+#-----------------------------------------------------------------------------
+# Create the Chrono_fsisph library
+#-----------------------------------------------------------------------------
+
+message(STATUS "  Add Chrono_fsisph library")
+
+add_library(Chrono_fsisph
+    ${FSISPH_BASE_FILES}
+    ${FSISPH_PHYSICS_FILES}
+    ${FSISPH_MATH_FILES}
+    ${FSISPH_UTILS_FILES}
+    ${FSISPH_STB_FILES}
+    ${FSISPH_CONFIG_FILE}
 )
+add_library(Chrono::fsisph ALIAS Chrono_fsisph)
 
-set_target_properties(ChronoEngine_fsi_sph PROPERTIES
-                      COMPILE_FLAGS "${CH_CXX_FLAGS}"
-                      LINK_FLAGS "${CH_FSI_LINKER_FLAGS}")
+set_target_properties(Chrono_fsisph PROPERTIES DEBUG_POSTFIX ${CH_DEBUG_POSTFIX})
 
-target_compile_definitions(ChronoEngine_fsi_sph PRIVATE "CH_API_COMPILE_FSI")
-target_compile_definitions(ChronoEngine_fsi_sph PRIVATE "CH_IGNORE_DEPRECATED")
+if (CH_STATIC)
+  set_target_properties(Chrono_fsisph PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
 
-target_link_libraries(ChronoEngine_fsi_sph ${CH_FSI_LINKED_LIBRARIES})
+if(MSVC)
+  target_compile_options(Chrono_fsisph PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/wd4251>)              # missing DLL interface
+  target_compile_options(Chrono_fsisph PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/wd4100>)              # unreferenced formal parameter
+  target_compile_options(Chrono_fsisph PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd4324>)  # unreferenced formal parameter
+  set_target_properties(Chrono_fsisph PROPERTIES MSVC_RUNTIME_LIBRARY ${CH_MSVC_RUNTIME_LIBRARY})
+endif()
 
-install(TARGETS ChronoEngine_fsi_sph
+target_compile_options(Chrono_fsisph PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Wno-deprecated-gpu-targets>)
+
+target_link_libraries(Chrono_fsisph PRIVATE Chrono_core)
+target_link_libraries(Chrono_fsisph PUBLIC Chrono_fsi)
+
+target_link_libraries(Chrono_fsisph PUBLIC CUDA::cudart_static)
+target_link_libraries(Chrono_fsisph PUBLIC CUDA::nvrtc)
+target_link_libraries(Chrono_fsisph PUBLIC CUDA::cuda_driver)
+target_link_libraries(Chrono_fsisph PUBLIC CUDA::cublas)
+target_link_libraries(Chrono_fsisph PUBLIC CUDA::cusparse)
+
+target_link_libraries(Chrono_fsisph PUBLIC Thrust::Thrust)
+target_compile_definitions(Chrono_fsisph PRIVATE "THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA")
+target_compile_definitions(Chrono_fsisph PRIVATE "THRUST_HOST_SYSTEM=THRUST_HOST_SYSTEM_CPP")
+
+target_compile_definitions(Chrono_fsisph PRIVATE $<$<COMPILE_LANGUAGE:CXX>:CH_API_COMPILE_FSI>)
+
+set_target_properties(Chrono_fsisph PROPERTIES CUDA_ARCHITECTURES ${CHRONO_CUDA_ARCHITECTURES})
+
+install(TARGETS Chrono_fsisph
+        EXPORT ChronoTargets
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib)
+        ARCHIVE DESTINATION lib
+        INCLUDES DESTINATION include/chrono_fsi)
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-        DESTINATION include/chrono_fsi
-        FILES_MATCHING PATTERN "*.h" PATTERN "*.cuh")
+#-------------------------------------------------------------------------------
+# Add the Chrono_fsisph_vsg library
+#-------------------------------------------------------------------------------
+
+if(CH_ENABLE_MODULE_VSG)
+    message(STATUS "  Add Chrono_fsisph_vsg library")
+
+    add_library(Chrono_fsisph_vsg
+        ${FSISPH_VSG_FILES}
+    )
+    add_library(Chrono::fsisph_vsg ALIAS Chrono_fsisph_vsg)
+
+    set_target_properties(Chrono_fsisph_vsg PROPERTIES DEBUG_POSTFIX ${CH_DEBUG_POSTFIX})
+
+   
+    if (CH_STATIC)
+      set_target_properties(Chrono_fsisph_vsg PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    endif()
+ 
+    if(MSVC)
+      # disable warnings related to missing DLL interface
+      target_compile_options(Chrono_fsisph_vsg PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/wd4251>)
+      set_target_properties(Chrono_fsisph_vsg PROPERTIES MSVC_RUNTIME_LIBRARY ${CH_MSVC_RUNTIME_LIBRARY})
+    endif()
+
+    target_compile_definitions(Chrono_fsisph_vsg PRIVATE $<$<COMPILE_LANGUAGE:CXX>:CH_API_COMPILE_FSI>)
+    
+    target_link_libraries(Chrono_fsisph_vsg PRIVATE Chrono_core Chrono_fsisph)
+    target_link_libraries(Chrono_fsisph_vsg PUBLIC Chrono_vsg)
+
+    target_link_libraries(Chrono_fsisph_vsg PRIVATE CUDA::cudart_static)
+    target_link_libraries(Chrono_fsisph_vsg PRIVATE CUDA::nvrtc)
+    target_link_libraries(Chrono_fsisph_vsg PRIVATE CUDA::cuda_driver)
+    target_link_libraries(Chrono_fsisph_vsg PRIVATE CUDA::cublas)
+    target_link_libraries(Chrono_fsisph_vsg PRIVATE CUDA::cusparse)
+
+    target_link_libraries(Chrono_fsisph_vsg PRIVATE Thrust::Thrust)
+    target_compile_definitions(Chrono_fsisph_vsg PRIVATE "THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA")
+    target_compile_definitions(Chrono_fsisph_vsg PRIVATE "THRUST_HOST_SYSTEM=THRUST_HOST_SYSTEM_CPP")
+
+    install(TARGETS Chrono_fsisph_vsg
+            EXPORT ChronoTargets
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            INCLUDES DESTINATION include/chrono_fsi)
+
+endif()

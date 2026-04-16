@@ -2,7 +2,7 @@
 {
     "Type": "GRANULAR_SPH",
     "Patch dimensions": {
-        "Length": 8,
+        "Length": 20,
         "Width": 4,
         "Depth": 0.5
     },
@@ -11,12 +11,13 @@
         "Density": 1700,
         "Cohesion": 5e3
     },
-    "Output Folder": "demo_tire_rig",
     "SPH Parameters": {
         "Method": "WCSPH",
         "Epsilon": 0.001,
-        "XSPH Coefficient": 0.5,
-        "Shifting Coefficient": 1.0,
+        "Shifting Method": "PPST_XSPH",
+        "XSPH Coefficient": 0.25,
+        "PPST Push Coefficient": 3.0,
+        "PPST Pull Coefficient": 1.0,
         "Viscosity Treatment Type": "Artificial Bilateral",
         "Boundary Treatment Type": "Adami",
         "Artificial viscosity alpha": 0.5
@@ -32,8 +33,8 @@
     },
     "Body Active Domain": [
         0.8,
-        0.5,
-        1.0
+        0.8,
+        0.8
     ],
     "Settling Time": 0.0
 }

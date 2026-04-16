@@ -21,19 +21,10 @@
 
 #include "chrono/utils/ChUtils.h"
 
+#include "chrono_vehicle/driver/ChInteractiveDriver.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 
-#ifdef CHRONO_IRRLICHT
-    #include "chrono_vehicle/driver/ChInteractiveDriverIRR.h"
-    #include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
-using namespace chrono::irrlicht;
-#endif
-
-#ifdef CHRONO_VSG
-    #include "chrono_vehicle/driver/ChInteractiveDriverVSG.h"
-    #include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemVSG.h"
-using namespace chrono::vsg3d;
-#endif
+#include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemVSG.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -41,9 +32,6 @@ using namespace chrono::vsg3d;
 #include "demos/SetChronoSolver.h"
 
 // =============================================================================
-
-// Run-time visualization system (IRRLICHT or VSG)
-ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
 
 // Trailer model selection (use only with HMMWV, Sedan, or UAZ)
 bool add_trailer = false;
@@ -90,7 +78,7 @@ int main(int argc, char* argv[]) {
     const auto& vehicle_model = models[which - 1].first;
 
     // Create the vehicle system
-    WheeledVehicle vehicle(vehicle::GetDataFile(vehicle_model->VehicleJSON()), contact_method);
+    WheeledVehicle vehicle(GetVehicleDataFile(vehicle_model->VehicleJSON()), contact_method);
     vehicle.Initialize(ChCoordsys<>(initLoc, QuatFromAngleZ(initYaw)));
     vehicle.GetChassis()->SetFixed(false);
     vehicle.SetChassisVisualizationType(VisualizationType::MESH);
@@ -101,15 +89,15 @@ int main(int argc, char* argv[]) {
     vehicle.SetWheelVisualizationType(VisualizationType::MESH);
 
     // Create and initialize the powertrain system
-    auto engine = ReadEngineJSON(vehicle::GetDataFile(vehicle_model->EngineJSON()));
-    auto transmission = ReadTransmissionJSON(vehicle::GetDataFile(vehicle_model->TransmissionJSON()));
+    auto engine = ReadEngineJSON(GetVehicleDataFile(vehicle_model->EngineJSON()));
+    auto transmission = ReadTransmissionJSON(GetVehicleDataFile(vehicle_model->TransmissionJSON()));
     auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
     vehicle.InitializePowertrain(powertrain);
-    
+
     // Create and initialize the tires
     for (unsigned int i = 0; i < vehicle.GetNumberAxles(); i++) {
         for (auto& wheel : vehicle.GetAxle(i)->GetWheels()) {
-            auto tire = ReadTireJSON(vehicle::GetDataFile(vehicle_model->TireJSON(i)));
+            auto tire = ReadTireJSON(GetVehicleDataFile(vehicle_model->TireJSON(i)));
             vehicle.InitializeTire(tire, wheel, VisualizationType::MESH);
         }
     }
@@ -120,14 +108,14 @@ int main(int argc, char* argv[]) {
     // Create the trailer system (build into same ChSystem)
     std::shared_ptr<WheeledTrailer> trailer;
     if (add_trailer) {
-        trailer = chrono_types::make_shared<WheeledTrailer>(sys, vehicle::GetDataFile(trailer_model.TrailerJSON()));
+        trailer = chrono_types::make_shared<WheeledTrailer>(sys, GetVehicleDataFile(trailer_model.TrailerJSON()));
         trailer->Initialize(vehicle.GetChassis());
         trailer->SetChassisVisualizationType(VisualizationType::PRIMITIVES);
         trailer->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
         trailer->SetWheelVisualizationType(VisualizationType::NONE);
         for (auto& axle : trailer->GetAxles()) {
             for (auto& wheel : axle->GetWheels()) {
-                auto tire = ReadTireJSON(vehicle::GetDataFile(trailer_model.TireJSON()));
+                auto tire = ReadTireJSON(GetVehicleDataFile(trailer_model.TireJSON()));
                 trailer->InitializeTire(tire, wheel, VisualizationType::PRIMITIVES);
             }
         }
@@ -137,9 +125,9 @@ int main(int argc, char* argv[]) {
     sys->SetCollisionSystemType(ChCollisionSystem::Type::BULLET);
 
     // Create the terrain
-    RigidTerrain terrain(sys, vehicle::GetDataFile(rigidterrain_file));
+    RigidTerrain terrain(sys, GetVehicleDataFile(rigidterrain_file));
     terrain.Initialize();
-    
+
     // Set solver and integrator
     double step_size = 2e-3;
     auto solver_type = ChSolver::Type::BARZILAIBORWEIN;
@@ -150,74 +138,30 @@ int main(int argc, char* argv[]) {
     }
     SetChronoSolver(*sys, solver_type, integrator_type);
 
+    // Create the interactive VSG driver system
+    ChInteractiveDriver driver(vehicle);
+    driver.SetSteeringDelta(0.02);
+    driver.SetThrottleDelta(0.02);
+    driver.SetBrakingDelta(0.06);
+    driver.Initialize();
+
     // Create the vehicle run-time visualization interface and the interactive driver
-#ifndef CHRONO_IRRLICHT
-    if (vis_type == ChVisualSystem::Type::IRRLICHT)
-        vis_type = ChVisualSystem::Type::VSG;
-#endif
-#ifndef CHRONO_VSG
-    if (vis_type == ChVisualSystem::Type::VSG)
-        vis_type = ChVisualSystem::Type::IRRLICHT;
-#endif
 
     std::string title = "Vehicle demo - JSON specification - " + vehicle_model->ModelName();
-    std::shared_ptr<ChVehicleVisualSystem> vis;
-    std::shared_ptr<ChDriver> driver;
-    switch (vis_type) {
-        case ChVisualSystem::Type::IRRLICHT: {
-#ifdef CHRONO_IRRLICHT
-            // Create the vehicle Irrlicht interface
-            auto vis_irr = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
-            vis_irr->SetWindowTitle(title);
-            vis_irr->SetChaseCamera(ChVector3d(0.0, 0.0, 1.75), vehicle_model->CameraDistance(), 0.5);
-            vis_irr->Initialize();
-            vis_irr->AddLightDirectional();
-            vis_irr->AddSkyBox();
-            vis_irr->AddLogo();
-            vis_irr->AttachVehicle(&vehicle);
 
-            // Create the interactive Irrlicht driver system
-            auto driver_irr = chrono_types::make_shared<ChInteractiveDriverIRR>(*vis_irr);
-            driver_irr->SetSteeringDelta(0.02);
-            driver_irr->SetThrottleDelta(0.02);
-            driver_irr->SetBrakingDelta(0.06);
-            driver_irr->Initialize();
-
-            vis = vis_irr;
-            driver = driver_irr;
-#endif
-            break;
-        }
-        default:
-        case ChVisualSystem::Type::VSG: {
-#ifdef CHRONO_VSG
-            // Create the vehicle VSG interface
-            auto vis_vsg = chrono_types::make_shared<ChWheeledVehicleVisualSystemVSG>();
-            vis_vsg->SetWindowTitle(title);
-            vis_vsg->AttachVehicle(&vehicle);
-            vis_vsg->SetChaseCamera(ChVector3d(0.0, 0.0, 1.75), vehicle_model->CameraDistance(), 0.5);
-            vis_vsg->SetWindowSize(ChVector2i(1200, 800));
-            vis_vsg->SetWindowPosition(ChVector2i(100, 300));
-            vis_vsg->SetUseSkyBox(true);
-            vis_vsg->SetCameraAngleDeg(40);
-            vis_vsg->SetLightIntensity(1.0f);
-            vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
-            vis_vsg->SetShadows(true);
-            vis_vsg->Initialize();
-
-            // Create the interactive VSG driver system
-            auto driver_vsg = chrono_types::make_shared<ChInteractiveDriverVSG>(*vis_vsg);
-            driver_vsg->SetSteeringDelta(0.02);
-            driver_vsg->SetThrottleDelta(0.02);
-            driver_vsg->SetBrakingDelta(0.06);
-            driver_vsg->Initialize();
-
-            vis = vis_vsg;
-            driver = driver_vsg;
-#endif
-            break;
-        }
-    }
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemVSG>();
+    vis->SetWindowTitle(title);
+    vis->AttachVehicle(&vehicle);
+    vis->AttachDriver(&driver);
+    vis->SetChaseCamera(ChVector3d(0.0, 0.0, 1.75), vehicle_model->CameraDistance(), 0.5);
+    vis->SetWindowSize(1280, 800);
+    vis->SetWindowPosition(100, 100);
+    vis->EnableSkyTexture(SkyMode::DOME);
+    vis->SetCameraAngleDeg(40);
+    vis->SetLightIntensity(1.0f);
+    vis->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
+    vis->EnableShadows();
+    vis->Initialize();
 
     // Initialize output directories
     const std::string out_dir = GetChronoOutputPath() + "WHEELED_JSON";
@@ -241,7 +185,7 @@ int main(int argc, char* argv[]) {
     // Optionally, enable output from selected vehicle subsystems
     ////vehicle.SetSuspensionOutput(0, true);
     ////vehicle.SetSuspensionOutput(1, true);
-    ////vehicle.SetOutput(ChVehicleOutput::ASCII, veh_dir, "output", 0.1);
+    ////vehicle.SetOutput(ChOutput::Type::ASCII, ChOutput::Mode::FRAMES, veh_dir, "output", 0.1);
 
     // Simulation loop
     vehicle.EnableRealtime(true);
@@ -267,10 +211,10 @@ int main(int argc, char* argv[]) {
         }
 
         // Get driver inputs
-        DriverInputs driver_inputs = driver->GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
 
         // Update modules (process inputs from other modules)
-        driver->Synchronize(time);
+        driver.Synchronize(time);
         vehicle.Synchronize(time, driver_inputs, terrain);
         if (add_trailer)
             trailer->Synchronize(time, driver_inputs, terrain);
@@ -279,7 +223,7 @@ int main(int argc, char* argv[]) {
             vis->Synchronize(time, driver_inputs);
 
         // Advance simulation for one timestep for all modules
-        driver->Advance(step_size);
+        driver.Advance(step_size);
         vehicle.Advance(step_size);
         if (add_trailer)
             trailer->Advance(step_size);

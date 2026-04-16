@@ -58,7 +58,7 @@ class ChApi ChExternalDynamicsDAE : public ChPhysicsItem {
     /// Get number of states (dimension of y).
     virtual unsigned int GetNumStates() const = 0;
 
-    /// Get number of state derivatives (dimension of yd).
+    /// Get number of state derivatives (dimension of yd and ydd).
     /// The default implementation assumes equal number of states and state derivatives.
     /// If this is not the case, a derived class must implement the functions IncrementState, CalculateStateIncrement,
     /// and (if stiff) CalculateForceJacobians.
@@ -112,7 +112,7 @@ class ChApi ChExternalDynamicsDAE : public ChPhysicsItem {
                                 ) = 0;
 
     /// Calculate a linear combination of the Jacobians of the generalized force with respect to the DAE states.
-    /// Must load J = alpha * dF/dy + beta * dF/dyd, for given alpha and beta.
+    /// Must load \f$J = alpha * dF/dy + beta * dF/dyd\f$, for given alpha and beta.
     /// Only used if the physics item is declared as stiff.  If provided, load J into the provided matrix 'J'
     /// (already set to zero before the call) and return 'true'. In that case, the user-provided Jacobian will
     /// overwrite the default finite-difference approximation. Note that a derived class must always implement
@@ -141,7 +141,7 @@ class ChApi ChExternalDynamicsDAE : public ChPhysicsItem {
     }
 
     /// Calculate the constraint violation partial derivative with respect to time.
-    /// Must load ct = \partial c / \partial t, for c = c(t,y).
+    /// Must load \f$ct = \partial c / \partial t\f$, for \f$c = c(t,y)\f$.
     /// This function is optional and only used is the system is rheonomous. If provided, load the constraint
     /// derivatives in the provided vector 'c' and return 'true'. In that case, this overrides the default finite
     /// difference approximation.
@@ -173,7 +173,7 @@ class ChApi ChExternalDynamicsDAE : public ChPhysicsItem {
             throw std::runtime_error("IncrementState required for a DAE with Ny != Nyd.");
     }
 
-    /// Calculate the increment between the two procided state vectors.
+    /// Calculate the increment between the two provided state vectors.
     /// Must calculate Dv = x_new - x. If the number of derivatives is equal to the number of states, this is a simple
     /// vector subtraction and this function need not be implemented. Otherwise (e.g., when using quaternions for
     /// rotations), special treatment is required and a derived class must provide an override. Here, 'x' and 'x_new'
@@ -194,7 +194,7 @@ class ChApi ChExternalDynamicsDAE : public ChPhysicsItem {
     ) {}
 
   protected:
-    virtual void Update(double time, bool update_assets = true) override;
+    virtual void Update(double time, UpdateFlags update_flags) override;
 
     virtual unsigned int GetNumCoordsPosLevel() override { return m_ny; }
     virtual unsigned int GetNumCoordsVelLevel() override { return m_nyd; }
@@ -216,7 +216,7 @@ class ChApi ChExternalDynamicsDAE : public ChPhysicsItem {
                                  const unsigned int off_v,
                                  const ChStateDelta& v,
                                  const double T,
-                                 bool full_update) override;
+                                 UpdateFlags update_flags) override;
     virtual void IntStateGatherAcceleration(const unsigned int off_a, ChStateDelta& a) override;
     virtual void IntStateScatterAcceleration(const unsigned int off_a, const ChStateDelta& a) override;
     virtual void IntStateGatherReactions(const unsigned int off_L, ChVectorDynamic<>& L) override;
@@ -245,9 +245,10 @@ class ChApi ChExternalDynamicsDAE : public ChPhysicsItem {
     virtual void IntLoadConstraint_C(const unsigned int off,
                                      ChVectorDynamic<>& Qc,
                                      const double c,
+                                     const double c_vel, 
                                      bool do_clamp,
                                      double recovery_clamp) override;
-    virtual void IntLoadConstraint_Ct(const unsigned int off, ChVectorDynamic<>& Qc, const double c) override;
+    virtual void IntLoadConstraint_Ct(const unsigned int off, ChVectorDynamic<>& Qc, const double c, const double c_vel) override;
     virtual void IntLoadResidual_CqL(const unsigned int off_L,
                                      ChVectorDynamic<>& R,
                                      const ChVectorDynamic<>& L,

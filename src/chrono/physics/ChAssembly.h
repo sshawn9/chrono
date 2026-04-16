@@ -214,13 +214,8 @@ class ChApi ChAssembly : public ChPhysicsItem {
     /// as starting point for offsetting all the contained sub objects.
     virtual void Setup() override;
 
-    /// Updates all the auxiliary data and children of
-    /// bodies, forces, links, given their current state.
-    virtual void Update(double mytime, bool update_assets = true) override;
-
-    /// Updates all the auxiliary data and children of
-    /// bodies, forces, links, given their current state.
-    virtual void Update(bool update_assets = true) override;
+    /// Updates all the auxiliary data and children of bodies, forces, links, given their current state.
+    virtual void Update(double time, UpdateFlags update_flags) override;
 
     /// Set zero speed (and zero accelerations) in state, without changing the position.
     virtual void ForceToRest() override;
@@ -236,11 +231,12 @@ class ChApi ChAssembly : public ChPhysicsItem {
                                  const unsigned int off_v,
                                  const ChStateDelta& v,
                                  const double T,
-                                 bool full_update) override;
+                                 UpdateFlags update_flags) override;
     virtual void IntStateGatherAcceleration(const unsigned int off_a, ChStateDelta& a) override;
     virtual void IntStateScatterAcceleration(const unsigned int off_a, const ChStateDelta& a) override;
     virtual void IntStateGatherReactions(const unsigned int off_L, ChVectorDynamic<>& L) override;
     virtual void IntStateScatterReactions(const unsigned int off_L, const ChVectorDynamic<>& L) override;
+    virtual void IntStateOnEndStep(double T) override;
     virtual void IntStateIncrement(const unsigned int off_x,
                                    ChState& x_new,
                                    const ChState& x,
@@ -285,9 +281,10 @@ class ChApi ChAssembly : public ChPhysicsItem {
     virtual void IntLoadConstraint_C(const unsigned int off,
                                      ChVectorDynamic<>& Qc,
                                      const double c,
+                                     const double c_vel,  
                                      bool do_clamp,
                                      double recovery_clamp) override;
-    virtual void IntLoadConstraint_Ct(const unsigned int off, ChVectorDynamic<>& Qc, const double c) override;
+    virtual void IntLoadConstraint_Ct(const unsigned int off, ChVectorDynamic<>& Qc, const double c, const double c_vel) override;
     virtual void IntToDescriptor(const unsigned int off_v,
                                  const ChStateDelta& v,
                                  const ChVectorDynamic<>& R,

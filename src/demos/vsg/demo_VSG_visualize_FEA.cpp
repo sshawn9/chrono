@@ -43,6 +43,7 @@ int main(int argc, char* argv[]) {
 
     // Create a Chrono system
     ChSystemSMC sys;
+    sys.SetGravityY();
 
     // Create a mesh, a container for groups of elements and their referenced nodes
     auto mesh = chrono_types::make_shared<ChMesh>();
@@ -142,9 +143,9 @@ int main(int argc, char* argv[]) {
     // Visualization of the FEM mesh.
     {
         // Mesh visualization - speed
-        auto vis_mesh = chrono_types::make_shared<ChVisualShapeFEA>(mesh);
+        auto vis_mesh = chrono_types::make_shared<ChVisualShapeFEA>();
         vis_mesh->SetFEMdataType(ChVisualShapeFEA::DataType::NODE_SPEED_NORM);
-        vis_mesh->SetColorscaleMinMax(0.0, 5.50);
+        vis_mesh->SetColormapRange(0.0, 5.50);
         vis_mesh->SetShrinkElements(true, 0.85);
         vis_mesh->SetSmoothFaces(true);
         mesh->AddVisualShapeFEA(vis_mesh);
@@ -152,7 +153,7 @@ int main(int argc, char* argv[]) {
 
     {
         // Mesh visualization - reference configuration (wireframe)
-        auto vis_mesh = chrono_types::make_shared<ChVisualShapeFEA>(mesh);
+        auto vis_mesh = chrono_types::make_shared<ChVisualShapeFEA>();
         vis_mesh->SetFEMdataType(ChVisualShapeFEA::DataType::SURFACE);
         vis_mesh->SetWireframe(true);
         vis_mesh->SetDrawInUndeformedReference(true);
@@ -161,7 +162,7 @@ int main(int argc, char* argv[]) {
 
     {
         // Node visualization - positions
-        auto vis_nodes = chrono_types::make_shared<ChVisualShapeFEA>(mesh);
+        auto vis_nodes = chrono_types::make_shared<ChVisualShapeFEA>();
         vis_nodes->SetFEMglyphType(ChVisualShapeFEA::GlyphType::NODE_DOT_POS);
         vis_nodes->SetFEMdataType(ChVisualShapeFEA::DataType::NONE);
         vis_nodes->SetSymbolsThickness(0.006);
@@ -172,13 +173,13 @@ int main(int argc, char* argv[]) {
     ChVisualSystemVSG vis;
     vis.SetCameraVertical(CameraVerticalDir::Y);
     vis.AttachSystem(&sys);
-    vis.SetWindowSize(800, 600);
+    vis.SetWindowSize(1280, 800);
+    vis.SetWindowPosition(100, 100);
     vis.SetWindowTitle("VSG FEA visualization");
-    vis.SetUseSkyBox(true);
+    vis.EnableSkyTexture(SkyMode::BOX);
     vis.SetLightIntensity(1.0f);
     vis.SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
     vis.AddCamera(ChVector3d(0.0, 0.6, -2.0), ChVector3d(0, 0.4, 0));
-    vis.SetLogoVisible(true);
     vis.Initialize();
 
     // Solver settings

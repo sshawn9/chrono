@@ -86,8 +86,9 @@ ChVectorDynamic<> ChExternalDynamicsDAE::GetInitialStateDerivatives() {
 
 // -----------------------------------------------------------------------------
 
-void ChExternalDynamicsDAE::Update(double time, bool update_assets) {
-    ChTime = time;
+void ChExternalDynamicsDAE::Update(double time, UpdateFlags update_flags) {
+    // Update time and assets
+    ChPhysicsItem::Update(time, update_flags);
 
     OnUpdate(time, m_y, m_yd);
 
@@ -104,9 +105,6 @@ void ChExternalDynamicsDAE::Update(double time, bool update_assets) {
     if (IsRheonomous()) {
         ComputeConstraintDerivative(time);
     }
-
-    // Update assets
-    ChPhysicsItem::Update(ChTime, update_assets);
 }
 
 // -----------------------------------------------------------------------------
@@ -146,7 +144,7 @@ void ChExternalDynamicsDAE::IntStateScatter(const unsigned int off_x,  // offset
                                             const unsigned int off_v,  // offset in v state vector
                                             const ChStateDelta& v,     // state vector, speed part
                                             const double T,            // time
-                                            bool full_update           // perform complete update
+                                            UpdateFlags update_flags    // perform complete update?
 ) {
     if (!IsActive())
         return;
@@ -155,7 +153,7 @@ void ChExternalDynamicsDAE::IntStateScatter(const unsigned int off_x,  // offset
     m_y = x.segment(off_x, m_ny);
     m_yd = v.segment(off_v, m_nyd);
 
-    Update(T, full_update);
+    Update(T, update_flags);
 }
 
 void ChExternalDynamicsDAE::IntStateGatherAcceleration(const unsigned int off_a, ChStateDelta& a) {
@@ -268,6 +266,7 @@ void ChExternalDynamicsDAE::IntLoadIndicator(const unsigned int off,
 void ChExternalDynamicsDAE::IntLoadConstraint_C(const unsigned int off,  // offset in Qc residual
                                                 ChVectorDynamic<>& Qc,   // result: the Qc residual, Qc += c*C
                                                 const double c,          // a scaling factor
+                                                const double c_vel,      // the scaling factor if the constraint is at speed level
                                                 bool do_clamp,           // apply clamping to c*C?
                                                 double recovery_clamp    // value for min/max clamping of c*C
 ) {
@@ -277,7 +276,8 @@ void ChExternalDynamicsDAE::IntLoadConstraint_C(const unsigned int off,  // offs
 
 void ChExternalDynamicsDAE::IntLoadConstraint_Ct(const unsigned int off,  // offset in Qc residual
                                                  ChVectorDynamic<>& Qc,   // result: the Qc residual, Qc += c*Ct
-                                                 const double c           // a scaling factor
+                                                 const double c,          // the scaling factor
+                                                 const double c_vel       // the scaling factor if the constraint is at speed level
 ) {
     if (!IsRheonomous())
         return;

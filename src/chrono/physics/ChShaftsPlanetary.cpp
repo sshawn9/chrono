@@ -76,9 +76,9 @@ bool ChShaftsPlanetary::Initialize(std::shared_ptr<ChShaft> shaft_1,  // first s
     return true;
 }
 
-void ChShaftsPlanetary::Update(double mytime, bool update_assets) {
+void ChShaftsPlanetary::Update(double time, UpdateFlags update_flags) {
     // Inherit time changes of parent class
-    ChPhysicsItem::Update(mytime, update_assets);
+    ChPhysicsItem::Update(time, update_flags);
 
     // update class data
     // ...
@@ -98,6 +98,7 @@ void ChShaftsPlanetary::IntLoadResidual_CqL(const unsigned int off_L,    // offs
 void ChShaftsPlanetary::IntLoadConstraint_C(const unsigned int off_L,  // offset in Qc residual
                                             ChVectorDynamic<>& Qc,     // result: the Qc residual, Qc += c*C
                                             const double c,            // a scaling factor
+                                            const double c_vel,        // the scaling factor if the constraint is at speed level
                                             bool do_clamp,             // apply clamping to c*C?
                                             double recovery_clamp      // value for min/max clamping of c*C
 ) {

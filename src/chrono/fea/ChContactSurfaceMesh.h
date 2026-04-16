@@ -15,11 +15,12 @@
 #ifndef CHCONTACTSURFACEMESH_H
 #define CHCONTACTSURFACEMESH_H
 
+#include "chrono/physics/ChLoaderUV.h"
+#include "chrono/physics/ChContactable.h"
 #include "chrono/fea/ChContactSurface.h"
 #include "chrono/fea/ChNodeFEAxyz.h"
 #include "chrono/fea/ChNodeFEAxyzrot.h"
 #include "chrono/collision/ChCollisionModel.h"
-#include "chrono/physics/ChLoaderUV.h"
 
 namespace chrono {
 namespace fea {
@@ -29,9 +30,12 @@ namespace fea {
 
 /// Contact element of triangular type.
 /// Used to 'tessellate' the surface of FEA meshes for collision purposes.
-class ChApi ChContactTriangleXYZ : public ChContactable_3vars<3, 3, 3>, public ChLoadableUV {
+class ChApi ChContactTriangleXYZ : public ChContactable, public ChLoadableUV {
   public:
-    ChContactTriangleXYZ();
+    ChContactTriangleXYZ(std::shared_ptr<ChNodeFEAxyz> node1,
+                         std::shared_ptr<ChNodeFEAxyz> node2,
+                         std::shared_ptr<ChNodeFEAxyz> node3,
+                         ChContactSurface* container = nullptr);
     ChContactTriangleXYZ(const std::array<std::shared_ptr<ChNodeFEAxyz>, 3>& nodes,
                          ChContactSurface* container = nullptr);
 
@@ -47,8 +51,17 @@ class ChApi ChContactTriangleXYZ : public ChContactable_3vars<3, 3, 3>, public C
     /// Set edge ownership.
     void SetEdgeOwnership(const ChVector3b& owns_edge) { m_owns_edge = owns_edge; }
 
-    /// Acccess the specified FEA node for which this is a proxy.
+    /// Access the specified FEA node for which this is a proxy.
     std::shared_ptr<ChNodeFEAxyz> GetNode(int i) const { return m_nodes[i]; }
+
+    /// Get the current position of first node.
+    const ChVector3d& GetPos1() const { return m_nodes[0]->GetPos(); }
+
+    /// Get the current position of second node.
+    const ChVector3d& GetPos2() const { return m_nodes[1]->GetPos(); }
+
+    /// Get the current position of third node.
+    const ChVector3d& GetPos3() const { return m_nodes[2]->GetPos(); }
 
     /// Get the contact surface container.
     ChContactSurface* GetContactSurface() const { return m_container; }
@@ -61,14 +74,12 @@ class ChApi ChContactTriangleXYZ : public ChContactable_3vars<3, 3, 3>, public C
 
     // Interface to ChContactable
 
-    virtual ChContactable::eChContactableType GetContactableType() const override { return CONTACTABLE_333; }
+    virtual ChContactable::Type GetContactableType() const override { return ChContactable::Type::THREE_333; }
 
-    /// Access variables for node 1.
-    virtual ChVariables* GetVariables1() override { return &m_nodes[0]->Variables(); }
-    /// Access variables for node 2.
-    virtual ChVariables* GetVariables2() override { return &m_nodes[1]->Variables(); }
-    /// Access variables for node 3.
-    virtual ChVariables* GetVariables3() override { return &m_nodes[2]->Variables(); }
+    virtual ChConstraintTuple* CreateConstraintTuple() override {
+        return new ChConstraintTuple_3vars<3, 3, 3>(&m_nodes[0]->Variables(), &m_nodes[1]->Variables(),
+                                                    &m_nodes[2]->Variables());
+    }
 
     /// Tell if the object must be considered in collision detection.
     virtual bool IsContactActive() override { return true; }
@@ -128,9 +139,9 @@ class ChApi ChContactTriangleXYZ : public ChContactable_3vars<3, 3, 3>, public C
     /// if the contactable is a ChBody, this should update the corresponding 1x6 jacobian.
     virtual void ComputeJacobianForContactPart(const ChVector3d& abs_point,
                                                ChMatrix33<>& contact_plane,
-                                               type_constraint_tuple& jacobian_tuple_N,
-                                               type_constraint_tuple& jacobian_tuple_U,
-                                               type_constraint_tuple& jacobian_tuple_V,
+                                               ChConstraintTuple* jacobian_tuple_N,
+                                               ChConstraintTuple* jacobian_tuple_U,
+                                               ChConstraintTuple* jacobian_tuple_V,
                                                bool second) override;
 
     /// Return mass of contactable object.
@@ -219,9 +230,12 @@ class ChApi ChContactTriangleXYZ : public ChContactable_3vars<3, 3, 3>, public C
 
 /// Contact element of triangular type - version for triangles where the nodes are of ChNodeFEAxyzrot type.
 /// Used to 'tessellate' a generic surface like the outer of tetrahedral meshes.
-class ChApi ChContactTriangleXYZRot : public ChContactable_3vars<6, 6, 6>, public ChLoadableUV {
+class ChApi ChContactTriangleXYZRot : public ChContactable, public ChLoadableUV {
   public:
-    ChContactTriangleXYZRot();
+    ChContactTriangleXYZRot(std::shared_ptr<ChNodeFEAxyzrot> node1,
+                            std::shared_ptr<ChNodeFEAxyzrot> node2,
+                            std::shared_ptr<ChNodeFEAxyzrot> node3,
+                            ChContactSurface* container = nullptr);
     ChContactTriangleXYZRot(const std::array<std::shared_ptr<ChNodeFEAxyzrot>, 3>& nodes,
                             ChContactSurface* container = nullptr);
 
@@ -237,8 +251,17 @@ class ChApi ChContactTriangleXYZRot : public ChContactable_3vars<6, 6, 6>, publi
     /// Set edge ownership.
     void SetEdgeOwnership(const ChVector3b& owns_edge) { m_owns_edge = owns_edge; }
 
-    /// Acccess the specified FEA node for which this is a proxy.
+    /// Access the specified FEA node for which this is a proxy.
     std::shared_ptr<ChNodeFEAxyzrot> GetNode(int i) const { return m_nodes[i]; }
+
+    /// Get the current position of first node.
+    const ChVector3d& GetPos1() const { return m_nodes[0]->GetPos(); }
+
+    /// Get the current position of second node.
+    const ChVector3d& GetPos2() const { return m_nodes[1]->GetPos(); }
+
+    /// Get the current position of third node.
+    const ChVector3d& GetPos3() const { return m_nodes[2]->GetPos(); }
 
     /// Get the contact surface container.
     ChContactSurface* GetContactSurface() const { return m_container; }
@@ -251,14 +274,12 @@ class ChApi ChContactTriangleXYZRot : public ChContactable_3vars<6, 6, 6>, publi
 
     // Interface to ChContactable
 
-    virtual ChContactable::eChContactableType GetContactableType() const override { return CONTACTABLE_666; }
+    virtual ChContactable::Type GetContactableType() const override { return ChContactable::Type::THREE_666; }
 
-    /// Access variables for node 1.
-    virtual ChVariables* GetVariables1() override { return &m_nodes[0]->Variables(); }
-    /// Access variables for node 2.
-    virtual ChVariables* GetVariables2() override { return &m_nodes[1]->Variables(); }
-    /// Access variables for node 3.
-    virtual ChVariables* GetVariables3() override { return &m_nodes[2]->Variables(); }
+    virtual ChConstraintTuple* CreateConstraintTuple() override {
+        return new ChConstraintTuple_3vars<6, 6, 6>(&m_nodes[0]->Variables(), &m_nodes[1]->Variables(),
+                                                    &m_nodes[2]->Variables());
+    }
 
     /// Tell if the object must be considered in collision detection.
     virtual bool IsContactActive() override { return true; }
@@ -319,9 +340,9 @@ class ChApi ChContactTriangleXYZRot : public ChContactable_3vars<6, 6, 6>, publi
     /// if the contactable is a ChBody, this should update the corresponding 1x6 jacobian.
     virtual void ComputeJacobianForContactPart(const ChVector3d& abs_point,
                                                ChMatrix33<>& contact_plane,
-                                               type_constraint_tuple& jacobian_tuple_N,
-                                               type_constraint_tuple& jacobian_tuple_U,
-                                               type_constraint_tuple& jacobian_tuple_V,
+                                               ChConstraintTuple* jacobian_tuple_N,
+                                               ChConstraintTuple* jacobian_tuple_U,
+                                               ChConstraintTuple* jacobian_tuple_V,
                                                bool second) override;
 
     /// Return mass of contactable object.
@@ -417,6 +438,66 @@ class ChApi ChContactSurfaceMesh : public ChContactSurface {
 
     virtual ~ChContactSurfaceMesh() {}
 
+    /// Utility function to add all boundary faces of the specified FEA mesh to this collision surface.
+    /// The function scans all the finite elements already added in the parent ChMesh and adds the faces
+    /// that are not shared (ie. the faces on the boundary 'skin').
+    /// For shells, the argument 'ccw' indicates whether the face vertices are provided in a counter-clockwise (default)
+    /// or clockwise order(because shells collisions are oriented and might work only from the "outer" side).
+    /// Currently supported elements that generate boundary skin:
+    /// - solids:
+    ///     - ChElementTetrahedron: all solid tetrahedrons
+    ///     - ChElementHexahedron: all solid hexahedrons
+    /// - shells:
+    ///     - ChElementShellANCF_3423 ANCF: shells (only one side)
+    ///     - ChElementShellANCF_3443 ANCF: shells (only one side)
+    ///     - ChElementShellANCF_3833 ANCF: shells (only one side)
+    ///     - ChElementShellReissner: Reissner 4-nodes shells (only one side)
+    /// - beams:
+    ///     - ChElementCableANCF: ANCF beams (as sphere-swept lines, i.e. sequence of capsules)
+    ///     - ChElementBeamEuler: Euler-Bernoulli beams (as sphere-swept lines, i.e. sequence of capsules)
+    void AddFacesFromBoundary(const ChMesh& mesh,                  ///< FEA mesh
+                              double sphere_swept = 0.0,           ///< radius of swept sphere
+                              bool ccw = true,                     ///< indicate counterclockwise vertex ordering
+                              bool include_cable_elements = true,  ///< create contact triangles for cable elements
+                              bool include_beam_elements = true    ///< create contact triangles for beam elements
+    );
+
+    /// Construct a contact surface from a triangular mesh.
+    /// FEA nodes are created at the mesh vertex locations.
+    void ConstructFromTrimesh(std::shared_ptr<ChTriangleMeshConnected> trimesh, double sphere_swept = 0.0);
+
+    /// Get the current axis-aligned bounding box.
+    virtual ChAABB GetAABB() const override;
+
+    /// Get the list of triangles.
+    std::vector<std::shared_ptr<ChContactTriangleXYZ>>& GetTrianglesXYZ() { return m_faces; }
+
+    /// Get the list of triangles for nodes with rotational dofs.
+    std::vector<std::shared_ptr<ChContactTriangleXYZRot>>& GetTrianglesXYZRot() { return m_faces_rot; }
+
+    /// Get the number of triangles.
+    unsigned int GetNumTriangles() const { return (unsigned int)(m_faces.size() + m_faces_rot.size()); }
+
+    /// Get the number of vertices.
+    unsigned int GetNumVertices() const;
+
+    // Functions to interface this with ChPhysicsItem container
+    virtual void SyncCollisionModels() const override;
+    virtual void AddCollisionModelsToSystem(ChCollisionSystem* coll_sys) const override;
+    virtual void RemoveCollisionModelsFromSystem(ChCollisionSystem* coll_sys) const override;
+
+    /// Utility function for exporting the contact mesh in a pointer-less manner.
+    /// The mesh is specified as a set of 3D vertex points (with associated velocities) and a set of faces (indices into
+    /// the vertex array). In addition, ownership of nodes and edges among the constituent triangles is returned in
+    /// 'owns_node' and 'owns_edge'.
+    void OutputSimpleMesh(std::vector<ChVector3d>& vert_pos,   ///< mesh vertices (absolute xyz positions)
+                          std::vector<ChVector3d>& vert_vel,   ///< vertex velocities (absolute xyz velocities)
+                          std::vector<ChVector3i>& triangles,  ///< triangle faces (indices in vertex array)
+                          std::vector<ChVector3b>& owns_node,  ///< node ownership for each triangular face
+                          std::vector<ChVector3b>& owns_edge   ///< edge ownership for each triangular face
+    ) const;
+
+  private:
     /// Add the face specified by the three specified XYZ nodes to this collision mesh.
     void AddFace(std::shared_ptr<ChNodeFEAxyz> node1,       ///< face node1
                  std::shared_ptr<ChNodeFEAxyz> node2,       ///< face node2
@@ -448,62 +529,6 @@ class ChApi ChContactSurfaceMesh : public ChContactSurface {
                  bool owns_edge3,                              ///< this collision face owns edge3
                  double sphere_swept = 0.0                     ///< thickness (radius of sweeping sphere)
     );
-
-    /// Utility function to add all boundary faces of the specified FEA mesh to this collision surface.
-    /// The function scans all the finite elements already added in the parent ChMesh and adds the faces
-    /// that are not shared (ie. the faces on the boundary 'skin').
-    /// For shells, the argument 'ccw' indicates whether the face vertices are provided in a counter-clockwise (default)
-    /// or clockwise order(because shells collisions are oriented and might work only from the "outer" side).
-    /// Currently supported elements that generate boundary skin:
-    /// - solids:
-    ///     - ChElementTetrahedron: all solid tetrahedrons
-    ///     - ChElementHexahedron: all solid hexahedrons
-    /// - shells:
-    ///     - ChElementShellANCF_3423 ANCF: shells (only one side)
-    ///     - ChElementShellANCF_3443 ANCF: shells (only one side)
-    ///     - ChElementShellANCF_3833 ANCF: shells (only one side)
-    ///     - ChElementShellReissner: Reissner 4-nodes shells (only one side)
-    /// - beams:
-    ///     - ChElementCableANCF: ANCF beams (as sphere-swept lines, i.e. sequence of capsules)
-    ///     - ChElementBeamEuler: Euler-Bernoulli beams (as sphere-swept lines, i.e. sequence of capsules)
-    void AddFacesFromBoundary(const ChMesh& mesh,                  ///< FEA mesh
-                              double sphere_swept = 0.0,           ///< radius of swept sphere
-                              bool ccw = true,                     ///< indicate counterclockwise vertex ordering
-                              bool include_cable_elements = true,  ///< create contact triangles for cable elements
-                              bool include_beam_elements = true    ///< create contact triangles for beam elements
-    );
-
-    /// Construct a contact surface from a triangular mesh.
-    /// FEA nodes are created at the mesh vertex locations.
-    void ConstructFromTrimesh(std::shared_ptr<ChTriangleMeshConnected> trimesh, double sphere_swept = 0.0);
-
-    /// Get the list of triangles.
-    std::vector<std::shared_ptr<ChContactTriangleXYZ>>& GetTrianglesXYZ() { return m_faces; }
-
-    /// Get the list of triangles for nodes with rotational dofs.
-    std::vector<std::shared_ptr<ChContactTriangleXYZRot>>& GetTrianglesXYZRot() { return m_faces_rot; }
-
-    /// Get the number of triangles.
-    unsigned int GetNumTriangles() const { return (unsigned int)(m_faces.size() + m_faces_rot.size()); }
-
-    /// Get the number of vertices.
-    unsigned int GetNumVertices() const;
-
-    // Functions to interface this with ChPhysicsItem container
-    virtual void SyncCollisionModels() const override;
-    virtual void AddCollisionModelsToSystem(ChCollisionSystem* coll_sys) const override;
-    virtual void RemoveCollisionModelsFromSystem(ChCollisionSystem* coll_sys) const override;
-
-    /// Utility function for exporting the contact mesh in a pointer-less manner.
-    /// The mesh is specified as a set of 3D vertex points (with associated velocities) and a set of faces (indices into
-    /// the vertex array). In addition, ownership of nodes and edges among the consitutent triangles is returned in
-    /// 'owns_node' and 'owns_edge'.
-    void OutputSimpleMesh(std::vector<ChVector3d>& vert_pos,   ///< mesh vertices (absolute xyz positions)
-                          std::vector<ChVector3d>& vert_vel,   ///< vertex velocities (absolute xyz velocities)
-                          std::vector<ChVector3i>& triangles,  ///< triangle faces (indices in vertex array)
-                          std::vector<ChVector3b>& owns_node,  ///< node ownership for each triangular face
-                          std::vector<ChVector3b>& owns_edge   ///< edge ownership for each triangular face
-    ) const;
 
   private:
     typedef std::array<std::shared_ptr<ChNodeFEAxyz>, 3> NodeTripletXYZ;

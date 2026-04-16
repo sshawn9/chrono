@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Demosntration of the Chrono::VSG run-time visualization system
+// Demonstration of the Chrono::VSG run-time visualization system
 //
 // =============================================================================
 
@@ -31,7 +31,6 @@ std::shared_ptr<ChVisualShapeTriangleMesh> CreateMeshShape(const std::string& fi
     auto trimesh_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
     trimesh_shape->SetMesh(trimesh);
     trimesh_shape->SetName(filesystem::path(filename).stem());
-    trimesh_shape->SetMutable(false);
 
     return trimesh_shape;
 }
@@ -45,10 +44,9 @@ int main(int argc, char* argv[]) {
     vis->SetWindowSize(ChVector2i(1200, 800));
     vis->SetWindowPosition(ChVector2i(100, 300));
     vis->SetWindowTitle("Chrono VSG Assets");
-    vis->SetUseSkyBox(false);
     vis->AddCamera(ChVector3d(8.0, 12.3, 3.0), ChVector3d(-0.1, 1.0, 0.4));
     vis->SetCameraAngleDeg(40);
-    vis->SetLightIntensity(2.0f);
+    vis->SetLightIntensity(1.0f);
     vis->SetLightDirection(CH_PI_2, CH_PI_4);
 
     ChVector3d bus_pos(3, -4.5, 0);
@@ -168,7 +166,6 @@ int main(int argc, char* argv[]) {
         vis->AddVisualModel(polaris, ChFrame<>(polaris_pos, QUNIT));
     }
 
-    vis->SetLogoVisible(true);
     vis->Initialize();
 
     while (vis->Run()) {

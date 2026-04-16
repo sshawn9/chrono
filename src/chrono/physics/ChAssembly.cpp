@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <cstdlib>
 
-#include "chrono/core/ChGlobal.h"
+#include "chrono/core/ChDataPath.h"
 #include "chrono/physics/ChAssembly.h"
 #include "chrono/physics/ChSystem.h"
 
@@ -637,34 +637,31 @@ void ChAssembly::Setup() {
     }
 }
 
-// Update assembly's own properties first (ChTime and assets, if any).
-// Then update all contents of this assembly.
-void ChAssembly::Update(double mytime, bool update_assets) {
-    ChPhysicsItem::Update(mytime, update_assets);
-    Update(update_assets);
-}
+// Update assembly's own properties first (time and assets, if any)
+// Then update all contents of this assembly:
+// - Update all physical items (bodies, links, meshes, etc), including their auxiliary variables
+// - Update all forces (automatic, as children of bodies)
+// - Update all markers (automatic, as children of bodies)
+void ChAssembly::Update(double time, UpdateFlags update_flags) {
+    ChPhysicsItem::Update(time, update_flags);
 
-// Update all physical items (bodies, links, meshes, etc), including their auxiliary variables.
-// Updates all forces (automatic, as children of bodies)
-// Updates all markers (automatic, as children of bodies).
-void ChAssembly::Update(bool update_assets) {
     //// NOTE: do not switch these to range for loops (may want to use OMP for)
     for (auto& body : bodylist) {
-        body->Update(ChTime, update_assets);
+        body->Update(time, update_flags);
     }
     for (auto& shaft : shaftlist) {
-        shaft->Update(ChTime, update_assets);
+        shaft->Update(time, update_flags);
     }
     for (auto& mesh : meshlist) {
-        mesh->Update(ChTime, update_assets);
+        mesh->Update(time, update_flags);
     }
     for (auto& otherphysics : otherphysicslist) {
-        otherphysics->Update(ChTime, update_assets);
+        otherphysics->Update(time, update_flags);
     }
     // The state of links depends on the bodylist,shaftlist,meshlist,otherphysicslist,
     // thus the update of linklist must be at the end.
     for (auto& link : linklist) {
-        link->Update(ChTime, update_assets);
+        link->Update(time, update_flags);
     }
 }
 
@@ -721,7 +718,7 @@ void ChAssembly::IntStateScatter(const unsigned int off_x,
                                  const unsigned int off_v,
                                  const ChStateDelta& v,
                                  const double T,
-                                 bool full_update) {
+                                 UpdateFlags update_flags) {
     // Notes:
     // 1. All IntStateScatter() calls below will automatically call Update() for each object, therefore:
     //    - do not call Update() on this (assembly).
@@ -735,25 +732,25 @@ void ChAssembly::IntStateScatter(const unsigned int off_x,
 
     for (auto& body : bodylist) {
         if (body->IsActive())
-            body->IntStateScatter(displ_x + body->GetOffset_x(), x, displ_v + body->GetOffset_w(), v, T, full_update);
+            body->IntStateScatter(displ_x + body->GetOffset_x(), x, displ_v + body->GetOffset_w(), v, T, update_flags);
         else
-            body->Update(T, full_update);
+            body->Update(T, update_flags);
     }
     for (auto& shaft : shaftlist) {
         if (shaft->IsActive())
             shaft->IntStateScatter(displ_x + shaft->GetOffset_x(), x, displ_v + shaft->GetOffset_w(), v, T,
-                                   full_update);
+                                   update_flags);
         else
-            shaft->Update(T, full_update);
+            shaft->Update(T, update_flags);
     }
     for (auto& mesh : meshlist) {
-        mesh->IntStateScatter(displ_x + mesh->GetOffset_x(), x, displ_v + mesh->GetOffset_w(), v, T, full_update);
+        mesh->IntStateScatter(displ_x + mesh->GetOffset_x(), x, displ_v + mesh->GetOffset_w(), v, T, update_flags);
     }
     for (auto& item : otherphysicslist) {
         if (item->IsActive())
-            item->IntStateScatter(displ_x + item->GetOffset_x(), x, displ_v + item->GetOffset_w(), v, T, full_update);
+            item->IntStateScatter(displ_x + item->GetOffset_x(), x, displ_v + item->GetOffset_w(), v, T, update_flags);
         else
-            item->Update(T, full_update);
+            item->Update(T, update_flags);
     }
     // Because the Update() of ChLink() depends on the frames of Body1 and Body2, the state scatter of linklist
     // must be behind of bodylist,shaftlist,meshlist,otherphysicslist; otherwise, the Update() of ChLink() would
@@ -761,9 +758,9 @@ void ChAssembly::IntStateScatter(const unsigned int off_x,
     // for one time step, then the simulation might diverge!
     for (auto& link : linklist) {
         if (link->IsActive())
-            link->IntStateScatter(displ_x + link->GetOffset_x(), x, displ_v + link->GetOffset_w(), v, T, full_update);
+            link->IntStateScatter(displ_x + link->GetOffset_x(), x, displ_v + link->GetOffset_w(), v, T, update_flags);
         else
-            link->Update(T, full_update);
+            link->Update(T, update_flags);
     }
 
     SetChTime(T);
@@ -866,6 +863,29 @@ void ChAssembly::IntStateScatterReactions(const unsigned int off_L, const ChVect
     for (auto& link : linklist) {
         if (link->IsActive())
             link->IntStateScatterReactions(displ_L + link->GetOffset_L(), L);
+    }
+}
+
+void ChAssembly::IntStateOnEndStep(double T) {
+
+    for (auto& body : bodylist) {
+        if (body->IsActive())
+            body->IntStateOnEndStep(T);
+    }
+    for (auto& shaft : shaftlist) {
+        if (shaft->IsActive())
+            shaft->IntStateOnEndStep(T);
+    }
+    for (auto& mesh : meshlist) {
+        mesh->IntStateOnEndStep(T);
+    }
+    for (auto& item : otherphysicslist) {
+        if (item->IsActive())
+            item->IntStateOnEndStep(T);
+    }
+    for (auto& link : linklist) {
+        if (link->IsActive())
+            link->IntStateOnEndStep(T);
     }
 }
 
@@ -1155,6 +1175,7 @@ void ChAssembly::IntLoadResidual_CqL(const unsigned int off_L,    ///< offset in
 void ChAssembly::IntLoadConstraint_C(const unsigned int off_L,  ///< offset in Qc residual
                                      ChVectorDynamic<>& Qc,     ///< result: the Qc residual, Qc += c*C
                                      const double c,            ///< a scaling factor
+                                     const double c_vel,        ///< the scaling factor if the constraint is at speed level
                                      bool do_clamp,             ///< apply clamping to c*C?
                                      double recovery_clamp      ///< value for min/max clamping of c*C
 ) {
@@ -1162,49 +1183,50 @@ void ChAssembly::IntLoadConstraint_C(const unsigned int off_L,  ///< offset in Q
 
     for (auto& body : bodylist) {
         if (body->IsActive())
-            body->IntLoadConstraint_C(displ_L + body->GetOffset_L(), Qc, c, do_clamp, recovery_clamp);
+            body->IntLoadConstraint_C(displ_L + body->GetOffset_L(), Qc, c, c_vel, do_clamp, recovery_clamp);
     }
     for (auto& shaft : shaftlist) {
         if (shaft->IsActive())
-            shaft->IntLoadConstraint_C(displ_L + shaft->GetOffset_L(), Qc, c, do_clamp, recovery_clamp);
+            shaft->IntLoadConstraint_C(displ_L + shaft->GetOffset_L(), Qc, c, c_vel, do_clamp, recovery_clamp);
     }
     for (auto& link : linklist) {
         if (link->IsActive())
-            link->IntLoadConstraint_C(displ_L + link->GetOffset_L(), Qc, c, do_clamp, recovery_clamp);
+            link->IntLoadConstraint_C(displ_L + link->GetOffset_L(), Qc, c, c_vel, do_clamp, recovery_clamp);
     }
     for (auto& mesh : meshlist) {
-        mesh->IntLoadConstraint_C(displ_L + mesh->GetOffset_L(), Qc, c, do_clamp, recovery_clamp);
+        mesh->IntLoadConstraint_C(displ_L + mesh->GetOffset_L(), Qc, c, c_vel, do_clamp, recovery_clamp);
     }
     for (auto& item : otherphysicslist) {
         if (item->IsActive())
-            item->IntLoadConstraint_C(displ_L + item->GetOffset_L(), Qc, c, do_clamp, recovery_clamp);
+            item->IntLoadConstraint_C(displ_L + item->GetOffset_L(), Qc, c, c_vel, do_clamp, recovery_clamp);
     }
 }
 
 void ChAssembly::IntLoadConstraint_Ct(const unsigned int off_L,  ///< offset in Qc residual
                                       ChVectorDynamic<>& Qc,     ///< result: the Qc residual, Qc += c*Ct
-                                      const double c             ///< a scaling factor
+                                      const double c,            ///< a scaling factor
+                                      const double c_vel         ///< the scaling factor if the constraint is at speed level
 ) {
     int displ_L = off_L - this->offset_L;
 
     for (auto& body : bodylist) {
         if (body->IsActive())
-            body->IntLoadConstraint_Ct(displ_L + body->GetOffset_L(), Qc, c);
+            body->IntLoadConstraint_Ct(displ_L + body->GetOffset_L(), Qc, c, c_vel);
     }
     for (auto& shaft : shaftlist) {
         if (shaft->IsActive())
-            shaft->IntLoadConstraint_Ct(displ_L + shaft->GetOffset_L(), Qc, c);
+            shaft->IntLoadConstraint_Ct(displ_L + shaft->GetOffset_L(), Qc, c, c_vel);
     }
     for (auto& link : linklist) {
         if (link->IsActive())
-            link->IntLoadConstraint_Ct(displ_L + link->GetOffset_L(), Qc, c);
+            link->IntLoadConstraint_Ct(displ_L + link->GetOffset_L(), Qc, c, c_vel);
     }
     for (auto& mesh : meshlist) {
-        mesh->IntLoadConstraint_Ct(displ_L + mesh->GetOffset_L(), Qc, c);
+        mesh->IntLoadConstraint_Ct(displ_L + mesh->GetOffset_L(), Qc, c, c_vel);
     }
     for (auto& item : otherphysicslist) {
         if (item->IsActive())
-            item->IntLoadConstraint_Ct(displ_L + item->GetOffset_L(), Qc, c);
+            item->IntLoadConstraint_Ct(displ_L + item->GetOffset_L(), Qc, c, c_vel);
     }
 }
 

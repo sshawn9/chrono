@@ -24,6 +24,7 @@
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/core/ChRealtimeStep.h"
 #include "chrono/assets/ChVisualShapeBox.h"
+#include "chrono/utils/ChUtils.h"
 
 #include "chrono_parsers/ChParserURDF.h"
 
@@ -43,15 +44,41 @@ using namespace chrono::parsers;
 ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
 
 int main(int argc, char* argv[]) {
-    std::string filename = (argc > 1) ? std::string(argv[1]) : "robot/r2d2/r2d2.urdf";
-    ////std::string filename = (argc > 1) ? std::string(argv[1]) : "robot/robosimian/rs.urdf";
+    // Select model
+    std::string input;
+    int model = 1;
+    std::cout << "Options:\n";
+    std::cout << "  1. R2D2 [DEFAULT]" << std::endl;
+    std::cout << "  2. Robosimian" << std::endl;
+    std::cout << "  3. User specified" << std::endl;
+    std::cout << "\nSelect model: ";
+    std::getline(std::cin, input);
+    if (!input.empty()) {
+        std::istringstream stream(input);
+        stream >> model;
+        ChClampValue(model, 1, 2);
+    }
+
+    std::string filename;
+    switch (model) {
+        case 1:
+            filename = GetChronoDataFile("robot/r2d2/r2d2.urdf");
+            break;
+        case 2:
+            filename = GetChronoDataFile("robot/robosimian/rs.urdf");
+            break;
+        case 3:
+            std::cout << "URDF file name: ";
+            std::getline(std::cin, filename);
+            break;
+    }
 
     // Create a Chrono system
     ChSystemSMC sys;
     sys.SetGravitationalAcceleration(ChVector3d(0, 0, -9.8));
 
     // Create parser instance
-    ChParserURDF parser(GetChronoDataFile(filename));
+    ChParserURDF parser(filename);
 
     // Set root body pose
     ////parser.SetRootInitPose(ChFrame<>(ChVector3d(0, 0, 1.5), QUNIT));
@@ -168,15 +195,12 @@ int main(int argc, char* argv[]) {
             vis_vsg->SetCameraVertical(CameraVerticalDir::Z);
             vis_vsg->SetWindowTitle("URDF parser demo");
             vis_vsg->AddCamera(aabb_center + ChVector3d(cam_offset, -cam_offset, 0), aabb_center);
-            vis_vsg->SetWindowSize(ChVector2i(1200, 800));
-            vis_vsg->SetWindowPosition(ChVector2i(500, 100));
-            vis_vsg->SetClearColor(ChColor(0.455f, 0.525f, 0.640f));
-            vis_vsg->SetUseSkyBox(false);
+            vis_vsg->SetWindowSize(1280, 800);
+            vis_vsg->SetWindowPosition(100, 100);
             vis_vsg->SetCameraAngleDeg(40.0);
             vis_vsg->SetLightIntensity(1.0f);
             vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
-            vis_vsg->SetShadows(true);
-            vis_vsg->SetWireFrameMode(false);
+            vis_vsg->EnableShadows();
             vis_vsg->Initialize();
 
             vis = vis_vsg;

@@ -17,10 +17,12 @@
 #include "chrono/physics/ChSystem.h"
 #include "chrono/physics/ChBodyEasy.h"
 
+#include "chrono/assets/ChVisualShapeFEA.h"
+#include "chrono/assets/ChColormap.h"
+
 #include "chrono/fea/ChElementCableANCF.h"
 #include "chrono/fea/ChBuilderBeam.h"
 #include "chrono/fea/ChMesh.h"
-#include "chrono/assets/ChVisualShapeFEA.h"
 #include "chrono/fea/ChLinkNodeFrame.h"
 #include "chrono/fea/ChLinkNodeSlopeFrame.h"
 
@@ -42,7 +44,11 @@ std::shared_ptr<ChVisualSystem> CreateVisualizationSystem(ChVisualSystem::Type v
                                                           ChSystem& sys,
                                                           const std::string& title,
                                                           const ChVector3d& cam_pos,
-                                                          const ChVector3d& cam_target = VNULL) {
+                                                          const ChVector3d& cam_target = VNULL,
+                                                          bool create_colorbar = false,
+                                                          const std::string& colorbar_title = "",
+                                                          const ChVector2d& colorbar_range = ChVector2d(0, 0),
+                                                          ChColormap::Type colormap_type = ChColormap::Type::JET) {
 #ifndef CHRONO_IRRLICHT
     if (vis_type == ChVisualSystem::Type::IRRLICHT)
         vis_type = ChVisualSystem::Type::VSG;
@@ -64,11 +70,13 @@ std::shared_ptr<ChVisualSystem> CreateVisualizationSystem(ChVisualSystem::Type v
             vis_irr->Initialize();
             vis_irr->AddLogo();
             vis_irr->AddSkyBox();
-            vis_irr->AddCamera(cam_pos, cam_target);
+            vis_irr->AddCamera(0.5 * cam_pos, cam_target);
             vis_irr->AddTypicalLights();
-            vis_irr->AddLightWithShadow(ChVector3d(1.0, 25.0, -5.0), ChVector3d(0, 0, 0), 35, 0.2, 35, 35, 512,
-                                        ChColor(0.6f, 0.8f, 1.0f));
             vis_irr->EnableShadows();
+
+            if (create_colorbar) {
+                vis_irr->AddGuiColorbar(colorbar_title, colorbar_range, colormap_type, false);
+            }
 
             vis = vis_irr;
 #endif
@@ -80,15 +88,24 @@ std::shared_ptr<ChVisualSystem> CreateVisualizationSystem(ChVisualSystem::Type v
             auto vis_vsg = chrono_types::make_shared<ChVisualSystemVSG>();
             vis_vsg->AttachSystem(&sys);
             vis_vsg->SetCameraVertical(vertical);
-            vis_vsg->SetWindowSize(ChVector2i(1280, 720));
-            vis_vsg->SetWindowPosition(ChVector2i(100, 300));
+            vis_vsg->SetWindowSize(1280, 800);
+            vis_vsg->SetWindowPosition(100, 100);
             vis_vsg->SetWindowTitle(title);
-            vis_vsg->SetUseSkyBox(true);
-            vis_vsg->AddCamera(2.0 * cam_pos, cam_target);
+            vis_vsg->EnableSkyTexture(SkyMode::BOX);
+            vis_vsg->AddCamera(cam_pos, cam_target);
             vis_vsg->SetCameraAngleDeg(50);
             vis_vsg->SetLightIntensity(1.0f);
             vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
-            vis_vsg->SetShadows(true);
+            vis_vsg->EnableShadows();
+
+            if (create_colorbar) {
+                vis_vsg->AddGuiColorbar(colorbar_title, colorbar_range, colormap_type, false, 300);
+            }
+
+            // optionally decouple the visualisation updates so less cpu-gpu work - comment out to test for performance
+            // change
+            // - testing shows a reduction in vsg Render() calls to 1/2 or less
+            vis_vsg->SetTargetRenderFPS(60); 
             vis_vsg->Initialize();
 
             vis = vis_vsg;

@@ -80,10 +80,45 @@ void ChGeometry::ArchiveIn(ChArchiveIn& archive_in) {
 
 // -----------------------------------------------------------------------------
 
+ChIntAABB::ChIntAABB()
+    : min(ChVector3i(+std::numeric_limits<int>::max())), max(ChVector3i(-std::numeric_limits<int>::max())) {}
+
+ChIntAABB::ChIntAABB(const ChVector3i& aabb_min, const ChVector3i& aabb_max) : min(aabb_min), max(aabb_max) {}
+
+ChVector3i ChIntAABB::Size() const {
+    return max - min;
+}
+
+bool ChIntAABB::IsInverted() const {
+    return min > max;
+}
+
+ChIntAABB& ChIntAABB::operator+=(const ChIntAABB& aabb) {
+    min = Vmin(min, aabb.min);
+    max = Vmax(max, aabb.max);
+    return *this;
+}
+
+ChIntAABB ChIntAABB::operator+(const ChIntAABB& aabb) {
+    ChIntAABB result = *this;
+    result += aabb;
+    return result;
+}
+
+ChIntAABB& ChIntAABB::operator+=(const ChVector3i p) {
+    min = Vmin(min, p);
+    max = Vmax(max, p);
+    return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 ChAABB::ChAABB()
     : min(ChVector3d(+std::numeric_limits<double>::max())), max(ChVector3d(-std::numeric_limits<double>::max())) {}
 
 ChAABB::ChAABB(const ChVector3d& aabb_min, const ChVector3d& aabb_max) : min(aabb_min), max(aabb_max) {}
+
+ChAABB::ChAABB(const ChIntAABB& aabb, double spacing) : min(spacing * aabb.min), max(spacing * aabb.max) {}
 
 ChVector3d ChAABB::Center() const {
     return 0.5 * (max + min);
@@ -98,7 +133,8 @@ bool ChAABB::IsInverted() const {
 }
 
 ChAABB& ChAABB::operator+=(const ChAABB& aabb) {
-    *this = ChAABB(Vmin(min, aabb.min), Vmax(max, aabb.max));
+    min = Vmin(min, aabb.min);
+    max = Vmax(max, aabb.max);
     return *this;
 }
 
@@ -106,6 +142,12 @@ ChAABB ChAABB::operator+(const ChAABB& aabb) {
     ChAABB result = *this;
     result += aabb;
     return result;
+}
+
+ChAABB& ChAABB::operator+=(const ChVector3d p) {
+    min = Vmin(min, p);
+    max = Vmax(max, p);
+    return *this;
 }
 
 ChAABB ChAABB::Transform(const ChFrame<>& frame) const {

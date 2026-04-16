@@ -51,32 +51,29 @@ void ChIntegrableIIorder::StateSetup(ChState& x, ChStateDelta& v, ChStateDelta& 
 }
 
 bool ChIntegrableIIorder::StateSolveA(ChStateDelta& Dvdt,        // result: computed a for a=dv/dt
-                                      ChVectorDynamic<>& L,      // result: computed lagrangian multipliers, if any
+                                      ChVectorDynamic<>& L,      // result: computed Lagrange multipliers
                                       const ChState& x,          // current state, x
                                       const ChStateDelta& v,     // current state, v
                                       const double T,            // current time T
                                       const double dt,           // timestep (if needed)
-                                      bool force_state_scatter,  // if false, x and v are not scattered to the system
-                                      bool full_update,          // if true, perform a full update during scatter
-                                      ChPenaltyParms* cpenalty   // if not null, deal with constraints via penalty to avoid a
-                                                                 // saddle matrix. If so, a fast lumped mass can be used to invert 
+                                      bool force_state_scatter,  // if true, scatter x and v to the system
+                                      UpdateFlags update_flags,  ///< if UpdateFlags::UPDATE_ALL, do a full update during scatter, otherwise switch off visual asset update, etc.
+                                      ChLumpingParms* lumping    // use lumped masses to avoid inverting a mass matrix
 ) {
     if (force_state_scatter)
-        StateScatter(x, v, T, full_update);
+        StateScatter(x, v, T, update_flags);
 
     ChVectorDynamic<> R(GetNumCoordsVelLevel());
-    R.setZero();
 
-    LoadResidual_F(R, 1.0);  // rhs, applied forces
-
-    ChVectorDynamic<> Qc;
-    Qc.setZero(GetNumConstraints());
-
-    if (!cpenalty) {
-        
+    if (!lumping) {
+        ChVectorDynamic<> Qc(GetNumConstraints());
         const double Delta = 1e-6;
 
-        LoadConstraint_C(Qc, -2.0 / (Delta * Delta));
+        R.setZero();
+        Qc.setZero();
+
+        LoadResidual_F(R, 1.0);
+        LoadConstraint_C(Qc, -2.0 / (Delta * Delta), -1.0 / Delta);
 
         // numerical differentiation to get the Qc term in constraints
         ChStateDelta dx(v);
@@ -84,33 +81,43 @@ bool ChIntegrableIIorder::StateSolveA(ChStateDelta& Dvdt,        // result: comp
         ChState xdx(x.size(), this);
 
         StateIncrement(xdx, x, dx);
-        StateScatter(xdx, v, T + Delta, full_update);
-        LoadConstraint_C(Qc, 1.0 / (Delta * Delta));
+        StateScatter(xdx, v, T + Delta, update_flags);
+        LoadConstraint_C(Qc, 1.0 / (Delta * Delta), 1.0 / Delta);
 
         StateIncrement(xdx, x, -dx);
-        StateScatter(xdx, v, T - Delta, full_update);
-        LoadConstraint_C(Qc, 1.0 / (Delta * Delta));
+        StateScatter(xdx, v, T - Delta, update_flags);
+        LoadConstraint_C(Qc, 1.0 / (Delta * Delta), 0.0);
 
-        StateScatter(x, v, T, full_update);  // back to original state
+        StateScatter(x, v, T, update_flags);  // back to original state
 
+        bool success = StateSolveCorrection(Dvdt, L, R, Qc, 1.0, 0, 0, x, v, T, false, UpdateFlags::UPDATE_ALL_NO_VISUAL, true, true);
+
+        return success;
     } else {
+        ChVectorDynamic<> Md(GetNumCoordsVelLevel());  // diagonal mass
+        Md.setZero(GetNumCoordsVelLevel());
 
         // penalty terms from constraints
+        R.setZero(GetNumCoordsVelLevel());
         L.setZero(GetNumConstraints());
 
+        LoadResidual_F(R, 1.0);  // rhs, applied forces
+
+        double err = 0;
+        LoadLumpedMass_Md(Md, err, 1.0);
+
         if (GetNumConstraints()) {
-            LoadConstraint_C(L, -cpenalty->Ck_penalty);  // L  = -k*C     // to do: modulate  k  as constraint-dependent,
-                                                        // k=cpenalty->Ck_penalty*Ck_i
+            LoadConstraint_C(L, -lumping->Ck_penalty, -lumping->Ck_penalty);  // L  = -k*C     // to do: modulate  k  as constraint-dependent,
+                                                        // k=lumping->Ck_penalty*Ck_i
             LoadResidual_CqL(R, L, 1.0);                // Fc =  Cq' * (-k*C)    = Cq' * L
             // to do: add c_penalty for speed proportional damping, as   Fc = - Cq' * (k*C + c*(dC/dt))
-
         }
+
+        // compute acceleration using lumped diagonal mass. No need to invoke a linear solver.
+        Dvdt.array() = R.array() / Md.array();  //  a = Md^-1 * F
+
+        return (err == 0);
     }
-
-    bool success = StateSolveCorrection(Dvdt, L, R, Qc, 1.0, 0, 0, x, v, T, false, false, true);
-
-    return success;
-
 }
 
 void ChIntegrableIIorder::StateIncrementX(ChState& x_new, const ChState& x, const ChStateDelta& Dx) {
@@ -134,12 +141,12 @@ void ChIntegrableIIorder::StateGather(ChState& y, double& T) {
     y.segment(GetNumCoordsPosLevel(), mv.size()) = mv;
 }
 
-void ChIntegrableIIorder::StateScatter(const ChState& y, const double T, bool full_update) {
+void ChIntegrableIIorder::StateScatter(const ChState& y, const double T, UpdateFlags update_flags) {
     ChState mx(GetNumCoordsPosLevel(), y.GetIntegrable());
     ChStateDelta mv(GetNumCoordsVelLevel(), y.GetIntegrable());
     mx = y.segment(0, GetNumCoordsPosLevel());
     mv = y.segment(GetNumCoordsPosLevel(), GetNumCoordsVelLevel());
-    StateScatter(mx, mv, T, full_update);
+    StateScatter(mx, mv, T, update_flags);
 }
 
 void ChIntegrableIIorder::StateGatherDerivative(ChStateDelta& Dydt) {
@@ -196,14 +203,14 @@ void ChIntegrableIIorder::StateIncrement(ChState& y_new,         // resulting y_
 }
 
 bool ChIntegrableIIorder::StateSolve(ChStateDelta& dydt,        // result: computed dydt
-                                     ChVectorDynamic<>& L,      // result: computed lagrangian multipliers, if any
+                                     ChVectorDynamic<>& L,      // result: computed Lagrange multipliers
                                      const ChState& y,          // current state y
                                      const double T,            // current time T
-                                     const double dt,           // timestep (if needed, ex. in NSC)
+                                     const double dt,           // timestep (if needed, e.g. in NSC)
                                      bool force_state_scatter,  // if false, y and T are not scattered to the system
-                                     bool full_update,          // if true, perform a full update during scatter
-                                     ChPenaltyParms* cpenalty   // if not null, deal with constraints via penalty to avoid a
-                                                                // saddle matrix. If so, a fast lumped mass can be used to invert 
+                                     UpdateFlags update_flags,   // if UpdateFlags::UPDATE_ALL, do a full update during scatter, otherwise switch off visual asset update, etc.
+                                     ChLumpingParms* lumping    // if not null, uses lumped masses to avoid inverting a
+                                                                // mass matrix, and uses penalty for constraints.
 ) {
     ChState mx(GetNumCoordsPosLevel(), y.GetIntegrable());
     ChStateDelta mv(GetNumCoordsVelLevel(), y.GetIntegrable());
@@ -212,7 +219,7 @@ bool ChIntegrableIIorder::StateSolve(ChStateDelta& dydt,        // result: compu
 
     // Solve with custom II order solver
     ChStateDelta ma(GetNumCoordsVelLevel(), y.GetIntegrable());
-    if (!StateSolveA(ma, L, mx, mv, T, dt, force_state_scatter, full_update, cpenalty)) {
+    if (!StateSolveA(ma, L, mx, mv, T, dt, force_state_scatter, update_flags, lumping)) {
         return false;
     }
 

@@ -12,7 +12,7 @@
 // Authors: Alessandro Tasora, Radu Serban
 // =============================================================================
 
-#include "chrono/core/ChGlobal.h"
+#include "chrono/core/ChDataPath.h"
 #include "chrono/physics/ChShaftBodyConstraint.h"
 
 namespace chrono {
@@ -46,9 +46,9 @@ bool ChShaftBodyRotation::Initialize(std::shared_ptr<ChShaft> mshaft,
     return true;
 }
 
-void ChShaftBodyRotation::Update(double mytime, bool update_assets) {
+void ChShaftBodyRotation::Update(double time, UpdateFlags update_flags) {
     // Inherit time changes of parent class
-    ChPhysicsItem::Update(mytime, update_assets);
+    ChPhysicsItem::Update(time, update_flags);
 
     // update class data
     // ...
@@ -73,6 +73,7 @@ void ChShaftBodyRotation::IntLoadResidual_CqL(const unsigned int off_L,    ///< 
 void ChShaftBodyRotation::IntLoadConstraint_C(const unsigned int off_L,  ///< offset in Qc residual
                                               ChVectorDynamic<>& Qc,     ///< result: the Qc residual, Qc += c*C
                                               const double c,            ///< a scaling factor
+                                              const double c_vel,        ///< the scaling factor if the constraint is at speed level
                                               bool do_clamp,             ///< apply clamping to c*C?
                                               double recovery_clamp      ///< value for min/max clamping of c*C
 ) {
@@ -214,9 +215,9 @@ bool ChShaftBodyTranslation::Initialize(std::shared_ptr<ChShaft> mshaft,
     return true;
 }
 
-void ChShaftBodyTranslation::Update(double mytime, bool update_assets) {
+void ChShaftBodyTranslation::Update(double time, UpdateFlags update_flags) {
     // Inherit time changes of parent class
-    ChPhysicsItem::Update(mytime, update_assets);
+    ChPhysicsItem::Update(time, update_flags);
 
     // update class data
     // ...
@@ -241,6 +242,7 @@ void ChShaftBodyTranslation::IntLoadResidual_CqL(const unsigned int off_L,    //
 void ChShaftBodyTranslation::IntLoadConstraint_C(const unsigned int off_L,  ///< offset in Qc residual
                                                  ChVectorDynamic<>& Qc,     ///< result: the Qc residual, Qc += c*C
                                                  const double c,            ///< a scaling factor
+                                                 const double c_vel,        ///< the scaling factor if the constraint is at speed level
                                                  bool do_clamp,             ///< apply clamping to c*C?
                                                  double recovery_clamp      ///< value for min/max clamping of c*C
 ) {
