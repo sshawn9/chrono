@@ -33,6 +33,10 @@
     #include "chrono_parsers/yaml/ChParserMbsYAML.h"
 #endif
 
+#ifdef CHRONO_VSG
+    #include "chrono_vsg/ChVisualSystemVSG.h"
+#endif
+
 namespace chrono {
 namespace ch_precice {
 
@@ -43,14 +47,19 @@ namespace ch_precice {
 class ChApiPrecice ChPreciceAdapterMbs : public ChPreciceAdapter {
   public:
     ChPreciceAdapterMbs(ChSystem& sys, double time_step, bool verbose = false);
-
 #if defined(CHRONO_PARSERS) && defined(CHRONO_HAS_YAML)
     ChPreciceAdapterMbs(const std::string& input_filename, bool verbose = false);
 #endif
-
     ~ChPreciceAdapterMbs();
 
     ChSystem& GetSystem() { return *m_sys; }
+
+    bool EnableVisualization(double render_fps,                  ///< rendering frequency
+                             CameraVerticalDir camera_vertical,  ///< camera vertical direction (Y or Z)
+                             const ChVector3d& camera_location,  ///< initial camera location
+                             const ChVector3d& camera_target,    ///< initial camera look-at point
+                             bool enable_shadows                 ///< enable dynamic shadows
+    );
 
     virtual void InitializeParticipant() override;
     virtual void WriteCheckpoint(double time) override;
@@ -79,6 +88,21 @@ class ChApiPrecice ChPreciceAdapterMbs : public ChPreciceAdapter {
     // Chrono physics items in coupling interface
     std::vector<std::shared_ptr<ChBodyAuxRef>> m_bodies;
 
+    // Run-time visualization
+    struct VisParams {
+        VisParams();
+        bool render;
+        double render_fps;
+        CameraVerticalDir camera_vertical;
+        ChVector3d camera_location;
+        ChVector3d camera_target;
+        bool enable_shadows;
+    };
+    VisParams m_vis;  ///< visualization parameters
+
+#ifdef CHRONO_VSG
+    std::shared_ptr<vsg3d::ChVisualSystemVSG> m_vsg;
+#endif
 };
 
 /// @} precice_module

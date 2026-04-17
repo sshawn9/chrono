@@ -94,6 +94,10 @@ if(CH_ENABLE_MODULE_PARSERS)
   target_link_libraries(Chrono_precice PRIVATE Chrono_parsers)
 endif()
 
+if(CH_ENABLE_MODULE_VSG)
+  target_link_libraries(Chrono_precice PRIVATE Chrono_vsg)
+endif()
+
 if(CH_ENABLE_MODULE_FSI)
   target_link_libraries(Chrono_precice PRIVATE Chrono_fsi)
 endif()

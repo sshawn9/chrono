@@ -49,6 +49,14 @@ ChPreciceAdapterMbs::ChPreciceAdapterMbs(const std::string& input_filename, bool
     parser.Populate(*sys);
     m_sys = sys.get();
 
+    // Extract information from parsed YAML files
+    m_vis.render = parser.Render();
+    m_vis.render_fps = parser.GetRenderFPS();
+    m_vis.camera_vertical = parser.GetCameraVerticalDir();
+    m_vis.camera_location = parser.GetCameraLocation();
+    m_vis.camera_target = parser.GetCameraTarget();
+    m_vis.enable_shadows = parser.EnableShadows();
+
     // Read in preCICE participant configuration
     ConstructSolver(input_filename);
 
@@ -88,6 +96,31 @@ ChPreciceAdapterMbs::ChPreciceAdapterMbs(const std::string& input_filename, bool
 #endif
 
 ChPreciceAdapterMbs::~ChPreciceAdapterMbs() {}
+
+// -----------------------------------------------------------------------------
+
+ChPreciceAdapterMbs::VisParams::VisParams()
+    : render(false), render_fps(120), camera_vertical(CameraVerticalDir::Z), camera_location({0, -1, 0}), camera_target({0, 0, 0}), enable_shadows(true) {}
+
+bool ChPreciceAdapterMbs::EnableVisualization(double render_fps,
+                                              CameraVerticalDir camera_vertical,
+                                              const ChVector3d& camera_location,
+                                              const ChVector3d& camera_target,
+                                              bool enable_shadows) {
+#ifdef CHRONO_VSG
+    m_vis.render_fps = render_fps;
+    m_vis.camera_vertical = camera_vertical;
+    m_vis.camera_location = camera_location;
+    m_vis.camera_target = camera_target;
+    m_vis.enable_shadows = enable_shadows;
+    m_vis.render = true;
+    return true;
+#else
+    cerr << "Chrono::VSG not enabled. Disabling run-time visualization" << endl;
+    m_vis.render = false;
+    return false;
+#endif
+}
 
 void ChPreciceAdapterMbs::InitializeParticipant() {
     ChPreciceAdapter::InitializeParticipant();
@@ -132,6 +165,25 @@ void ChPreciceAdapterMbs::InitializeParticipant() {
         // Register coupling mesh with preCICE
         RegisterMesh(mesh_name, vertices);
     }
+
+#ifdef CHRONO_VSG
+    // Enable runtime visualization
+    if (m_vis.render) {
+        m_vsg = chrono_types::make_shared<vsg3d::ChVisualSystemVSG>();
+        m_vsg->AttachSystem(m_sys);
+        m_vsg->SetWindowTitle("Chrono preCICE MBS participant - " + m_participant_name);
+        m_vsg->AddCamera(m_vis.camera_location, m_vis.camera_target);
+        m_vsg->SetWindowSize(1280, 800);
+        m_vsg->SetWindowPosition(100, 100);
+        m_vsg->SetCameraVertical(m_vis.camera_vertical);
+        m_vsg->SetCameraAngleDeg(40.0);
+        m_vsg->SetLightIntensity(1.0f);
+        m_vsg->SetLightDirection(-CH_PI_4, CH_PI_4);
+        m_vsg->EnableShadows(m_vis.enable_shadows);
+        m_vsg->ToggleAbsFrameVisibility();
+        m_vsg->Initialize();
+    }
+#endif
 }
 
 void ChPreciceAdapterMbs::WriteCheckpoint(double time) {
@@ -178,6 +230,15 @@ void ChPreciceAdapterMbs::AdvanceParticipant(double time, double time_step) {
     ChPreciceAdapter::AdvanceParticipant(time, time_step);
 
     ChAssertAlways(time == m_sys->GetChTime());
+
+    static int render_frame = 0;
+    if (m_vis.render && m_vsg->Run()) {
+        if (time >= render_frame / m_vis.render_fps) {
+            m_vsg->Render();
+            render_frame++;
+        }
+    }
+
     m_sys->DoStepDynamics(time_step);
 }
 
