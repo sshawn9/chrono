@@ -67,16 +67,18 @@ class ChApiPrecice ChPreciceAdapterMbs : public ChPreciceAdapter {
         ChStateDelta v;
     };
 
+    void ReadBodyRefData(const std::string& mesh_name, const MeshInfo& mesh_info);
+    void WriteBodyRefData(const std::string& mesh_name, MeshInfo& mesh_info);
+
     ChSystem* m_sys;
     double m_time_step;
+
+    // System checkpoint data
     Checkpoint m_checkpoint;
 
-    std::vector<std::shared_ptr<ChBody>> m_bodies;
+    // Chrono physics items in coupling interface
+    std::vector<std::shared_ptr<ChBodyAuxRef>> m_bodies;
 
-    bool m_use_rigid_body_ref_data;
-    bool m_use_rigid_body_mesh_data;
-    bool m_use_contact_mesh1d_data;
-    bool m_use_contact_mesh2d_data;
 };
 
 /// @} precice_module
