@@ -39,13 +39,22 @@ namespace ch_precice {
 /// Base class for all preCICE adapters.
 class ChApiPrecice ChPreciceAdapter {
   public:
-    /// Chrono coupling data types.
+    /// Chrono coupling mesh types (mesh vertex semantics).
+    enum class MeshType {
+        GENERIC,                 ///< generic mesh
+        RIGID_BODY_REF_POINTS,   ///< set of points corresponding to rigid body reference frames
+        RIGID_BODY_MESH_POINTS,  ///< set of points on rigid body meshes
+        FEA_MESH1D_NODES,        ///< set of points corresponding to 1D FEA meshes (segment nodes)
+        FEA_MESH2D_NODES         ///< set of points corresponding to 2D FEA meshes (surface mesh nodes)
+    };
+
+    /// Chrono coupling data type.
     enum class DataType {
-        GENERIC,                 ///<
-        RIGID_BODY_REF_POINTS,   ///<
-        RIGID_BODY_MESH_POINTS,  ///<
-        FEA_MESH1D_NODES,        ///<
-        FEA_MESH2D_NODES         ///<
+        GENERIC,     ///< generic data
+        POSITIONS,   ///< 3D positions
+        VELOCITIES,  ///< 3D velocities
+        FORCES,      ///< 3D forces
+        TORQUES      ///< 3D torques
     };
 
     ChPreciceAdapter();
@@ -78,11 +87,11 @@ class ChApiPrecice ChPreciceAdapter {
 
     /// Set a coupling mesh with specified data type, using the given lists of data names for writing and reading.
     /// Used when the adapter is not constructed from a YAML specification file. This function can be called more than once.
-    void SetMeshInterface(const std::string& mesh_name, DataType data_type, const std::vector<std::string>& data_write_names, const std::vector<std::string>& data_read_names);
+    void SetMeshInterface(const std::string& mesh_name, MeshType data_type, const std::vector<std::string>& data_write_names, const std::vector<std::string>& data_read_names);
 
     // ---- preCICE participant registration
 
-    /// Register the solver with preCICE, using the specified preCICE configuration file, and the solver process size and index. 
+    /// Register the solver with preCICE, using the specified preCICE configuration file, and the solver process size and index.
     void RegisterSolver(const std::string& precice_config_filename, int process_index = 0, int process_size = 1);
 
     // ---- Mesh specification
@@ -107,20 +116,26 @@ class ChApiPrecice ChPreciceAdapter {
 
     // ---- Accessor functions
 
-    /// Get the number of spatial dimensions for the mesh with the specified name.
+    /// Get the number of spatial dimensions for the mesh with specified name.
     int GetMeshDimensions(const std::string& mesh_name) const;
 
-    /// Get the number of vertices for the mesh with the specified name.
+    /// Get the number of vertices for the mesh with specified name.
     size_t GetNumVertices(const std::string& mesh_name);
 
-    /// Get the type for the data on the mesh with the specified name.
-    DataType GetDataType(const std::string& mesh_name) const;
+    /// Get the type (vertex semantics) for the mesh with specified name.
+    MeshType GetMeshType(const std::string& mesh_name) const;
 
-    /// Get the type name for the data on the mesh with the specified name.
-    std::string GetDataTypeAsString(const std::string& mesh_name) const;
+    /// Get the type (vertex semantics) for the mesh with specified name.
+    std::string GetMeshTypeAsString(const std::string& mesh_name) const;
 
-    /// Get the data dimensions for the data with the specified name on the mesh with the specified name.
+    /// Get the data dimensions for the data with specified name on the mesh with specified name.
     int GetDataDimensions(const std::string& mesh_name, const std::string& data_name) const;
+
+    /// Get the type for the coupling data with specified name on the mesh with specified name.
+    DataType GetDataType(const std::string& mesh_name, const std::string& data_name) const;
+
+    /// Get the type for the coupling data with specified name on the mesh with specified name.
+    std::string GetDataTypeAsString(const std::string& mesh_name, const std::string& data_name) const;
 
     /// Get the maximum time step size from preCICE.
     double GetMaxTimeStepSize() const;
@@ -261,18 +276,24 @@ class ChApiPrecice ChPreciceAdapter {
 
     // ---- Member variables
 
-    /// Data type to hold values for all data in a coupling mesh, indexed by the data name.
-    using DataValues = std::map<std::string, std::vector<double>>;
+    /// Definition of a coupling data block.
+    struct DataInfo {
+        DataType type;               ///< data type
+        std::vector<double> values;  ///< data values
+    };
+
+    /// Data type to hold information for all data blocks in a coupling mesh, indexed by the data name.
+    using CouplingData = std::map<std::string, DataInfo>;
 
     /// Definition of a coupling mesh.
-    struct MeshData {
-        DataType data_type;           ///< type of data exchanged via this mesh
+    struct MeshInfo {
+        MeshType type;                ///< mesh type (vertex semantics)
         std::vector<int> vertex_ids;  ///< preCICE IDs of the mesh vertices
-        DataValues data;              ///< list of data objects defined on this mesh
+        CouplingData data;            ///< list of data objects defined on this mesh
     };
 
     /// Data type to hold data for all coupling meshes, indexed by the mesh name.
-    using CouplingMeshes = std::map<std::string, MeshData>;
+    using CouplingMeshes = std::map<std::string, MeshInfo>;
 
     /// Data type to hold data names associated with a given mesh name.
     using MeshDataNames = std::map<std::string, std::vector<std::string>>;

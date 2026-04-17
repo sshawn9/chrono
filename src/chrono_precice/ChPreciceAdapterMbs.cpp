@@ -90,6 +90,8 @@ ChPreciceAdapterMbs::ChPreciceAdapterMbs(const std::string& input_filename, bool
 ChPreciceAdapterMbs::~ChPreciceAdapterMbs() {}
 
 void ChPreciceAdapterMbs::InitializeParticipant() {
+    ChPreciceAdapter::InitializeParticipant();
+
     // Set number of Chrono physics items in the coupling interfaces
     //// TODO - set this from specified FSI data
 
@@ -106,26 +108,24 @@ void ChPreciceAdapterMbs::InitializeParticipant() {
         }
 
         std::vector<ChVector3d> vertices;
-        size_t num_vertices;
-        auto& mesh_data = m_coupling_meshes[mesh_name];
-        switch (mesh_data.data_type) {
-            case DataType::RIGID_BODY_REF_POINTS: {
-                num_vertices = m_bodies.size();
+        auto& mesh_info = m_coupling_meshes[mesh_name];
+        switch (mesh_info.type) {
+            case MeshType::RIGID_BODY_REF_POINTS: {
                 for (const auto& body : m_bodies)
                     vertices.push_back(body->GetPos());
                 break;
             }
-            case DataType::RIGID_BODY_MESH_POINTS: {
-                num_vertices = 0;  //// TODO
-                break;
+            case MeshType::RIGID_BODY_MESH_POINTS: {
+                ////break;
+                throw std::runtime_error("MeshType::RIGID_BODY_MESH_POINTS not yet implemented");
             }
-            case DataType::FEA_MESH1D_NODES: {
-                num_vertices = 0;  //// TODO
-                break;
+            case MeshType::FEA_MESH1D_NODES: {
+                ////break;
+                throw std::runtime_error("MeshType::FEA_MESH1D_NODES not yet implemented");
             }
-            case DataType::FEA_MESH2D_NODES: {
-                num_vertices = 0;  //// TODO
-                break;
+            case MeshType::FEA_MESH2D_NODES: {
+                ////break;
+                throw std::runtime_error("MeshType::FEA_MESH2D_NODES not yet implemented");
             }
         }
 

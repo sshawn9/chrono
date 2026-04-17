@@ -3,8 +3,10 @@ precice_adapter_config:
     
     interfaces:
     - mesh_name: Mesh2
-      data_type: GENERIC
+      mesh_type: GENERIC
       write_data:
       - name: data2
+        type: GENERIC
       read_data:
       - name: data1
+        type: GENERIC

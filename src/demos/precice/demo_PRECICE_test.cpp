@@ -38,7 +38,7 @@ using std::endl;
 
 class TestAdapter : public ChPreciceAdapter {
   public:
-    TestAdapter(const std::string& yaml_input, const std::string& precice_config_filename, bool verbose = false);
+    TestAdapter(const std::string& yaml_input, bool verbose = false);
 
     virtual void InitializeParticipant() override;
     virtual void WriteCheckpoint(double time) override;
@@ -50,11 +50,7 @@ class TestAdapter : public ChPreciceAdapter {
 
   private:
     int id;
-
     std::string mesh_name;
-    int mesh_dim;
-    int num_vertices;
-    std::vector<double> vertices;
 
     double solver_time;
     double solver_state;
@@ -63,14 +59,13 @@ class TestAdapter : public ChPreciceAdapter {
     std::vector<double> solver_vector_output;
 };
 
-TestAdapter::TestAdapter(const std::string& yaml_input, const std::string& precice_config_filename, bool verbose) : ChPreciceAdapter(), solver_time(0), solver_state(0) {
+TestAdapter::TestAdapter(const std::string& yaml_input, bool verbose) : ChPreciceAdapter(), solver_time(0), solver_state(0) {
     SetVerbose(verbose);
-
-    // Construct solver from the specified YAML input file
     ConstructSolver(yaml_input);
+}
 
-    // Register the solver with preCICE using the specified input file, rank 0, and size 1
-    RegisterSolver(precice_config_filename, 0, 1);
+void TestAdapter::InitializeParticipant() {
+    ChPreciceAdapter::InitializeParticipant();
 
     // Set a unique id for different instantiations of this adapter (to differentiate their behavior)
     id = (m_participant_name == "Solver1") ? 1 : 2;
@@ -78,11 +73,14 @@ TestAdapter::TestAdapter(const std::string& yaml_input, const std::string& preci
     // Check that the participant has the expected number of interfaces (1 mesh)
     auto mesh_names = GetMeshNames();
     ChAssertAlways(mesh_names.size() == 1);
+
+    // Get dimension of the one and only mesh
     mesh_name = mesh_names[0];
-    mesh_dim = GetMeshDimensions(mesh_name);
+    int mesh_dim = GetMeshDimensions(mesh_name);
 
     // Create a mock-up mesh for testing
-    num_vertices = 4;
+    int num_vertices = 4;
+    std::vector<double> vertices;
     switch (mesh_dim) {
         case 2: {
             cout << "Creating 2D mesh with " << num_vertices << " vertices" << endl;
@@ -104,10 +102,6 @@ TestAdapter::TestAdapter(const std::string& yaml_input, const std::string& preci
             cerr << "Error: [SetInterfaces] Unsupported mesh dimension: " << mesh_dim << endl;
             throw std::runtime_error("[SetInterfaces] Unsupported mesh dimension");
     }
-}
-
-void TestAdapter::InitializeParticipant() {
-    ChPreciceAdapter::InitializeParticipant();
 
     // Register the mesh in the adapter, given its vertices, and resize interface read/write data
     RegisterMesh(mesh_name, vertices);
@@ -207,7 +201,10 @@ int main(int argc, char* argv[]) {
 
     // Create the participant and register it with preCICE
     std::string precice_config_filename = GetChronoDataFile("precice/test/test.xml");
-    TestAdapter participant(input_filename, precice_config_filename, true);
+    TestAdapter participant(input_filename, true);
+
+    // Register solver with preCICE
+    participant.RegisterSolver(precice_config_filename);
 
     // Initialize simulation
     participant.InitializeSimulation();
