@@ -861,7 +861,7 @@ void ChVehicleCosimTerrainNodeGranularOMP::UpdateMeshProxy(unsigned int i, MeshS
 
     // Note: it is assumed that there is one and only one mesh defined!
     const auto& trimesh = m_geometry[i_shape]->coll_meshes[0].trimesh;
-    const auto& idx_verts = trimesh->GetIndicesVertexes();
+    const auto& idx_verts = trimesh->GetIndicesVertices();
     int nt = trimesh->GetNumTriangles();
 
     // shape_data contains all triangle vertex locations, in groups of three real3, one group for each triangle.
@@ -947,7 +947,7 @@ void ChVehicleCosimTerrainNodeGranularOMP::GetForceMeshProxy(unsigned int i, Mes
 
     // Note: it is assumed that there is one and only one mesh defined!
     const auto& trimesh = m_geometry[i_shape]->coll_meshes[0].trimesh;
-    const auto& idx_verts = trimesh->GetIndicesVertexes();
+    const auto& idx_verts = trimesh->GetIndicesVertices();
     int nt = trimesh->GetNumTriangles();
 
     // Maintain an unordered map of vertex indices and associated contact forces.
