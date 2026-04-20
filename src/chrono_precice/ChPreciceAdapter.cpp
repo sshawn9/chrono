@@ -413,13 +413,29 @@ void ChPreciceAdapter::InitializeParticipant() {
 }
 
 void ChPreciceAdapter::WriteData() {
-    if (m_verbose)
-        cout << m_prefix1 << "Write data" << endl;
+    std::string msg = m_prefix1 + "Write data\n";
+    for (auto& [mesh_name, mesh_info] : m_coupling_meshes) {
+        for (const auto& data_name : m_data_write[mesh_name]) {
+            auto data_dim = std::to_string(GetDataDimensions(mesh_name, data_name));
+            msg += m_prefix2 + mesh_name + ":" + data_name + " (" + data_dim + "," + GetDataTypeAsString(mesh_name, data_name) + ")\n";
+            WriteDataBlock(mesh_name, data_name, mesh_info.data[data_name].values);
+        }
+        if (m_verbose)
+            cout << msg;
+    }
 }
 
 void ChPreciceAdapter::ReadData() {
-    if (m_verbose)
-        cout << m_prefix1 << "Read data" << endl;
+    std::string msg = m_prefix1 + "Read data\n";
+    for (auto& [mesh_name, mesh_info] : m_coupling_meshes) {
+        for (const auto& data_name : m_data_read[mesh_name]) {
+            auto data_dim = std::to_string(GetDataDimensions(mesh_name, data_name));
+            msg += m_prefix2 + mesh_name + ":" + data_name + " (" + data_dim + "," + GetDataTypeAsString(mesh_name, data_name) + ")\n";
+            mesh_info.data[data_name].values = ReadDataBlock(mesh_name, data_name);
+        }
+        if (m_verbose)
+            cout << msg;
+    }
 }
 
 void ChPreciceAdapter::WriteCheckpoint(double time) {
@@ -455,9 +471,6 @@ void ChPreciceAdapter::SetDataBlock(const std::string& mesh_name, const std::str
 }
 
 void ChPreciceAdapter::WriteDataBlock(const std::string& mesh_name, const std::string& data_name) {
-    if (m_verbose)
-        cout << m_prefix2 << data_name << endl;
-
     const auto& vertex_ids = m_coupling_meshes[mesh_name].vertex_ids;
     const auto& data_info = m_coupling_meshes[mesh_name].data[data_name];
     m_participant->writeData(mesh_name, data_name, vertex_ids, data_info.values);
@@ -469,9 +482,6 @@ void ChPreciceAdapter::WriteDataBlock(const std::string& mesh_name, const std::s
 }
 
 void ChPreciceAdapter::ReadDataBlock(const std::string& mesh_name, const std::string& data_name, double relative_read_time) {
-    if (m_verbose)
-        cout << m_prefix2 << data_name << endl;
-
     const auto& vertex_ids = m_coupling_meshes[mesh_name].vertex_ids;
     auto& data_info = m_coupling_meshes[mesh_name].data[data_name];
     m_participant->readData(mesh_name, data_name, vertex_ids, relative_read_time, data_info.values);

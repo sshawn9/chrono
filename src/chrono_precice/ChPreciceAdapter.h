@@ -249,11 +249,10 @@ class ChApiPrecice ChPreciceAdapter {
 
     /// Read data from other solvers.
     /// A derived class must:
-    /// - call ReadDataBlock() for all its interfaces,
-    /// - obtain the read data with calls to GetDataBlock(), and
-    /// - perform any necessary processing on the received data.
-    /// A convenience version of ReadDataBlock() that combines the first 2 steps for a given read interface (mesh/data name pair) is available.
-    virtual void ReadData();
+    /// - call the base class implementation to receive data from preCICE
+    /// - perform any necessary processing of the data now stored in m_coupling_meshes
+    /// - only access data from entries with names in m_data_read
+    virtual void ReadData() = 0;
 
     /// Let the derived class implement the actual computation of the solver time step based on the maximum time step provided by preCICE.
     /// The default implementation simply returns the maximum time step provided by preCICE, but derived classes can override this to implement custom time-stepping logic.
@@ -264,11 +263,10 @@ class ChApiPrecice ChPreciceAdapter {
 
     /// Write data for other solvers.
     /// A derived class must:
-    /// - prepare the data to be sent,
-    /// - set the data for all its interfaces with calls to SetDataBlock(), and
-    /// - finally call WriteDataBlock().
-    /// A convenience version of WriteDataBlock() that combines the last 2 steps for a given write interface (mesh/data name pair) is available.
-    virtual void WriteData();
+    /// - prepare the data to be sent and load it in m_coupling_meshes
+    /// - only access data from entries with names in m_data_write
+    /// - call the base class implementation to send data to preCICE
+    virtual void WriteData() = 0;
 
     /// Let the derived class perform any necessary operations during simulation shutdown.
     /// This function is called before the preCICE coupling is finalized.

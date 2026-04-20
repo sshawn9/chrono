@@ -126,21 +126,6 @@ void TestAdapter::ReadCheckpoint(double time) {
 
 void TestAdapter::ReadData() {
     ChPreciceAdapter::ReadData();
-
-    for (const auto& data_name : GetReadDataNamesOnMesh(mesh_name)) {
-        auto data_dim = GetDataDimensions(mesh_name, data_name);
-        switch (data_dim) {
-            case 1:
-                ReadDataBlock(mesh_name, data_name, 0);
-                break;
-            case 3:
-                ReadDataBlock(mesh_name, data_name, 0);
-                break;
-            default:
-                cerr << "Error: [ReadData] Unsupported data dimension: " << data_dim << endl;
-                throw std::runtime_error("[ReadData] Unsupported mesh dimension");
-        }
-    }
 }
 
 double TestAdapter::GetSolverTimeStep(double max_time_step) const {
@@ -161,22 +146,27 @@ void TestAdapter::AdvanceParticipant(double time, double time_step) {
 }
 
 void TestAdapter::WriteData() {
-    ChPreciceAdapter::WriteData();
+    for (auto& [mesh_name, mesh_info] : m_coupling_meshes) {
+        for (const auto& data_name : m_data_write[mesh_name]) {
+            auto data_dim = GetDataDimensions(mesh_name, data_name);
+            switch (data_dim) {
+                case 1:
+                    mesh_info.data[data_name].values = solver_scalar_output;
+                    break;
+                case 3:
+                    mesh_info.data[data_name].values = solver_vector_output;
+                    break;
+                default:
+                    cerr << "Error: [WriteData] Unsupported data dimension: " << data_dim << endl;
+                    throw std::runtime_error("[WriteData] Unsupported mesh dimension");
+            }
 
-    for (const auto& data_name : GetWriteDataNamesOnMesh(mesh_name)) {
-        auto data_dim = GetDataDimensions(mesh_name, data_name);
-        switch (data_dim) {
-            case 1:
-                WriteDataBlock(mesh_name, data_name, solver_scalar_output);
-                break;
-            case 3:
-                WriteDataBlock(mesh_name, data_name, solver_vector_output);
-                break;
-            default:
-                cerr << "Error: [WriteData] Unsupported data dimension: " << data_dim << endl;
-                throw std::runtime_error("[WriteData] Unsupported mesh dimension");
+
+            auto& data_info = mesh_info.data[data_name];
         }
     }
+
+    ChPreciceAdapter::WriteData();
 }
 
 // -----------------------------------------------------------------------------
