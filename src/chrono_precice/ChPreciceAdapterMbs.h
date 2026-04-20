@@ -46,7 +46,7 @@ namespace ch_precice {
 /// preCICE adapter for Chrono MBS simulation.
 class ChApiPrecice ChPreciceAdapterMbs : public ChPreciceAdapter {
   public:
-    ChPreciceAdapterMbs(ChSystem& sys, double time_step, bool verbose = false);
+    ChPreciceAdapterMbs(std::shared_ptr<ChSystem> sys, double time_step, bool verbose = false);
 #if defined(CHRONO_PARSERS) && defined(CHRONO_HAS_YAML)
     ChPreciceAdapterMbs(const std::string& input_filename, bool verbose = false);
 #endif
@@ -60,6 +60,8 @@ class ChApiPrecice ChPreciceAdapterMbs : public ChPreciceAdapter {
                              const ChVector3d& camera_target,    ///< initial camera look-at point
                              bool enable_shadows                 ///< enable dynamic shadows
     );
+
+    void AddCouplingBody(std::shared_ptr<ChBodyAuxRef> body);
 
     virtual void InitializeParticipant() override;
     virtual void WriteCheckpoint(double time) override;
@@ -76,17 +78,23 @@ class ChApiPrecice ChPreciceAdapterMbs : public ChPreciceAdapter {
         ChStateDelta v;
     };
 
+    struct CouplingBody {
+        int index;
+        std::shared_ptr<ChBodyAuxRef> body;
+        unsigned int accumulator_index;
+    };
+
     void ReadBodyRefData(const std::string& mesh_name, const MeshInfo& mesh_info);
     void WriteBodyRefData(const std::string& mesh_name, MeshInfo& mesh_info);
 
-    ChSystem* m_sys;
+    std::shared_ptr<ChSystem> m_sys;
     double m_time_step;
 
     // System checkpoint data
     Checkpoint m_checkpoint;
 
     // Chrono physics items in coupling interface
-    std::vector<std::shared_ptr<ChBodyAuxRef>> m_bodies;
+    std::vector<std::shared_ptr<CouplingBody>> m_coupling_bodies;
 
     // Run-time visualization
     struct VisParams {

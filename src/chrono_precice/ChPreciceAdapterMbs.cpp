@@ -25,18 +25,8 @@ using std::endl;
 namespace chrono {
 namespace ch_precice {
 
-ChPreciceAdapterMbs::ChPreciceAdapterMbs(ChSystem& sys, double time_step, bool verbose) : m_sys(&sys), m_time_step(time_step) {
-    ChAssertAlways(m_sys->IsInitialized());
-
+ChPreciceAdapterMbs::ChPreciceAdapterMbs(std::shared_ptr<ChSystem> sys, double time_step, bool verbose) : m_sys(sys), m_time_step(time_step) {
     SetVerbose(verbose);
-
-    // Allocate space for checkpoint
-    m_sys->Setup();
-    auto np = m_sys->GetNumCoordsPosLevel();
-    auto nv = m_sys->GetNumCoordsVelLevel();
-    m_checkpoint.time = m_sys->GetChTime();
-    m_checkpoint.x.setZero(np, m_sys);
-    m_checkpoint.v.setZero(nv, m_sys);
 }
 
 #if defined(CHRONO_PARSERS) && defined(CHRONO_HAS_YAML)
@@ -45,9 +35,9 @@ ChPreciceAdapterMbs::ChPreciceAdapterMbs(const std::string& input_filename, bool
 
     // Create the MBS from the YAML specification file
     parsers::ChParserMbsYAML parser(input_filename, verbose);
-    auto sys = parser.CreateSystem();
-    parser.Populate(*sys);
-    m_sys = sys.get();
+    m_sys = parser.CreateSystem();
+    m_time_step = parser.GetTimestep();
+    parser.Populate(*m_sys);
 
     // Extract information from parsed YAML files
     m_vis.render = parser.Render();
@@ -74,7 +64,7 @@ ChPreciceAdapterMbs::ChPreciceAdapterMbs(const std::string& input_filename, bool
             auto body_name = bodies[i]["name"].as<std::string>();
             auto body = parser.FindBodyByName(body_name);
             if (body) {
-                m_bodies.push_back(body);
+                AddCouplingBody(body);
             } else {
                 cerr << "No body named '" << body_name << "' was found in the MBS" << endl;
                 throw std::runtime_error("Interface body not present in MBS");
@@ -96,6 +86,14 @@ ChPreciceAdapterMbs::ChPreciceAdapterMbs(const std::string& input_filename, bool
 #endif
 
 ChPreciceAdapterMbs::~ChPreciceAdapterMbs() {}
+
+void ChPreciceAdapterMbs::AddCouplingBody(std::shared_ptr<ChBodyAuxRef> body) {
+    auto c_body = chrono_types::make_shared<CouplingBody>();
+    c_body->index = (int)m_coupling_bodies.size();
+    c_body->body = body;
+    c_body->accumulator_index = body->AddAccumulator();
+    m_coupling_bodies.push_back(c_body);
+}
 
 // -----------------------------------------------------------------------------
 
@@ -125,9 +123,6 @@ bool ChPreciceAdapterMbs::EnableVisualization(double render_fps,
 void ChPreciceAdapterMbs::InitializeParticipant() {
     ChPreciceAdapter::InitializeParticipant();
 
-    // Set number of Chrono physics items in the coupling interfaces
-    //// TODO - set this from specified FSI data
-
     // Go through all interface meshes and
     // - check that coupling meshes have dimension 3 (as reported by preCICE)
     // - check that coupling data have dimension 3 (as reported by preCICE)
@@ -139,13 +134,16 @@ void ChPreciceAdapterMbs::InitializeParticipant() {
         for (const auto& data_name : GetReadDataNamesOnMesh(mesh_name)) {
             ChAssertAlways(GetDataDimensions(mesh_name, data_name) == 3);
         }
+        for (const auto& data_name : GetWriteDataNamesOnMesh(mesh_name)) {
+            ChAssertAlways(GetDataDimensions(mesh_name, data_name) == 3);
+        }
 
         std::vector<ChVector3d> vertices;
         auto& mesh_info = m_coupling_meshes[mesh_name];
         switch (mesh_info.type) {
             case MeshType::RIGID_BODY_REF_POINTS: {
-                for (const auto& body : m_bodies)
-                    vertices.push_back(body->GetPos());
+                for (const auto& c_body : m_coupling_bodies)
+                    vertices.push_back(c_body->body->GetFrameRefToAbs().GetPos());
                 break;
             }
             case MeshType::RIGID_BODY_MESH_POINTS: {
@@ -166,11 +164,19 @@ void ChPreciceAdapterMbs::InitializeParticipant() {
         RegisterMesh(mesh_name, vertices);
     }
 
+    // Allocate space for checkpoint
+    m_sys->Setup();
+    auto np = m_sys->GetNumCoordsPosLevel();
+    auto nv = m_sys->GetNumCoordsVelLevel();
+    m_checkpoint.time = m_sys->GetChTime();
+    m_checkpoint.x.setZero(np, m_sys.get());
+    m_checkpoint.v.setZero(nv, m_sys.get());
+
 #ifdef CHRONO_VSG
     // Enable runtime visualization
     if (m_vis.render) {
         m_vsg = chrono_types::make_shared<vsg3d::ChVisualSystemVSG>();
-        m_vsg->AttachSystem(m_sys);
+        m_vsg->AttachSystem(m_sys.get());
         m_vsg->SetWindowTitle("Chrono preCICE MBS participant - " + m_participant_name);
         m_vsg->AddCamera(m_vis.camera_location, m_vis.camera_target);
         m_vsg->SetWindowSize(1280, 800);
@@ -203,6 +209,10 @@ void ChPreciceAdapterMbs::ReadCheckpoint(double time) {
 
 void ChPreciceAdapterMbs::ReadData() {
     ChPreciceAdapter::ReadData();
+
+    for (auto& c_body : m_coupling_bodies) {
+        c_body->body->EmptyAccumulator(c_body->accumulator_index);
+    }
 
     for (const auto& [mesh_name, mesh_info] : m_coupling_meshes) {
         switch (mesh_info.type) {
@@ -243,8 +253,6 @@ void ChPreciceAdapterMbs::AdvanceParticipant(double time, double time_step) {
 }
 
 void ChPreciceAdapterMbs::WriteData() {
-    ChPreciceAdapter::WriteData();
-
     for (auto& [mesh_name, mesh_info] : m_coupling_meshes) {
         switch (mesh_info.type) {
             case MeshType::RIGID_BODY_REF_POINTS:
@@ -261,6 +269,8 @@ void ChPreciceAdapterMbs::WriteData() {
                 break;
         }
     }
+
+    ChPreciceAdapter::WriteData();
 }
 
 // -----------------------------------------------------------------------------
@@ -272,22 +282,30 @@ void ChPreciceAdapterMbs::ReadBodyRefData(const std::string& mesh_name, const Me
         const auto& data_values = data_info.values;
         switch (data_type) {
             case DataType::FORCES:
-                for (int i = 0; i < m_bodies.size(); i++) {
+                assert(data_values.size() == 3 * m_coupling_bodies.size());
+                for (size_t i = 0; i < m_coupling_bodies.size(); i++) {
+                    auto& c_body = m_coupling_bodies[i];
                     ChVector3d force;
                     force.x() = data_values[3 * i + 0];
                     force.x() = data_values[3 * i + 1];
                     force.x() = data_values[3 * i + 2];
+                    c_body->body->AccumulateForce(c_body->accumulator_index, force, c_body->body->GetFrameRefToAbs().GetPos(), false);
+                    if (m_verbose)
+                        cout << m_prefix2 << "body: " << c_body->body->GetName() << " | force:  " << force << endl;
                 }
-                //// TODO -- apply force
                 break;
             case DataType::TORQUES:
-                for (int i = 0; i < m_bodies.size(); i++) {
+                assert(data_values.size() == 3 * m_coupling_bodies.size());
+                for (size_t i = 0; i < m_coupling_bodies.size(); i++) {
+                    auto& c_body = m_coupling_bodies[i];
                     ChVector3d torque;
                     torque.x() = data_values[3 * i + 0];
                     torque.x() = data_values[3 * i + 1];
                     torque.x() = data_values[3 * i + 2];
+                    c_body->body->AccumulateTorque(c_body->accumulator_index, torque, false);
+                    if (m_verbose)
+                        cout << m_prefix2 << "body: " << c_body->body->GetName() << " | torque: " << torque << endl;
                 }
-                //// TODO -- apply torque
                 break;
             default:
                 throw std::runtime_error("Invalid read data type for MBS");
@@ -300,24 +318,29 @@ void ChPreciceAdapterMbs::WriteBodyRefData(const std::string& mesh_name, MeshInf
         auto& data_info = mesh_info.data[data_name];
         auto data_type = data_info.type;
         auto& data_values = data_info.values;
-        if (m_verbose) {
-            cout << m_prefix2 << "'" << data_name << "' (" << GetDataDimensions(mesh_name, data_name) << "," << GetDataTypeAsString(mesh_name, data_name) << ")" << endl;
-        }
         switch (data_type) {
             case DataType::POSITIONS:
-                for (int i = 0; i < m_bodies.size(); i++) {
-                    const auto& pos = m_bodies[i]->GetFrameRefToAbs().GetPos();
+                assert(data_values.size() == 3 * m_coupling_bodies.size());
+                for (size_t i = 0; i < m_coupling_bodies.size(); i++) {
+                    auto& c_body = m_coupling_bodies[i];
+                    const auto& pos = c_body->body->GetFrameRefToAbs().GetPos();
                     data_values[3 * i + 0] = pos.x();
                     data_values[3 * i + 1] = pos.y();
                     data_values[3 * i + 2] = pos.z();
+                    if (m_verbose)
+                        cout << m_prefix2 << "body: " << c_body->body->GetName() << " | pos:  " << pos << endl;
                 }
                 break;
             case DataType::VELOCITIES:
-                for (int i = 0; i < m_bodies.size(); i++) {
-                    const auto& vel = m_bodies[i]->GetFrameRefToAbs().GetPosDt();
+                assert(data_values.size() == 3 * m_coupling_bodies.size());
+                for (size_t i = 0; i < m_coupling_bodies.size(); i++) {
+                    auto& c_body = m_coupling_bodies[i];
+                    const auto& vel = c_body->body->GetFrameRefToAbs().GetPosDt();
                     data_values[3 * i + 0] = vel.x();
                     data_values[3 * i + 1] = vel.y();
                     data_values[3 * i + 2] = vel.z();
+                    if (m_verbose)
+                        cout << m_prefix2 << "body: " << c_body->body->GetName() << " | vel:  " << vel << endl;
                 }
                 break;
             default:
