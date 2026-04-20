@@ -201,20 +201,20 @@ void ChLinkMotorRotationDriveline::IntLoadLumpedMass_Md(const unsigned int off, 
 }
 
 void ChLinkMotorRotationDriveline::IntLoadResidual_CqL(const unsigned int off_L, ChVectorDynamic<>& R, const ChVectorDynamic<>& L, const double c) {
-void ChLinkMotorRotationDriveline::IntLoadIndicator(const unsigned int off,
-                                                        ChVectorDynamic<>& N) {
-    // First, inherit to parent class
-    ChLinkMotorRotation::IntLoadIndicator(off, N);
-
-    innershaft1->IntLoadIndicator(off + 0, N);
-    innershaft2->IntLoadIndicator(off + 1, N);
-}
     // First, inherit to parent class
     ChLinkMotorRotation::IntLoadResidual_CqL(off_L, R, L, c);
 
     unsigned int nc = mask.GetNumConstraints();
     innerconstraint1->IntLoadResidual_CqL(off_L + nc + 0, R, L, c);
     innerconstraint2->IntLoadResidual_CqL(off_L + nc + 1, R, L, c);
+}
+
+void ChLinkMotorRotationDriveline::IntLoadIndicator(const unsigned int off, ChVectorDynamic<>& N) {
+    // First, inherit to parent class
+    ChLinkMotorRotation::IntLoadIndicator(off, N);
+
+    innershaft1->IntLoadIndicator(off + 0, N);
+    innershaft2->IntLoadIndicator(off + 1, N);
 }
 
 void ChLinkMotorRotationDriveline::IntLoadConstraint_C(const unsigned int off_L, ChVectorDynamic<>& Qc, const double c, const double c_vel, bool do_clamp, double recovery_clamp) {

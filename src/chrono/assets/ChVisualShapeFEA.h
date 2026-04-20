@@ -179,6 +179,13 @@ class ChApi ChVisualShapeFEA {
     /// Update the triangle visualization mesh so that it matches with the FEM mesh.
     void Update(ChObj* updater, const ChFrame<>& frame);
 
+    // SERIALIZATION
+    virtual void ArchiveOut(ChArchiveOut& archive_out);
+    virtual void ArchiveIn(ChArchiveIn& archive_in);
+    void SetTag(int tag) { m_tag = tag; }
+    int GetTag() const { return m_tag; }
+    int m_tag = -1;
+
   private:
     double ComputeScalarOutput(std::shared_ptr<fea::ChNodeFEAxyz> node,
                                std::shared_ptr<fea::ChElementBase> element) const;

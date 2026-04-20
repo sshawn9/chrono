@@ -53,6 +53,10 @@ public:
     virtual bool IsFixed() const override { return false; }
     virtual unsigned int GetNumCoordsPosLevel() const override { return 0; }
 
+    /// Get a symbolic 'center' of the node (the position).
+    /// ***TO DO*** now reference position, but may be better displaced pos if there is a ChFieldDisplacement...
+    virtual ChVector3d GetCenter() const override { return *this; }
+
     // SERIALIZATION
 
     /// Method to allow serialization of transient data to archives.

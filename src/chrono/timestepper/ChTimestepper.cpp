@@ -18,9 +18,9 @@
 
 namespace chrono {
 
-CH_UPCASTING(ChTimestepperIorder, ChTimestepper)
-CH_UPCASTING(ChTimestepperIIorder, ChTimestepper)
-CH_UPCASTING(ChImplicitIterativeTimestepper, ChImplicitTimestepper)
+//CH_UPCASTING(ChTimestepperIorder, ChTimestepper)
+//CH_UPCASTING(ChTimestepperIIorder, ChTimestepper)
+//CH_UPCASTING(ChImplicitIterativeTimestepper, ChImplicitTimestepper)
 
 // -----------------------------------------------------------------------------
 
