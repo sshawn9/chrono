@@ -86,14 +86,25 @@ ChVector3d ChChassis::GetDriverPos() const {
     return m_body->GetFrameRefToAbs().TransformPointLocalToParent(GetLocalDriverCoordsys().pos);
 }
 
-// Return the speed measured at the origin of the chassis reference frame.
+// Return the velocity of the origin of the chassis frame
+// Same as GetPointVelocity(VNULL)
+const ChVector3d& ChChassis::GetLinearVelocity() const {
+    return m_body->GetFrameRefToAbs().GetPosDt();
+}
+
+// Return the angular velocity of the chassis reference frame
+ChVector3d ChChassis::GetAngularVelocity() const {
+    return m_body->GetFrameRefToAbs().GetAngVelLocal();
+}
+
+// Return the speed measured at the origin of the chassis reference frame
 double ChChassis::GetSpeed() const {
     const auto& x_dir = m_body->GetRotMat().GetAxisX();
     const auto& vel = m_body->GetFrameRefToAbs().GetPosDt();
     return Vdot(vel, x_dir);
 }
 
-// Return the speed measured at the chassis center of mass.
+// Return the speed measured at the chassis center of mass
 double ChChassis::GetCOMSpeed() const {
     const auto& x_dir = m_body->GetRotMat().GetAxisX();
     const auto& vel = m_body->GetPosDt();

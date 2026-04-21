@@ -72,6 +72,12 @@ class CH_VEHICLE_API ChChassis : public ChPart {
     /// Get the global location of the driver.
     ChVector3d GetDriverPos() const;
 
+    /// Get the linear velocity of the origin of chassis reference frame, expressed in the global frame.
+    const ChVector3d& GetLinearVelocity() const;
+
+    /// Return the angular velocity of the chassis reference frame, expressed in the chassis reference frame.
+    ChVector3d GetAngularVelocity() const;
+
     /// Get the vehicle speed.
     /// Return the speed measured at the origin of the chassis reference frame.
     double GetSpeed() const;

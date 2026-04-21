@@ -148,6 +148,14 @@ class CH_VEHICLE_API ChVehicle {
     /// horizontal) terrains. In the ISO frame convention, a positive pitch angle corresponds to the vehicle front
     /// dipping below the terrain plane.
     double GetPitch(const ChTerrain& terrain) const;
+   
+    /// Get the vehicle linear velocity.
+    /// This is the velocity of the origin of chassis reference frame, expressed in the global frame.
+    const ChVector3d& GetLinearVelocity() const { return m_chassis->GetLinearVelocity(); }
+
+    /// Get the vehicle angular velocity.
+    /// This is the angular velocity of the chassis reference frame, expressed in the chassis reference frame.
+    ChVector3d GetAngularVelocity() const { return m_chassis->GetAngularVelocity(); }
 
     /// Get the vehicle speed (velocity component in the vehicle forward direction).
     /// Return the speed measured at the origin of the main chassis reference frame.
