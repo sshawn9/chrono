@@ -1,68 +1,69 @@
 #--------------------------------------------------------------
 
-# List of demos with no additional dependencies 
+# Add demos that do have no other dependencies
 set(MULTIDOMAIN_DEMOS
-    demo_MDOM_MPI_intro_master
-    demo_MDOM_MPI_intro_lowlevel
-    demo_MDOM_MPI_explicit
-    demo_MDOM_MPI_fea
-    demo_MDOM_MPI_grid
-	)
+)
 
-# List of demos requiring the Chrono::Irrlicht module
-set(MULTIDOMAIN_DEMOS_IRR
-    demo_MDOM_OMP_intro_master
-    demo_MDOM_OMP_intro_lowlevel
-    demo_MDOM_OMP_fea
-	)
+# Add demos that require postprocess
+if(CH_ENABLE_MODULE_POSTPROCESS)
+    set(MULTIDOMAIN_DEMOS ${MULTIDOMAIN_DEMOS}
+        demo_MDOM_MPI_intro_master
+        demo_MDOM_MPI_intro_lowlevel
+        demo_MDOM_MPI_explicit
+        demo_MDOM_MPI_fea
+        demo_MDOM_MPI_grid
+    )
+endif()
+
+# Add demos that require irrlicht 
+if(CH_ENABLE_MODULE_IRRLICHT)
+    set(MULTIDOMAIN_DEMOS ${MULTIDOMAIN_DEMOS}
+        demo_MDOM_OMP_intro_master
+        demo_MDOM_OMP_intro_lowlevel
+        demo_MDOM_OMP_fea
+    )
+endif()
+
 
 #--------------------------------------------------------------
 
-message(STATUS "Demo programs for MULTIDOMAIN module...")
+# Set include paths, compiler & linker flags, and libraries
+list(APPEND LIBS Chrono_core)
+list(APPEND LIBS Chrono_multidomain)
+
+if(CH_ENABLE_MODULE_IRRLICHT)
+  list(APPEND LIBS "Chrono_irrlicht")
+endif()
+
+if(CH_ENABLE_MODULE_POSTPROCESS)
+  list(APPEND LIBS "Chrono_postprocess")
+endif()
+
+#--------------------------------------------------------------
+
+message(STATUS "Add demo programs for MULTIDOMAIN module")
 
 foreach(PROGRAM ${MULTIDOMAIN_DEMOS})
-    message(STATUS "...add ${PROGRAM}")
+  # message(STATUS "...add ${PROGRAM}")
 
-    add_executable(${PROGRAM}  "${PROGRAM}.cpp")
-    source_group(""  FILES  "${PROGRAM}.cpp")
-    
-    set_target_properties(${PROGRAM} PROPERTIES 
-        FOLDER demos
-        COMPILE_FLAGS "${CH_CXX_FLAGS}"
-        LINK_FLAGS "${CH_LINKERFLAG_EXE}")
-    set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")    
-    target_link_libraries(${PROGRAM} 
-		ChronoEngine 
-		ChronoEngine_postprocess
-        ChronoEngine_multidomain)
-    add_dependencies(${PROGRAM} ChronoEngine ChronoEngine_postprocess ChronoEngine_multidomain)
+  add_executable(${PROGRAM}  "${PROGRAM}.cpp")
+  source_group(""  FILES  "${PROGRAM}.cpp")
 
-    install(TARGETS ${PROGRAM} DESTINATION ${CH_INSTALL_DEMO})
+  set_target_properties(${PROGRAM} PROPERTIES FOLDER demos)
+  if(APPLE)
+    set_target_properties(${PROGRAM} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${MACOSX_BUNDLE_INFO_PLIST})
+  endif()
+  if(MSVC)
+    set_target_properties(${PROGRAM} PROPERTIES MSVC_RUNTIME_LIBRARY ${CH_MSVC_RUNTIME_LIBRARY})
+  endif()
+  set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
+  target_link_libraries(${PROGRAM} ${LIBS})  
+
+  install(TARGETS ${PROGRAM} CONFIGURATIONS Release CONFIGURATIONS Release DESTINATION ${CH_INSTALL_DEMO})
 endforeach()
 
-if(ENABLE_MODULE_IRRLICHT)
 
-    include_directories(${CH_IRRLICHT_INCLUDES})
 
-    foreach(PROGRAM ${MULTIDOMAIN_DEMOS_IRR})
-        message(STATUS "...add ${PROGRAM}")
 
-        add_executable(${PROGRAM}  "${PROGRAM}.cpp")
-        source_group(""  FILES  "${PROGRAM}.cpp")
-        set_target_properties(${PROGRAM} PROPERTIES 
-            FOLDER demos
-            COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
-            LINK_FLAGS "${CH_LINKERFLAG_EXE}")
-        set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
-        target_link_libraries(${PROGRAM} 
-        	ChronoEngine
-            ChronoEngine_multidomain
-            ChronoEngine_irrlicht)
-        add_dependencies(${PROGRAM} ChronoEngine ChronoEngine_multidomain ChronoEngine_irrlicht)
-
-        install(TARGETS ${PROGRAM} DESTINATION ${CH_INSTALL_DEMO})
-    endforeach()
-
-endif()
 
 

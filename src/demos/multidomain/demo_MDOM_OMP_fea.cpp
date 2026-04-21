@@ -114,8 +114,8 @@ int main(int argc, char* argv[]) {
                                         0       // rank of this domain 
                                        ));
     // Set the time stepper: we have FEA, use an explicit time stepper. 
-    auto explicit_timestepper0 = chrono_types::make_shared<ChTimestepperEulerExplIIorder>(&sys_0);
-    explicit_timestepper0->SetConstraintsAsPenaltyON(2e6); // use penalty for constraints, skip linear systems completely
+    auto explicit_timestepper0 = chrono_types::make_shared<ChTimestepperEulerExplicitIIorder>(&sys_0);
+    explicit_timestepper0->SetDiagonalLumpingON(2e6);  // use penalty for constraints, skip linear systems completely
     sys_0.SetTimestepper(explicit_timestepper0);
     // Set the solver: efficient ChSolverLumpedMultidomain (needs explicit timestepper with constraint penalty)
     auto lumped_solver0 = chrono_types::make_shared<ChSolverLumpedMultidomain>();
@@ -129,8 +129,8 @@ int main(int argc, char* argv[]) {
                                         1       // rank of this domain 
                                        ));
     // Set the time stepper: we have FEA, use an explicit time stepper.
-    auto explicit_timestepper1 = chrono_types::make_shared<ChTimestepperEulerExplIIorder>(&sys_1);
-    explicit_timestepper1->SetConstraintsAsPenaltyON(2e6); // use penalty for constraints, skip linear systems completely
+    auto explicit_timestepper1 = chrono_types::make_shared<ChTimestepperEulerExplicitIIorder>(&sys_1);
+    explicit_timestepper1->SetDiagonalLumpingON(2e6); // use penalty for constraints, skip linear systems completely
     sys_1.SetTimestepper(explicit_timestepper1);
     // Set the solver: efficient ChSolverLumpedMultidomain (needs explicit timestepper with constraint penalty)
     auto lumped_solver1 = chrono_types::make_shared<ChSolverLumpedMultidomain>();

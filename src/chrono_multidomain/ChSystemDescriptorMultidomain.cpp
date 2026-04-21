@@ -13,8 +13,6 @@
 // =============================================================================
 
 
-#include "chrono/solver/ChConstraintTwoTuplesContactN.h"
-#include "chrono/solver/ChConstraintTwoTuplesFrictionT.h"
 #include "chrono/core/ChMatrix.h"
 #include "chrono/serialization/ChArchiveJSON.h"
 #include "chrono/serialization/ChArchiveXML.h"

@@ -639,7 +639,7 @@ void example5(const std::string& out_dir) {
                 this->StateScatter(x, v, T, update_flags);
 
             if (!Qc.size()) {
-                // User has enabled SetConstraintsAsPenaltyON(), do not use constraint jacobians
+                // User has enabled SetDiagonalLumpingON(), do not use constraint jacobians
                 // and moreover use lumped mass matrix
                 ChVectorDynamic<> b_(2);
                 b_(0) = R(0);

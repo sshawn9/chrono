@@ -33,7 +33,7 @@ void ChTimestepperExplicit::SetDiagonalLumpingON(double Ck, double Cr) {
     lumping_parameters = new ChLumpingParms(Ck, Cr);
 }
 
-void ChTimestepperExplicit::SetDiagonalLumpingOFF() {
+void ChTimestepperExplicit::SetConstraintsAsPenaltyOFF() {
     if (lumping_parameters)
         delete (lumping_parameters);
 }

@@ -27,16 +27,18 @@ CH_UPCASTING(ChSolverBBmultidomain, ChIterativeSolverVI)
 ChSolverBBmultidomain::ChSolverBBmultidomain() : n_armijo(10), max_armijo_backtrace(3), lastgoodres(1e30) {}
 
 double ChSolverBBmultidomain::Solve(ChSystemDescriptor& sysd) {
+    
+    if (!sysd.SupportsSchurComplement()) {
+        std::cerr << "\n\nChSolverBB: Can NOT use Barzilai-Borwein solver if\n"
+                  << " - there are stiffness or damping matrices, or\n "
+                  << " - no inverse mass matrix was provided" << std::endl;
+        throw std::runtime_error("ChSolverBB: System descriptor does not support Schur complement-based solvers.");
+    }
+
     std::vector<ChConstraint*>& mconstraints = sysd.GetConstraints();
     std::vector<ChVariables*>& mvariables = sysd.GetVariables();
 
     ChSystemDescriptorMultidomain& descriptor = dynamic_cast<ChSystemDescriptorMultidomain&>(sysd);
-
-    if (sysd.GetKRMBlocks().size() > 0) {
-        std::cerr << "\n\nChSolverBB: Can NOT use Barzilai-Borwein solver if there are stiffness matrices."
-                  << std::endl;
-        throw std::runtime_error("ChSolverBB: Do NOT use Barzilai-Borwein solver if there are stiffness matrices.");
-    }
     
     // MULTIDOMAIN******************
     // This Wv could be needed for the globalVdot() operations at global level.
@@ -83,7 +85,7 @@ double ChSolverBBmultidomain::Solve(ChSystemDescriptor& sysd) {
     // Update auxiliary data in all constraints before starting,
     // that is: g_i=[Cq_i]*[invM_i]*[Cq_i]' and  [Eq_i]=[invM_i]*[Cq_i]'
     for (unsigned int ic = 0; ic < mconstraints.size(); ic++)
-        mconstraints[ic]->Update_auxiliary();
+        mconstraints[ic]->UpdateAuxiliary();
 
     // Average all g_i for the triplet of contact constraints n,u,v.
     //  Can be used for the fixed point phase and/or by preconditioner.

@@ -38,7 +38,7 @@ class ChApi ChTimestepperExplicit : public ChTimestepper {
     void SetDiagonalLumpingON(double Ck = 1000, double Cr = 0);
 
     /// Turn off the diagonal lumping (default is off)
-    void SetDiagonalLumpingOFF();
+    void SetConstraintsAsPenaltyOFF();
 
     /// Gets the diagonal lumping error done last time the integrator has been called
     double GetLumpingError();
