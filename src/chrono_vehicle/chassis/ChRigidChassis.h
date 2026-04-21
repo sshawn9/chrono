@@ -21,8 +21,10 @@
 
 #include <vector>
 
-#include "chrono_vehicle/ChChassis.h"
 #include "chrono/assets/ChColor.h"
+#include "chrono/utils/ChBodyGeometry.h"
+
+#include "chrono_vehicle/ChChassis.h"
 
 namespace chrono {
 namespace vehicle {
@@ -57,6 +59,11 @@ class CH_VEHICLE_API ChRigidChassis : public ChChassis {
     /// Get the name of the Wavefront file with chassis visualization mesh.
     /// An empty string is returned if no mesh was specified.
     const std::string& GetMeshFilename() const { return m_geometry.vis_model_file; }
+
+    /// Set collision geometry.
+    /// This function can be used to overwrite the current collision geometry and must be called before vehicle initialization.
+    /// Only the collision-related quantities from the provided ChBodyGeometry object are used. 
+    void SetCollisionGeometry(const utils::ChBodyGeometry& geometry);
 
     /// Initialize the rigid chassis at the specified global position and orientation.
     virtual void OnInitialize(ChVehicle* vehicle,              ///< [in] containing vehicle
