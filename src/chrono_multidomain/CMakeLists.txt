@@ -4,20 +4,20 @@
 # Cannot be used stand-alone (it's loaded by CMake config. file in parent dir.)
 #=============================================================================
 
-option(ENABLE_MODULE_MULTIDOMAIN "Enable the Chrono MultiDomain module" OFF)
+option(CH_ENABLE_MODULE_MULTIDOMAIN "Enable the Chrono MultiDomain module" OFF)
 
 # Return now if this module is not enabled
-IF(NOT ENABLE_MODULE_MULTIDOMAIN)
-	RETURN()
+IF(NOT CH_ENABLE_MODULE_MULTIDOMAIN)
+	return()
 ENDIF()
 
-MESSAGE(STATUS "\n==== Chrono MultiDomain module ====\n")
+message(STATUS "\n==== Chrono MultiDomain module ====\n")
 
 # Return now if MPI is not available
 
 if(NOT MPI_FOUND)
 	message("Chrono::Multidomain requires MPI, but MPI not found. Disabling Chrono::Multidomain")
-	set(ENABLE_MODULE_MULTIDOMAIN OFF CACHE BOOL "Enable the Multidomain module" FORCE)
+	set(CH_ENABLE_MODULE_MULTIDOMAIN OFF CACHE BOOL "Enable the Multidomain module" FORCE)
 	return()
 endif()
 
@@ -26,7 +26,7 @@ endif()
 
 
 
-SET(ChronoEngine_MULTIDOMAIN_SOURCES 
+set(Chrono_MULTIDOMAIN_SOURCES 
     ChDomain.cpp
     ChDomainBuilder.cpp
     ChDomainManager.cpp
@@ -39,7 +39,7 @@ SET(ChronoEngine_MULTIDOMAIN_SOURCES
     ChMpi.cpp
 )
 
-SET(ChronoEngine_MULTIDOMAIN_HEADERS
+set(Chrono_MULTIDOMAIN_HEADERS
     ChApiMultiDomain.h
     ChDomain.h
     ChDomainBuilder.h
@@ -53,9 +53,9 @@ SET(ChronoEngine_MULTIDOMAIN_HEADERS
     ChMpi.h
 )
 
-SOURCE_GROUP("" FILES 
-            ${ChronoEngine_MULTIDOMAIN_SOURCES} 
-            ${ChronoEngine_MULTIDOMAIN_HEADERS})
+source_group("" FILES 
+            ${Chrono_MULTIDOMAIN_SOURCES} 
+            ${Chrono_MULTIDOMAIN_HEADERS})
 
 #-----------------------------------------------------------------------------	
 # In most cases, you do not need to edit the lines below.
@@ -65,29 +65,35 @@ SOURCE_GROUP("" FILES
 
 include_directories(${MPI_CXX_HEADER_DIR})
 
-ADD_LIBRARY(ChronoEngine_multidomain 
-			${ChronoEngine_MULTIDOMAIN_SOURCES}
-			${ChronoEngine_MULTIDOMAIN_HEADERS})
+add_library(Chrono_multidomain 
+			${Chrono_MULTIDOMAIN_SOURCES}
+			${Chrono_MULTIDOMAIN_HEADERS})
 
-SET_TARGET_PROPERTIES(ChronoEngine_multidomain PROPERTIES
+set_target_properties(Chrono_multidomain PROPERTIES
                       COMPILE_FLAGS "${CH_CXX_FLAGS}"
                       LINK_FLAGS "${CH_LINKERFLAG_LIB}")
                           
-target_compile_definitions(ChronoEngine_multidomain PRIVATE "CH_API_COMPILE_MULTIDOMAIN")
-target_compile_definitions(ChronoEngine_multidomain PRIVATE "CH_IGNORE_DEPRECATED")
+target_compile_definitions(Chrono_multidomain PRIVATE "CH_API_COMPILE_MULTIDOMAIN")
+target_compile_definitions(Chrono_multidomain PRIVATE "CH_IGNORE_DEPRECATED")
 
-TARGET_LINK_LIBRARIES(ChronoEngine_multidomain 
-	                  ChronoEngine
-					  ${MPI_LIBRARIES})
-	
-ADD_DEPENDENCIES(ChronoEngine_multidomain ChronoEngine)
-	
-INSTALL(TARGETS ChronoEngine_multidomain
+target_link_libraries(Chrono_multidomain PRIVATE Chrono_core)
+target_link_libraries(Chrono_multidomain PUBLIC ${MPI_LIBRARIES})
+
+install(TARGETS Chrono_multidomain
+        EXPORT ChronoTargets
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib)		
+        ARCHIVE DESTINATION lib
+        INCLUDES DESTINATION include/Chrono_multidomain)
+	
+		
 
-INSTALL(FILES ${ChronoEngine_MULTIDOMAIN_HEADERS}
-        DESTINATION include/chrono_multidomain)
+#-------------------------------------------------------------------------------
+# Install files
+#-------------------------------------------------------------------------------
+
+# Old way
+install(FILES ${Chrono_POSTPROCESS_HEADERS}
+        DESTINATION include/Chrono_multidomain)
 
 
