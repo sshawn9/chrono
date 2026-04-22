@@ -298,6 +298,9 @@ class CH_VEHICLE_API ChVehicle {
     /// Log current constraint violations.
     virtual void LogConstraintViolations() {}
 
+    /// Return a list with all bodies in the vehicle system.
+    virtual std::vector<std::shared_ptr<ChBody>> GetBodyList() const { return std::vector<std::shared_ptr<ChBody>>(); }
+
     /// Return a JSON string with information on all modeling components in the vehicle system.
     /// These include bodies, shafts, joints, spring-damper elements, markers, etc.
     virtual std::string ExportComponentList() const { return ""; }
