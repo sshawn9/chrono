@@ -21,8 +21,8 @@
 namespace chrono {
 namespace utils {
 
-static const double EPS = 1e-20;
-static const double EPS_TRIDEGEN = 1e-10;
+static constexpr double EPS = 1e-20;
+static constexpr double EPS_TRIDEGEN = 1e-10;
 
 bool LineLineIntersect(const ChVector3d& p1,
                        const ChVector3d& p2,
@@ -142,7 +142,7 @@ double PointTrianglePlaneDistance(const ChVector3d& B,
 bool IsTriangleDegenerate(const ChVector3d& Dx, const ChVector3d& Dy) {
     ChVector3d vcr;
     vcr = Vcross(Dx, Dy);
-    if (fabs(vcr.x()) < EPS_TRIDEGEN && fabs(vcr.y()) < EPS_TRIDEGEN && fabs(vcr.z()) < EPS_TRIDEGEN)
+    if (std::abs(vcr.x()) < EPS_TRIDEGEN && std::abs(vcr.y()) < EPS_TRIDEGEN && std::abs(vcr.z()) < EPS_TRIDEGEN)
         return true;
     return false;
 }
