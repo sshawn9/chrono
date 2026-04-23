@@ -149,7 +149,7 @@ video::SMaterial ToIrrlichtMaterial(std::shared_ptr<ChVisualMaterial> mat, video
 // -----------------------------------------------------------------------------
 // Align an Irrlicht object to a the specified coordinate system.
 // -----------------------------------------------------------------------------
-void alignIrrlichtNode(scene::ISceneNode* node, const ChCoordsys<>& coords) {
+void AlignIrrlichtNode(scene::ISceneNode* node, const ChCoordsys<>& coords) {
     // Construct the equivalent 4x4 Irrlicht matrix
     irr::core::matrix4CH irrMat(coords);
 
@@ -216,7 +216,7 @@ class _draw_reporter_class : public ChContactContainer::ReportContactCallback {
     double clen;
 };
 
-int drawAllContactPoints(const ChVisualSystemIrrlicht* vis, double len, ContactsDrawMode drawtype) {
+int DrawAllContactPoints(const ChVisualSystemIrrlicht* vis, double len, ContactsDrawMode drawtype) {
     if (drawtype == ContactsDrawMode::CONTACT_NONE)
         return 0;
 
@@ -297,7 +297,7 @@ class _label_reporter_class : public ChContactContainer::ReportContactCallback {
     irr::video::SColor ccol;
 };
 
-int drawAllContactLabels(const ChVisualSystemIrrlicht* vis, ContactsLabelMode labeltype, ChColor col) {
+int DrawAllContactLabels(const ChVisualSystemIrrlicht* vis, ContactsLabelMode labeltype, ChColor col) {
     if (labeltype == ContactsLabelMode::CONTACT_NONE_VAL)
         return 0;
 
@@ -318,7 +318,7 @@ int drawAllContactLabels(const ChVisualSystemIrrlicht* vis, ContactsLabelMode la
 // -----------------------------------------------------------------------------
 // Draw links as glyps.
 // ---------------------------------------------------------------------------
-int drawAllLinks(const ChVisualSystemIrrlicht* vis, double len, LinkDrawMode drawtype) {
+int DrawAllLinks(const ChVisualSystemIrrlicht* vis, double len, LinkDrawMode drawtype) {
     if (drawtype == LinkDrawMode::LINK_NONE)
         return 0;
 
@@ -357,7 +357,7 @@ int drawAllLinks(const ChVisualSystemIrrlicht* vis, double len, LinkDrawMode dra
 // -----------------------------------------------------------------------------
 // Draw links as labels
 // ---------------------------------------------------------------------------
-int drawAllLinkLabels(const ChVisualSystemIrrlicht* vis, LinkLabelMode labeltype, ChColor col) {
+int DrawAllLinkLabels(const ChVisualSystemIrrlicht* vis, LinkLabelMode labeltype, ChColor col) {
     if (labeltype == LinkLabelMode::LINK_NONE_VAL)
         return 0;
 
@@ -411,7 +411,7 @@ int drawAllLinkLabels(const ChVisualSystemIrrlicht* vis, LinkLabelMode labeltype
 // -----------------------------------------------------------------------------
 // Draw collision objects bounding boxes for rigid bodies.
 // -----------------------------------------------------------------------------
-int drawAllBoundingBoxes(const ChVisualSystemIrrlicht* vis) {
+int DrawAllBoundingBoxes(const ChVisualSystemIrrlicht* vis) {
     vis->GetVideoDriver()->setTransform(irr::video::ETS_WORLD, irr::core::matrix4());
     irr::video::SMaterial mattransp;
     mattransp.ZBuffer = true;
@@ -462,7 +462,7 @@ int drawAllBoundingBoxes(const ChVisualSystemIrrlicht* vis) {
 // -----------------------------------------------------------------------------
 // Draw coordinate systems of ChBody objects bodies.
 // -----------------------------------------------------------------------------
-int drawAllCOMs(const ChVisualSystemIrrlicht* vis, double scale) {
+int DrawAllCOMs(const ChVisualSystemIrrlicht* vis, double scale) {
     vis->GetVideoDriver()->setTransform(irr::video::ETS_WORLD, irr::core::matrix4());
     irr::video::SMaterial mattransp;
     mattransp.ZBuffer = true;
@@ -505,7 +505,7 @@ int drawAllCOMs(const ChVisualSystemIrrlicht* vis, double scale) {
 // -----------------------------------------------------------------------------
 // Draw coordinate systems of frames used by links.
 // -----------------------------------------------------------------------------
-int drawAllLinkframes(const ChVisualSystemIrrlicht* vis, double scale) {
+int DrawAllLinkframes(const ChVisualSystemIrrlicht* vis, double scale) {
     vis->GetVideoDriver()->setTransform(irr::video::ETS_WORLD, irr::core::matrix4());
     irr::video::SMaterial mattransp;
     mattransp.ZBuffer = true;
@@ -548,7 +548,7 @@ int drawAllLinkframes(const ChVisualSystemIrrlicht* vis, double scale) {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void drawHUDviolation(const ChVisualSystemIrrlicht* vis, int pos_x, int pos_y, int width, int height) {
+void DrawSolverViolation(const ChVisualSystemIrrlicht* vis, int pos_x, int pos_y, int width, int height) {
     auto solver = std::dynamic_pointer_cast<ChIterativeSolver>(vis->GetSystem(0).GetSolver());
     if (!solver || solver->GetIterations() == 0)
         return;
@@ -655,7 +655,7 @@ void drawHUDviolation(const ChVisualSystemIrrlicht* vis, int pos_x, int pos_y, i
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void drawChFunction(const ChVisualSystemIrrlicht* vis,
+void DrawChFunction(const ChVisualSystemIrrlicht* vis,
                     std::shared_ptr<chrono::ChFunction> fx,
                     double xmin,
                     double xmax,
@@ -711,7 +711,7 @@ void drawChFunction(const ChVisualSystemIrrlicht* vis,
 // -----------------------------------------------------------------------------
 // Draw segment lines in 3D space, with given color.
 // -----------------------------------------------------------------------------
-void drawSegment(const ChVisualSystemIrrlicht* vis, const ChVector3d& start, const ChVector3d& end, const ChColor& col, bool use_Zbuffer) {
+void DrawSegment(const ChVisualSystemIrrlicht* vis, const ChVector3d& start, const ChVector3d& end, const ChColor& col, bool use_Zbuffer) {
     vis->GetVideoDriver()->setTransform(irr::video::ETS_WORLD, irr::core::matrix4());
     irr::video::SMaterial mattransp;
     mattransp.ZBuffer = use_Zbuffer;
@@ -723,26 +723,26 @@ void drawSegment(const ChVisualSystemIrrlicht* vis, const ChVector3d& start, con
 // -----------------------------------------------------------------------------
 // Draw a polyline in 3D space, given the array of points as a std::vector.
 // -----------------------------------------------------------------------------
-void drawPolyline(const ChVisualSystemIrrlicht* vis, const std::vector<ChVector3d>& points, const ChColor& col, bool use_Zbuffer) {
+void DrawPolyline(const ChVisualSystemIrrlicht* vis, const std::vector<ChVector3d>& points, const ChColor& col, bool use_Zbuffer) {
     // not very efficient, but enough as an example..
     if (points.size() < 2)
         return;
 
     for (size_t i = 0; i < points.size() - 1; i++)
-        drawSegment(vis, points[i], points[i + 1], col, use_Zbuffer);
+        DrawSegment(vis, points[i], points[i + 1], col, use_Zbuffer);
 }
 
 // -----------------------------------------------------------------------------
 // Draw a circle line in 3D space, with given color.
 // -----------------------------------------------------------------------------
-void drawCircle(const ChVisualSystemIrrlicht* vis, double radius, const ChCoordsysd& coord, const ChColor& col, int resolution, bool use_Zbuffer) {
+void DrawCircle(const ChVisualSystemIrrlicht* vis, double radius, const ChCoordsysd& coord, const ChColor& col, int resolution, bool use_Zbuffer) {
     double phaseA = 0;
     double phaseB = 0;
     for (int iu = 1; iu <= resolution; iu++) {
         phaseB = CH_2PI * (double)iu / (double)resolution;
         ChVector3d V1(radius * std::cos(phaseA), radius * std::sin(phaseA), 0);
         ChVector3d V2(radius * std::cos(phaseB), radius * std::sin(phaseB), 0);
-        drawSegment(vis, coord.TransformPointLocalToParent(V1), coord.TransformPointLocalToParent(V2), col, use_Zbuffer);
+        DrawSegment(vis, coord.TransformPointLocalToParent(V1), coord.TransformPointLocalToParent(V2), col, use_Zbuffer);
         phaseA = phaseB;
     }
 }
@@ -750,7 +750,14 @@ void drawCircle(const ChVisualSystemIrrlicht* vis, double radius, const ChCoords
 // -----------------------------------------------------------------------------
 // Draw a spring in 3D space, with given color.
 // -----------------------------------------------------------------------------
-void drawSpring(const ChVisualSystemIrrlicht* vis, double radius, const ChVector3d& start, const ChVector3d& end, const ChColor& col, int resolution, double turns, bool use_Zbuffer) {
+void DrawSpring(const ChVisualSystemIrrlicht* vis,
+                double radius,
+                const ChVector3d& start,
+                const ChVector3d& end,
+                const ChColor& col,
+                int resolution,
+                double turns,
+                bool use_Zbuffer) {
     ChVector3d dist = end - start;
     ChVector3d Vx, Vy, Vz;
     double length = dist.Length();
@@ -769,7 +776,7 @@ void drawSpring(const ChVisualSystemIrrlicht* vis, double radius, const ChVector
         heightB = length * ((double)iu / (double)resolution);
         ChVector3d V1(heightA, radius * std::cos(phaseA), radius * std::sin(phaseA));
         ChVector3d V2(heightB, radius * std::cos(phaseB), radius * std::sin(phaseB));
-        drawSegment(vis, pos.TransformPointLocalToParent(V1), pos.TransformPointLocalToParent(V2), col, use_Zbuffer);
+        DrawSegment(vis, pos.TransformPointLocalToParent(V1), pos.TransformPointLocalToParent(V2), col, use_Zbuffer);
         phaseA = phaseB;
         heightA = heightB;
     }
@@ -778,7 +785,14 @@ void drawSpring(const ChVisualSystemIrrlicht* vis, double radius, const ChVector
 // -----------------------------------------------------------------------------
 // Draw a rotational spring in 3D space, with given color.
 // -----------------------------------------------------------------------------
-void drawRotSpring(const ChVisualSystemIrrlicht* vis, const ChCoordsysd& pos, double radius, double start_angle, double end_angle, const ChColor& col, int resolution, bool use_Zbuffer) {
+void DrawRotSpring(const ChVisualSystemIrrlicht* vis,
+                   const ChCoordsysd& pos,
+                   double radius,
+                   double start_angle,
+                   double end_angle,
+                   const ChColor& col,
+                   int resolution,
+                   bool use_Zbuffer) {
     double del_angle = (end_angle - start_angle) / resolution;
     ChVector3d V1(radius * std::cos(start_angle), radius * std::sin(start_angle), 0);
 
@@ -786,7 +800,7 @@ void drawRotSpring(const ChVisualSystemIrrlicht* vis, const ChCoordsysd& pos, do
         double crt_angle = start_angle + iu * del_angle;
         double crt_radius = radius - (iu * del_angle / CH_2PI) * (radius / 10);
         ChVector3d V2(crt_radius * std::cos(crt_angle), crt_radius * std::sin(crt_angle), 0);
-        drawSegment(vis, pos.TransformPointLocalToParent(V1), pos.TransformPointLocalToParent(V2), col, use_Zbuffer);
+        DrawSegment(vis, pos.TransformPointLocalToParent(V1), pos.TransformPointLocalToParent(V2), col, use_Zbuffer);
         V1 = V2;
     }
 }
@@ -794,22 +808,22 @@ void drawRotSpring(const ChVisualSystemIrrlicht* vis, const ChCoordsysd& pos, do
 // -----------------------------------------------------------------------------
 // Draw grids in 3D space, with given orientation, color and spacing.
 // -----------------------------------------------------------------------------
-void drawGrid(const ChVisualSystemIrrlicht* vis, double ustep, double vstep, int nu, int nv, const ChCoordsysd& pos, const ChColor& col, bool use_Zbuffer) {
+void DrawGrid(const ChVisualSystemIrrlicht* vis, double ustep, double vstep, int nu, int nv, const ChCoordsysd& pos, const ChColor& col, bool use_Zbuffer) {
     for (int iu = -nu / 2; iu <= nu / 2; iu++) {
         ChVector3d V1(iu * ustep, vstep * (nv / 2), 0);
         ChVector3d V2(iu * ustep, -vstep * (nv / 2), 0);
-        drawSegment(vis, pos.TransformPointLocalToParent(V1), pos.TransformPointLocalToParent(V2), col, use_Zbuffer);
+        DrawSegment(vis, pos.TransformPointLocalToParent(V1), pos.TransformPointLocalToParent(V2), col, use_Zbuffer);
     }
 
     for (int iv = -nv / 2; iv <= nv / 2; iv++) {
         ChVector3d V1(ustep * (nu / 2), iv * vstep, 0);
         ChVector3d V2(-ustep * (nu / 2), iv * vstep, 0);
-        drawSegment(vis, pos.TransformPointLocalToParent(V1), pos.TransformPointLocalToParent(V2), col, use_Zbuffer);
+        DrawSegment(vis, pos.TransformPointLocalToParent(V1), pos.TransformPointLocalToParent(V2), col, use_Zbuffer);
     }
 }
 
 // Easy-to-use function to draw color map 2D legend
-void drawColorbar(const ChVisualSystemIrrlicht* vis, const ChColormap& colormap, double vmin, double vmax, const std::string& label, int x, int y, int sx, int sy) {
+void DrawColorbar(const ChVisualSystemIrrlicht* vis, const ChColormap& colormap, double vmin, double vmax, const std::string& label, int x, int y, int sx, int sy) {
     irr::video::IVideoDriver* driver = vis->GetVideoDriver();
 
     gui::IGUIFont* font = 0;
@@ -843,7 +857,7 @@ void drawColorbar(const ChVisualSystemIrrlicht* vis, const ChColormap& colormap,
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void drawPlot3D(const ChVisualSystemIrrlicht* vis, ChMatrixConstRef X, ChMatrixConstRef Y, ChMatrixConstRef Z, const ChCoordsysd& coord, const ChColor& col, bool use_Zbuffer) {
+void DrawPlot3D(const ChVisualSystemIrrlicht* vis, ChMatrixConstRef X, ChMatrixConstRef Y, ChMatrixConstRef Z, const ChCoordsysd& coord, const ChColor& col, bool use_Zbuffer) {
     vis->GetVideoDriver()->setTransform(irr::video::ETS_WORLD, irr::core::matrix4());
     irr::video::SMaterial mattransp;
     mattransp.ZBuffer = true;
@@ -851,7 +865,7 @@ void drawPlot3D(const ChVisualSystemIrrlicht* vis, ChMatrixConstRef X, ChMatrixC
     vis->GetVideoDriver()->setMaterial(mattransp);
 
     if ((X.cols() != Y.cols()) || (X.cols() != Z.cols()) || (X.rows() != Y.rows()) || (X.rows() != Z.rows())) {
-        std::cerr << "drawPlot3D: X Y Z matrices must have the same size, as n.rows and n.columns" << std::endl;
+        std::cerr << "DrawPlot3D: X Y Z matrices must have the same size, as n.rows and n.columns" << std::endl;
         return;
     }
 
@@ -860,13 +874,13 @@ void drawPlot3D(const ChVisualSystemIrrlicht* vis, ChMatrixConstRef X, ChMatrixC
             if (ix > 0) {
                 ChVector3d Vx1(X(ix - 1, iy), Y(ix - 1, iy), Z(ix - 1, iy));
                 ChVector3d Vx2(X(ix, iy), Y(ix, iy), Z(ix, iy));
-                drawSegment(vis, coord.TransformPointLocalToParent(Vx1), coord.TransformPointLocalToParent(Vx2), col, use_Zbuffer);
+                DrawSegment(vis, coord.TransformPointLocalToParent(Vx1), coord.TransformPointLocalToParent(Vx2), col, use_Zbuffer);
             }
 
             if (iy > 0) {
                 ChVector3d Vy1(X(ix, iy - 1), Y(ix, iy - 1), Z(ix, iy - 1));
                 ChVector3d Vy2(X(ix, iy), Y(ix, iy), Z(ix, iy));
-                drawSegment(vis, coord.TransformPointLocalToParent(Vy1), coord.TransformPointLocalToParent(Vy2), col, use_Zbuffer);
+                DrawSegment(vis, coord.TransformPointLocalToParent(Vy1), coord.TransformPointLocalToParent(Vy2), col, use_Zbuffer);
             }
         }
     }
@@ -926,7 +940,7 @@ void drawProfilerRecursive(utils::ChProfileIterator* profileIterator, irr::Irrli
 }
 
 // Draw run-time profiler infos
-void drawProfiler(const ChVisualSystemIrrlicht* vis) {
+void DrawProfiler(const ChVisualSystemIrrlicht* vis) {
     int pos_x = 230;
     int pos_y = 30;
     int width = 500;
@@ -942,17 +956,23 @@ void drawProfiler(const ChVisualSystemIrrlicht* vis) {
 }
 
 // Draw RGB coordinate system
-void drawCoordsys(const ChVisualSystemIrrlicht* vis, const ChCoordsysd& coord, double scale, bool use_Zbuffer) {
-    drawSegment(vis, coord.pos, coord.pos + coord.rot.Rotate(VECT_X) * scale, ChColor(1.f, 0.f, 0.f), use_Zbuffer);
-    drawSegment(vis, coord.pos, coord.pos + coord.rot.Rotate(VECT_Y) * scale, ChColor(0.f, 1.f, 0.f), use_Zbuffer);
-    drawSegment(vis, coord.pos, coord.pos + coord.rot.Rotate(VECT_Z) * scale, ChColor(0.f, 0.f, 1.f), use_Zbuffer);
+void DrawCoordsys(const ChVisualSystemIrrlicht* vis, const ChCoordsysd& coord, double scale, bool use_Zbuffer) {
+    DrawSegment(vis, coord.pos, coord.pos + coord.rot.Rotate(VECT_X) * scale, ChColor(1.f, 0.f, 0.f), use_Zbuffer);
+    DrawSegment(vis, coord.pos, coord.pos + coord.rot.Rotate(VECT_Y) * scale, ChColor(0.f, 1.f, 0.f), use_Zbuffer);
+    DrawSegment(vis, coord.pos, coord.pos + coord.rot.Rotate(VECT_Z) * scale, ChColor(0.f, 0.f, 1.f), use_Zbuffer);
 }
 
 // -----------------------------------------------------------------------------
 // Draw a line arrow in 3D space with given color.
 // -----------------------------------------------------------------------------
-void drawArrow(const ChVisualSystemIrrlicht* vis, const ChVector3d& start, const ChVector3d& end, const ChVector3d& plane_normal, bool sharp, const ChColor& col, bool use_Zbuffer) {
-    drawSegment(vis, start, end, col, use_Zbuffer);  // main segment
+void DrawArrow(const ChVisualSystemIrrlicht* vis,
+               const ChVector3d& start,
+               const ChVector3d& end,
+               const ChVector3d& plane_normal,
+               bool sharp,
+               const ChColor& col,
+               bool use_Zbuffer) {
+    DrawSegment(vis, start, end, col, use_Zbuffer);  // main segment
     ChVector3d dir = (end - start).GetNormalized();
     ChVector3d u, v, w;
     dir.GetDirectionAxesAsX(u, v, w, plane_normal);
@@ -964,14 +984,14 @@ void drawArrow(const ChVisualSystemIrrlicht* vis, const ChVector3d& start, const
         p1 = end + 0.1 * w - 0.5 * dir;
         p2 = end + 0.1 * -w - 0.5 * dir;
     }
-    drawSegment(vis, end, p1, col, use_Zbuffer);  // arrow segment 1
-    drawSegment(vis, end, p2, col, use_Zbuffer);  // arrow segment 2
+    DrawSegment(vis, end, p1, col, use_Zbuffer);  // arrow segment 1
+    DrawSegment(vis, end, p2, col, use_Zbuffer);  // arrow segment 2
 }
 
 // -----------------------------------------------------------------------------
 // Draw a label in 3D scene at given position.
 // -----------------------------------------------------------------------------
-void drawLabel3D(const ChVisualSystemIrrlicht* vis, const std::string& text, const ChVector3d& position, const ChColor& color, bool use_Zbuffer) {
+void DrawLabel3D(const ChVisualSystemIrrlicht* vis, const std::string& text, const ChVector3d& position, const ChColor& color, bool use_Zbuffer) {
     irr::core::position2di spos = vis->GetSceneManager()->getSceneCollisionManager()->getScreenCoordinatesFrom3DPosition(irr::core::vector3dfCH(position));
     auto font = vis->GetGUIEnvironment()->getFont(GetChronoDataFile("fonts/arial8.xml").c_str());
     if (font) {
