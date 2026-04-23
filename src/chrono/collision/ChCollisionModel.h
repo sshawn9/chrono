@@ -12,9 +12,6 @@
 // Authors: Alessandro Tasora, Radu Serban
 // =============================================================================
 
-//// TODO
-//// - eliminate GetPhysicsItem
-
 #ifndef CH_COLLISION_MODEL_H
 #define CH_COLLISION_MODEL_H
 
@@ -79,12 +76,6 @@ class ChApi ChCollisionModel {
 
     /// Get the pointer to the contactable object.
     ChContactable* GetContactable() const { return contactable; }
-
-    /// Get the pointer to the client owner ChPhysicsItem.
-    ///
-    //// TODO OBSOLETE
-    ///
-    ChPhysicsItem* GetPhysicsItem();
 
     /// Synchronize the position and orientation of the collision model to the associated contactable.
     void SyncPosition();
