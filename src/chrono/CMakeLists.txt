@@ -600,6 +600,7 @@ set(Chrono_geometry_SOURCES
     geometry/ChCone.cpp
     geometry/ChCylinder.cpp
     geometry/ChCapsule.cpp
+    geometry/ChDelaunay2D.cpp
     geometry/ChLine.cpp
     geometry/ChLineArc.cpp
     geometry/ChLineSegment.cpp
@@ -628,6 +629,7 @@ set(Chrono_geometry_HEADERS
     geometry/ChCone.h
     geometry/ChCylinder.h
     geometry/ChCapsule.h
+    geometry/ChDelaunay2D.h
     geometry/ChLine.h
     geometry/ChLineCam.h
     geometry/ChLinePoly.h
