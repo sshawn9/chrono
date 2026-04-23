@@ -52,21 +52,21 @@ ChTriangleMeshConnected::ChTriangleMeshConnected(const ChTriangleMeshConnected& 
     m_face_mat_indices = source.m_face_mat_indices;
 
     // deep copies of properties
-    this->m_properties_per_vertex.resize(source.m_properties_per_vertex.size());
+    m_properties_per_vertex.resize(source.m_properties_per_vertex.size());
     for (size_t i = 0; i < source.m_properties_per_vertex.size(); ++i)
-        this->m_properties_per_vertex[i] = source.m_properties_per_vertex[i]->clone();
+        m_properties_per_vertex[i] = source.m_properties_per_vertex[i]->clone();
     // deep copies of properties
-    this->m_properties_per_face.resize(source.m_properties_per_face.size());
+    m_properties_per_face.resize(source.m_properties_per_face.size());
     for (size_t i = 0; i < source.m_properties_per_face.size(); ++i)
-        this->m_properties_per_face[i] = source.m_properties_per_face[i]->clone();
+        m_properties_per_face[i] = source.m_properties_per_face[i]->clone();
 
     m_filename = source.m_filename;
 }
 
 ChTriangleMeshConnected::~ChTriangleMeshConnected() {
-    for (ChProperty* id : this->m_properties_per_vertex)
+    for (ChProperty* id : m_properties_per_vertex)
         delete (id);
-    for (ChProperty* id : this->m_properties_per_face)
+    for (ChProperty* id : m_properties_per_face)
         delete (id);
 }
 
@@ -101,16 +101,16 @@ void ChTriangleMeshConnected::Clear() {
     m_face_col_indices.clear();
     m_face_mat_indices.clear();
 
-    for (ChProperty* id : this->m_properties_per_vertex)
+    for (ChProperty* id : m_properties_per_vertex)
         delete (id);
     m_properties_per_vertex.clear();
 
-    for (ChProperty* id : this->m_properties_per_face)
+    for (ChProperty* id : m_properties_per_face)
         delete (id);
     m_properties_per_vertex.clear();
 }
 
-ChAABB ChTriangleMeshConnected::CalcBoundingBox(std::vector<ChVector3d> vertices) {
+ChAABB ChTriangleMeshConnected::CalcBoundingBox(const std::vector<ChVector3d>& vertices) {
     ChAABB bbox;
     for (const auto& v : vertices) {
         bbox.min.x() = std::min(bbox.min.x(), v.x());
@@ -142,7 +142,7 @@ ChAABB ChTriangleMeshConnected::GetBoundingBox() const {
 //                             const int* indices, bool bodyCoords, Real& mass,
 //                             Vector3<Real>& center, Matrix3<Real>& inertia)
 //
-void ChTriangleMeshConnected::ComputeMassProperties(bool body_coords, double& mass, ChVector3d& center, ChMatrix33<>& inertia, double scale) const {
+void ChTriangleMeshConnected::ComputeMassProperties(bool body_coords, double& mass, ChVector3d& center, ChMatrix33d& inertia, double scale) const {
     const double oneDiv24 = 1 / 24.0;
     const double oneDiv60 = 1 / 60.0;
     const double oneDiv120 = 1 / 120.0;
@@ -286,7 +286,7 @@ bool ChTriangleMeshConnected::LoadWavefrontMesh(const std::string& filename, boo
         return false;
     }
 
-    this->Clear();
+    Clear();
 
     m_filename = filename;
 
@@ -379,8 +379,65 @@ bool ChTriangleMeshConnected::LoadSTLMesh(const std::string& filename, bool load
     return true;
 }
 
-void ChTriangleMeshConnected::WriteWavefront(const std::string& filename, const std::vector<ChTriangleMeshConnected>& meshes) {
+bool ChTriangleMeshConnected::WriteSTL(const std::string& filename, const ChTriangleMeshConnected& trimesh) {
+    // STL file format (Wikipedia)
+    // ----------------------------------------------------
+    // UINT8[80]        – Header               - 80 bytes
+    // UINT32           – Number of triangles  - 04 bytes
+    // foreach triangle                        - (50 bytes)
+    //     REAL32[3]    – Normal vector        - 12 bytes
+    //     REAL32[3]    – Vertex 1             - 12 bytes
+    //     REAL32[3]    – Vertex 2             - 12 bytes
+    //     REAL32[3]    – Vertex 3             - 12 bytes
+    //     UINT16       – Attribute byte count - 02 bytes
+    // end
+    // ----------------------------------------------------
+
+    std::ofstream fileo(filename, std::ios::binary);
+    if (!fileo.is_open()) {
+        std::cerr << "Unable to create output .STL file\n";
+        return false;
+    }
+
+    // Empty header
+    char header[80] = {0};
+    fileo.write(header, 80);  // 80 bytes
+
+    // Number of triangles
+    uint32_t num_triangles = static_cast<uint32_t>(trimesh.GetNumTriangles());
+    fileo.write(reinterpret_cast<const char*>(&num_triangles), sizeof(uint32_t));  // 4 bytes
+
+    // Triangles (50 bytes each)
+    for (unsigned int i = 0; i < trimesh.GetNumTriangles(); ++i) {
+        const auto& tri = trimesh.GetTriangle(i);
+
+        // Normal
+        ChVector3d normal = tri.GetNormal();
+        float n[3] = {static_cast<float>(normal.x()), static_cast<float>(normal.y()), static_cast<float>(normal.z())};
+        fileo.write(reinterpret_cast<const char*>(n), 3 * sizeof(float));  // 12 bytes
+
+        // Vertices
+        float p1[3] = {static_cast<float>(tri.p1.x()), static_cast<float>(tri.p1.y()), static_cast<float>(tri.p1.z())};
+        float p2[3] = {static_cast<float>(tri.p2.x()), static_cast<float>(tri.p2.y()), static_cast<float>(tri.p2.z())};
+        float p3[3] = {static_cast<float>(tri.p3.x()), static_cast<float>(tri.p3.y()), static_cast<float>(tri.p3.z())};
+        fileo.write(reinterpret_cast<const char*>(p1), 3 * sizeof(float));  // 12 bytes
+        fileo.write(reinterpret_cast<const char*>(p2), 3 * sizeof(float));  // 12 bytes
+        fileo.write(reinterpret_cast<const char*>(p3), 3 * sizeof(float));  // 12 bytes
+
+        // Attribute byte count
+        uint16_t attr = 0;
+        fileo.write(reinterpret_cast<const char*>(&attr), sizeof(uint16_t));  // 2 bytes
+    }
+
+    return true;
+}
+
+bool ChTriangleMeshConnected::WriteWavefront(const std::string& filename, const std::vector<ChTriangleMeshConnected>& meshes) {
     std::ofstream fileo(filename);
+    if (!fileo.is_open()) {
+        std::cerr << "Unable to create output .OBJ file\n";
+        return false;
+    }
 
     //// TODO: include normal information if available
 
@@ -445,6 +502,7 @@ void ChTriangleMeshConnected::WriteWavefront(const std::string& filename, const 
     }
 
     fileo.close();
+    return true;
 }
 
 /// Utility function for merging multiple meshes.
@@ -732,13 +790,13 @@ bool ChTriangleMeshConnected::MakeOffset(double moffset) {
             // weighted sum as offset vector
             voffsets[i] = VNULL;
             for (int j = 0; j < ntri; ++j) {
-                voffsets[i] += this->GetTriangle(mverttriangles[j]).GetNormal() * x(j);
+                voffsets[i] += GetTriangle(mverttriangles[j]).GetNormal() * x(j);
             }
         }
     }
 
     // apply offset vectors to itself:
-    for (int i = 0; i < this->m_vertices.size(); ++i) {
+    for (int i = 0; i < m_vertices.size(); ++i) {
         m_vertices[i] += voffsets[i] * moffset;
     }
 
@@ -1022,11 +1080,11 @@ void ChTriangleMeshConnected::RefineMeshEdges(std::vector<int>& marked_tris,    
     if (atri_map) {
         tri_map = *atri_map;
     } else {
-        this->ComputeNeighbouringTriangleMap(tri_map);
+        ComputeNeighbouringTriangleMap(tri_map);
     }
 
     std::vector<bool> marked_tris_flagged;
-    marked_tris_flagged.resize(this->m_face_v_indices.size());
+    marked_tris_flagged.resize(m_face_v_indices.size());
     for (auto i : marked_tris)
         marked_tris_flagged[i] = true;
 
@@ -1048,11 +1106,11 @@ void ChTriangleMeshConnected::RefineMeshEdges(std::vector<int>& marked_tris,    
             int edge_N = 0;
             double L_e;
             for (int ie = 0; ie < 3; ++ie) {
-                std::pair<int, int> ie_verts = this->GetTriangleEdgeIndices(m_face_v_indices[t_N], ie, true);
+                std::pair<int, int> ie_verts = GetTriangleEdgeIndices(m_face_v_indices[t_N], ie, true);
                 if (criterion)
                     L_e = criterion->ComputeLength(ie_verts.first, ie_verts.second, this);
                 else
-                    L_e = (this->m_vertices[ie_verts.first] - this->m_vertices[ie_verts.second]).Length();
+                    L_e = (m_vertices[ie_verts.first] - m_vertices[ie_verts.second]).Length();
                 if (L_e > L_max) {
                     L_max = L_e;
                     edge_N = ie;
@@ -1102,11 +1160,11 @@ void ChTriangleMeshConnected::RefineMeshEdges(std::vector<int>& marked_tris,    
                 int edge_N1 = 0;
                 int t_shared = 0;
                 for (int ie = 0; ie < 3; ++ie) {
-                    std::pair<int, int> T1_ie_verts = this->GetTriangleEdgeIndices(m_face_v_indices[t_N1], ie, true);
+                    std::pair<int, int> T1_ie_verts = GetTriangleEdgeIndices(m_face_v_indices[t_N1], ie, true);
                     if (criterion)
                         L_e = criterion->ComputeLength(T1_ie_verts.first, T1_ie_verts.second, this);
                     else
-                        L_e = (this->m_vertices[T1_ie_verts.first] - this->m_vertices[T1_ie_verts.second]).Length();
+                        L_e = (m_vertices[T1_ie_verts.first] - m_vertices[T1_ie_verts.second]).Length();
                     if (L_e > T1_L_max) {
                         T1_L_max = L_e;
                         edge_N1 = ie;

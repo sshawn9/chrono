@@ -102,12 +102,12 @@ class ChApi ChTriangleMeshConnected : public ChTriangleMesh {
     virtual ChAABB GetBoundingBox() const override;
 
     /// Return the bounding box of a triangle mesh with given vertices.
-    static ChAABB CalcBoundingBox(std::vector<ChVector3d> vertices);
+    static ChAABB CalcBoundingBox(const std::vector<ChVector3d>& vertices);
 
     /// Return the indices of the two vertices of the i-th edge of the triangle.
     /// If unique=true, swap the pair so that 1st < 2nd, to permit test sharing with other triangle.
     std::pair<int, int> GetTriangleEdgeIndices(const ChVector3i& face_indices,  ///< indices of a triangular face
-                                               int nedge,                       ///< number of edge: 0, 1, 2
+                                               int num_edge,                    ///< number of edge: 0, 1, 2
                                                bool unique                      ///< swap?
     );
 
@@ -128,8 +128,8 @@ class ChApi ChTriangleMeshConnected : public ChTriangleMesh {
     /// NB: this mesh object must already be initialized.
     bool LoadWavefrontMesh(const std::string& filename, bool load_normals = true, bool load_uv = false);
 
-    /// Write the specified meshes in a Wavefront .obj file.
-    static void WriteWavefront(const std::string& filename, const std::vector<ChTriangleMeshConnected>& meshes);
+    /// Write the specified meshes in a Wavefront OBJ file.
+    static bool WriteWavefront(const std::string& filename, const std::vector<ChTriangleMeshConnected>& meshes);
 
     /// Create and return a ChTriangleMeshConnected from an STL file.
     /// If an error occurs during loading, an empty shared pointer is returned.
@@ -138,6 +138,9 @@ class ChApi ChTriangleMeshConnected : public ChTriangleMesh {
     /// Load an STL file into this triangle mesh.
     /// NB: this mesh object must already be initialized.
     bool LoadSTLMesh(const std::string& filename, bool load_normals = true);
+
+    /// Write the specified mesh in a binary STL file.
+    static bool WriteSTL(const std::string& filename, const ChTriangleMeshConnected& trimesh);
 
     /// Add a property as an array of data per-vertex. Deletion will be automatic at the end of mesh life.
     /// Warning: mprop.data.size() must be equal to m_vertices.size(). Cost: allocation and a data copy.
@@ -163,7 +166,7 @@ class ChApi ChTriangleMeshConnected : public ChTriangleMesh {
     /// This function assumes the object has a constant density of 1.
     /// To use a density value `rho`, multiply the output mass by `rho` and the output inertia by `rho`.
     /// The output results are scaled by scale^3 (for the mass) and by scale^5 for inertia.
-    void ComputeMassProperties(bool body_coords, double& mass, ChVector3d& center, ChMatrix33<>& inertia, double scale = 1.0) const;
+    void ComputeMassProperties(bool body_coords, double& mass, ChVector3d& center, ChMatrix33d& inertia, double scale = 1.0) const;
 
     /// Compute and return mass, barycenter, and inertia tensor.
     /// If body_coords=true, the inertia is calculated relative to the center of mass.
