@@ -15,9 +15,9 @@
 #pragma once
 
 #include <vector>
+
 #include "chrono/geometry/ChTriangleMeshConnected.h"
 #include "chrono/core/ChVector3.h"
-
 
 namespace chrono {
 
@@ -30,7 +30,8 @@ class ChApi ChDelaunay2D {
     /// Triangulate a flat (z == 0) point set using Bowyer-Watson.
     static bool Triangulate(const std::vector<ChVector3d>& points, ChTriangleMeshConnected& mesh);
 
-    /// Creates a Triangle mesh.
+    /// Create a trimesh from the given set of points.
+    /// The points are assumed to all lie in the x-y plane (i.e., points[i].z() = 0).
     static std::shared_ptr<ChTriangleMeshConnected> CreateMesh(const std::vector<ChVector3d>& points);
 
     /// Run Bowyer-Watson and return raw triangle.

@@ -26,7 +26,7 @@ using namespace chrono;
 class DelaunayFixture : public ::benchmark::Fixture {
   public:
     void SetUp(const ::benchmark::State& st) override {
-        const int num_points = static_cast<int>(st.range(0));  
+        const int num_points = static_cast<int>(st.range(0));
         points.clear();
         points.reserve(num_points);
 

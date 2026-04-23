@@ -1,11 +1,6 @@
-if(NOT BUILD_BENCHMARKING_GEOMETRY)
-    return()
-endif()
-    
 set(TESTS
-    btest_ChDelaunay2D
+    btest_CH_Delaunay2D
     )
-
 
 list(APPEND LIBS Chrono_core)
 
