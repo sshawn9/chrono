@@ -770,7 +770,7 @@ set(Chrono_collision_SOURCES
     collision/ChCollisionShapeSegment.cpp
     collision/ChCollisionShapeSphere.cpp
     collision/ChCollisionShapeTriangle.cpp
-    collision/ChCollisionShapeMeshTriangle.cpp
+    collision/ChCollisionShapeConnectedTriangle.cpp
     collision/ChCollisionShapeTriangleMesh.cpp
     )
 set(Chrono_collision_HEADERS
@@ -798,7 +798,7 @@ set(Chrono_collision_HEADERS
     collision/ChCollisionShapeSegment.h
     collision/ChCollisionShapeSphere.h
     collision/ChCollisionShapeTriangle.h
-    collision/ChCollisionShapeMeshTriangle.h
+    collision/ChCollisionShapeConnectedTriangle.h
     collision/ChCollisionShapeTriangleMesh.h
     )
 source_group(collision FILES ${Chrono_collision_SOURCES} ${Chrono_collision_HEADERS})
@@ -881,7 +881,7 @@ set(Chrono_collision_bullet_SOURCES
     collision/bullet/BulletCollision/CollisionDispatch/cbtHashedSimplePairCache.cpp
     collision/bullet/BulletCollision/CollisionShapes/cbtBarrelShape.cpp
     collision/bullet/BulletCollision/CollisionShapes/cbt2DShape.cpp
-    collision/bullet/BulletCollision/CollisionShapes/cbtCEtriangleShape.cpp
+    collision/bullet/BulletCollision/CollisionShapes/cbtChTriangleShape.cpp
     collision/bullet/BulletCollision/CollisionShapes/cbtSegmentShape.cpp
     collision/bullet/BulletCollision/CollisionShapes/cbtBoxShape.cpp
     collision/bullet/BulletCollision/CollisionShapes/cbtTriangleMeshShape.cpp

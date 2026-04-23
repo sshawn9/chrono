@@ -25,7 +25,7 @@ software.
 #include "LinearMath/cbtVector3.h"
 #include "chrono/core/ChVector3.h"
 
-/// cbtCEtriangleShape represents a triangle that is part of a collision mesh.
+/// cbtChTriangleShape represents a triangle that is part of a collision mesh.
 /// This because the default Bullet or GImpact triangle mesh system is not flexible enough to
 /// handle FEM problems where each triangle may have its collision model, and because
 /// of other limitations related to robustness etc.
@@ -33,9 +33,9 @@ software.
 /// "Fast Collision Detection for Deformable Models using Representative-Triangles"
 /// S.Rasmus Tamstorf, D.Manocha1
 
-class cbtCEtriangleShape : public cbtConvexInternalShape {
+class cbtChTriangleShape : public cbtConvexInternalShape {
   public:
-    cbtCEtriangleShape(const chrono::ChVector3d* mp1,
+    cbtChTriangleShape(const chrono::ChVector3d* mp1,
                        const chrono::ChVector3d* mp2,
                        const chrono::ChVector3d* mp3,
                        const chrono::ChVector3d* me1,

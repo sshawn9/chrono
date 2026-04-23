@@ -110,7 +110,7 @@ void ChCollisionModel::SetFamily(int family) {
 }
 
 // Return the position of the single bit set in family_group.
-int ChCollisionModel::GetFamily() {
+int ChCollisionModel::GetFamily() const {
     unsigned i = 1;
     int pos = 1;
     while (!(i & family_group)) {
@@ -137,7 +137,7 @@ void ChCollisionModel::AllowCollisionsWith(int family) {
 }
 
 // Return true if the family_mask bit in position mfamily is set.
-bool ChCollisionModel::CollidesWith(int family) {
+bool ChCollisionModel::CollidesWith(int family) const {
     assert(family >= 0 && family < 15);
     return (family_mask & (1 << family)) != 0;
 }

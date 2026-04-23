@@ -21,7 +21,7 @@
 #include "chrono/collision/bullet/ChCollisionModelBullet.h"
 #include "chrono/collision/bullet/BulletCollision/CollisionShapes/cbt2DShape.h"
 #include "chrono/collision/bullet/BulletCollision/CollisionShapes/cbtBarrelShape.h"
-#include "chrono/collision/bullet/BulletCollision/CollisionShapes/cbtCEtriangleShape.h"
+#include "chrono/collision/bullet/BulletCollision/CollisionShapes/cbtChTriangleShape.h"
 #include "chrono/collision/bullet/BulletCollision/CollisionShapes/cbtPointShape.h"
 #include "chrono/collision/bullet/BulletCollision/CollisionShapes/cbtSegmentShape.h"
 #include "chrono/collision/bullet/cbtBulletCollisionCommon.h"
@@ -226,8 +226,8 @@ void ChCollisionModelBullet::Populate() {
                 InjectTriangleMesh(shape_trimesh, frame);
                 break;
             }
-            case ChCollisionShape::Type::MESHTRIANGLE: {
-                auto shape_triangle = std::static_pointer_cast<ChCollisionShapeMeshTriangle>(shape);
+            case ChCollisionShape::Type::CONNECTEDTRIANGLE: {
+                auto shape_triangle = std::static_pointer_cast<ChCollisionShapeConnectedTriangle>(shape);
                 InjectTriangleProxy(shape_triangle);
                 break;
             }
@@ -506,7 +506,7 @@ void ChCollisionModelBullet::InjectTriangleMesh(std::shared_ptr<ChCollisionShape
             // Add a mesh triangle collision shape (triangle with connectivity information).
             // For a non-wing vertex (i.e. 'free' edge), point to opposite vertex, that is the vertex in triangle not belonging to edge.
             // Indicate if an edge is owned by this triangle. Otherwise, they belong to a neighboring triangle.
-            auto shape_triangle = chrono_types::make_shared<ChCollisionShapeMeshTriangle>(
+            auto shape_triangle = chrono_types::make_shared<ChCollisionShapeConnectedTriangle>(
                 shape_trimesh->GetMaterial(),                                                                                    // contact material
                 &mesh->m_vertices[tri_verts_indices.x()],                                                                        // vertex 1 coords
                 &mesh->m_vertices[tri_verts_indices.y()],                                                                        // vertex 2 coords
@@ -606,10 +606,10 @@ void ChCollisionModelBullet::InjectTriangleMesh(std::shared_ptr<ChCollisionShape
     }
 }
 
-void ChCollisionModelBullet::InjectTriangleProxy(std::shared_ptr<ChCollisionShapeMeshTriangle> shape_triangle) {
+void ChCollisionModelBullet::InjectTriangleProxy(std::shared_ptr<ChCollisionShapeConnectedTriangle> shape_triangle) {
     model->SetSafeMargin(shape_triangle->sradius);
 
-    auto bt_shape = chrono_types::make_shared<cbtCEtriangleShape>(shape_triangle->V1, shape_triangle->V2, shape_triangle->V3,              //
+    auto bt_shape = chrono_types::make_shared<cbtChTriangleShape>(shape_triangle->V1, shape_triangle->V2, shape_triangle->V3,              //
                                                                   shape_triangle->eP1, shape_triangle->eP2, shape_triangle->eP3,           //
                                                                   shape_triangle->ownsV1, shape_triangle->ownsV2, shape_triangle->ownsV3,  //
                                                                   shape_triangle->ownsE1, shape_triangle->ownsE2, shape_triangle->ownsE3,  //
@@ -657,11 +657,11 @@ ChAABB ChCollisionModelBullet::GetBoundingBox() const {
 }
 
 void ChCollisionModelBullet::SyncPosition() {
-    auto frame = GetContactable()->GetCollisionModelFrame();
-    const auto& R = frame.GetRotMat();
-    cbtMatrix3x3 basisA((cbtScalar)R(0, 0), (cbtScalar)R(0, 1), (cbtScalar)R(0, 2), (cbtScalar)R(1, 0), (cbtScalar)R(1, 1), (cbtScalar)R(1, 2), (cbtScalar)R(2, 0),
-                        (cbtScalar)R(2, 1), (cbtScalar)R(2, 2));
-
+    ChFramed frame = GetContactable()->GetCollisionModelFrame();
+    const ChMatrix33d& R = frame.GetRotMat();
+    cbtMatrix3x3 basisA((cbtScalar)R(0, 0), (cbtScalar)R(0, 1), (cbtScalar)R(0, 2),   //
+                        (cbtScalar)R(1, 0), (cbtScalar)R(1, 1), (cbtScalar)R(1, 2),   //
+                        (cbtScalar)R(2, 0), (cbtScalar)R(2, 1), (cbtScalar)R(2, 2));  //
     bt_collision_object->getWorldTransform().setOrigin(cbtVector3CH(frame.GetPos()));
     bt_collision_object->getWorldTransform().setBasis(basisA);
 }
