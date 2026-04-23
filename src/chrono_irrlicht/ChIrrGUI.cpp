@@ -450,7 +450,7 @@ void ChIrrGUI::Render() {
         tools::drawAllBoundingBoxes(m_vis);
 
     if (g_plot_cogs->isChecked())
-        tools::drawAllCOGs(m_vis, symbolscale);
+        tools::drawAllCOMs(m_vis, symbolscale);
 
     if (g_plot_abscoord->isChecked())
         tools::drawCoordsys(m_vis, CSYSNORM, symbolscale);

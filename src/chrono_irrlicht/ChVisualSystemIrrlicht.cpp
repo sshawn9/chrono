@@ -160,7 +160,7 @@ void ChVisualSystemIrrlicht::SetLogLevel(irr::ELOG_LEVEL log_level) {
 void ChVisualSystemIrrlicht::SetCameraVertical(CameraVerticalDir vert) {
     m_yup = (vert == CameraVerticalDir::Y);
 }
-CameraVerticalDir ChVisualSystemIrrlicht::GetCameraVertical() {
+CameraVerticalDir ChVisualSystemIrrlicht::GetCameraVertical() const {
     return (m_yup == true ? CameraVerticalDir::Y : CameraVerticalDir::Z);
 }
 
@@ -636,7 +636,7 @@ void ChVisualSystemIrrlicht::RenderFrame(const ChFrame<>& frame, double axis_len
 }
 
 void ChVisualSystemIrrlicht::RenderCOGFrames(double axis_length) {
-    irrlicht::tools::drawAllCOGs(this, axis_length);
+    irrlicht::tools::drawAllCOMs(this, axis_length);
 }
 
 void ChVisualSystemIrrlicht::WriteImageToFile(const std::string& filename) {
