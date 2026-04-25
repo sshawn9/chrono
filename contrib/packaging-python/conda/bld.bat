@@ -25,8 +25,9 @@ set "VSGIMGUI_SOURCE_DIR=%SRC_DIR%\download_vsg\vsgImGui"
 set "VSG_INSTALL_DIR=%SRC_DIR%\contrib\build-scripts\vsg_build"
 
 git clone -c advice.detachedHead=false --depth 1 --branch v0.7.0 "https://github.com/vsg-dev/vsgImGui" "%VSGIMGUI_SOURCE_DIR%"
+git -C "%VSGIMGUI_SOURCE_DIR%" apply "%SRC_DIR%\contrib\packaging-python\conda\vsgImGui-win-export.diff"
 cmake -G "Visual Studio 17 2022" -T "v143,cuda=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.8" ^
- -B build_vsgImGui -S "%VSGIMGUI_SOURCE_DIR%" -DBUILD_SHARED_LIBS:BOOL=OFF
+ -B build_vsgImGui -S "%VSGIMGUI_SOURCE_DIR%" -DBUILD_SHARED_LIBS:BOOL=OFF -DVSGIMGUI_STATIC_DLLEXPORT:BOOL=ON
 cmake --build build_vsgImGui --config Release
 cmake --install build_vsgImGui --config Release --prefix "%VSG_INSTALL_DIR%"
 

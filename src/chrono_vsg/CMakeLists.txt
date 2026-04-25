@@ -156,8 +156,9 @@ if(_vsgimgui_type STREQUAL "STATIC_LIBRARY")
 
     # Windows doesn't make symbols from static libraries available for export by default, so we need to explicitly enable that.
     if(MSVC)
-        set_target_properties(Chrono_vsg PROPERTIES
-            WINDOWS_EXPORT_ALL_SYMBOLS ON
+        target_link_options(Chrono_vsg
+            PRIVATE
+                "$<$<CXX_COMPILER_ID:MSVC>:/OPT:NOREF>"
         )
     endif()
 else()
