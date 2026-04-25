@@ -31,6 +31,16 @@ if [ `uname -m` == x86_64 ]; then
     MKL_LIB_DIR=`cd $HOME/miniconda/pkgs/mkl-2020*/; pwd`
 fi
 
+# Due to issues in https://github.com/conda-forge/vsgimgui-feedstock/issues/6, we need to build vsgImGui from source and link it statically.
+# This is a workaround until the issue is resolved.
+VSGIMGUI_SOURCE_DIR="$SRC_DIR/download_vsg/vsgImGui"
+VSG_INSTALL_DIR="$SRC_DIR/contrib/build-scripts/vsg_build"
+
+git clone -c advice.detachedHead=false --depth 1 --branch v0.7.0 "https://github.com/vsg-dev/vsgImGui" "$VSGIMGUI_SOURCE_DIR"
+cmake -G "Ninja" -B build_vsgImGui -S ${VSGIMGUI_SOURCE_DIR} -DBUILD_SHARED_LIBS:BOOL=OFF
+cmake --build build_vsgImGui --config Release
+cmake --install build_vsgImGui --config Release --prefix ${VSG_INSTALL_DIR}
+
 # Configure step
 cmake -DCMAKE_INSTALL_PREFIX=$PREFIX \
  -DCMAKE_C_COMPILER=$(which clang) \
@@ -42,7 +52,7 @@ cmake -DCMAKE_INSTALL_PREFIX=$PREFIX \
  -DPython3_ROOT_DIR=$PREFIX \
  -DCMAKE_BUILD_TYPE=RELEASE \
  -DCH_ENABLE_MODULE_IRRLICHT=ON \
- -DCH_ENABLE_MODULE_VSG=OFF \
+ -DCH_ENABLE_MODULE_VSG=ON \
  -DCH_ENABLE_MODULE_POSTPROCESS=ON \
  -DCH_ENABLE_MODULE_VEHICLE=ON \
  -DCH_ENABLE_MODULE_PYTHON=ON \
@@ -57,6 +67,7 @@ cmake -DCMAKE_INSTALL_PREFIX=$PREFIX \
  -DMKL_RT_LIBRARY=$MKL_LIB_DIR/lib/libmkl_rt.dylib \
  -DEIGEN3_INCLUDE_DIR=$PREFIX/include/eigen3 \
  -DCH_PYCHRONO_DATA_PATH=../../../../share/chrono/data \
+ -DvsgImGui_DIR=$VSG_INSTALL_DIR/lib/cmake/vsgImGui/ \
  ./..
 # Build step
 # on linux travis, limit the number of concurrent jobs otherwise
