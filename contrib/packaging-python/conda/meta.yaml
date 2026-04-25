@@ -31,7 +31,7 @@ requirements:
     - libglvnd-glx-cos7-x86_64 # [linux]
     - freeglut # [linux]
     - libxxf86vm-devel-cos7-x86_64 # [linux]
-    - mkl-devel ==2025.2.0 # [not arm64]
+    - mkl-devel ==2025.2.0 # [linux64 or win64]
     - irrlicht
     - numpy
     - glew
@@ -54,7 +54,7 @@ requirements:
     - vsgxchange
   run:
     - python
-    - mkl ==2025.2.0 # [not arm64]
+    - mkl ==2025.2.0 # [linux64 or win64]
     - numpy
     - irrlicht
     - glew
