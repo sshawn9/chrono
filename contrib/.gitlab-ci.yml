@@ -641,8 +641,6 @@ macos-apple:sonoma:test:
     # this command is needed to get the git describe data needed by the numbering
     - git fetch --prune --unshallow
     - clang --version
-    # conda build uses "build.sh" for both Linux and MacOS. Since we do things differently, we do the following workaround
-    - mv -f ./contrib/packaging-python/conda/buildMacOS.sh ./contrib/packaging-python/conda/build.sh
   environment:
     name: pychrono-macos
     url: https://anaconda.org/projectchrono/pychrono
