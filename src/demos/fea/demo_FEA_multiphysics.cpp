@@ -38,7 +38,6 @@
 #include "chrono/fea/multiphysics/ChLoaderHeatRadiation.h"
 #include "chrono/fea/multiphysics/ChLoaderHeatVolumetricSource.h"
 #include "chrono/fea/multiphysics/ChLoaderHeatConvection.h"
-#include "chrono/fea/multiphysics/ChLoaderPressure.h"
 #include "chrono/fea/multiphysics/ChBuilderVolume.h"
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
 #include "chrono/physics/ChLinkLockTrajectory.h"

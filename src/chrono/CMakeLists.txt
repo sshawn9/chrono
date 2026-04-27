@@ -348,6 +348,7 @@ set(Chrono_fea_SOURCES
     fea/ChLoadContactSurfaceMesh.cpp
     fea/ChLoadsNodeXYZRot.cpp
     fea/ChLoaderGravity.cpp
+    fea/ChLoaderPressure.cpp
     )
 set(Chrono_fea_HEADERS
     fea/ChBuilderBeam.h
@@ -369,6 +370,7 @@ set(Chrono_fea_HEADERS
     fea/ChLoadContactSurfaceMesh.h
     fea/ChLoadsNodeXYZRot.h
     fea/ChLoaderGravity.h
+    fea/ChLoaderPressure.h
     fea/ChRotUtils.h
     )
 source_group(fea FILES ${Chrono_fea_SOURCES} ${Chrono_fea_HEADERS})
@@ -504,7 +506,6 @@ set(Chrono_fea_multiphysics_SOURCES
     fea/multiphysics/ChDomainThermoDeformation.cpp
     fea/multiphysics/ChVisualDataExtractor.cpp
     fea/multiphysics/ChDrawer.cpp
-    fea/multiphysics/ChLoaderPressure.cpp
     fea/multiphysics/ChLoaderHeatFlux.cpp
     fea/multiphysics/ChLoaderHeatRadiation.cpp
     fea/multiphysics/ChLoaderHeatConvection.cpp
@@ -543,7 +544,6 @@ set(Chrono_fea_multiphysics_HEADERS
     fea/multiphysics/ChDomainThermoDeformation.h
     fea/multiphysics/ChVisualDataExtractor.h
     fea/multiphysics/ChDrawer.h
-    fea/multiphysics/ChLoaderPressure.h
     fea/multiphysics/ChLoaderHeatFlux.h
     fea/multiphysics/ChLoaderHeatRadiation.h
     fea/multiphysics/ChLoaderHeatConvection.h
