@@ -17,25 +17,25 @@ ENV PRE_BUILD_COMMANDS=""
 
 # Install Chrono dependencies that are required for all modules (or some but are fairly small)
 RUN sudo apt update && \
-        sudo apt install --no-install-recommends -y \
-        libirrlicht-dev \
-        libeigen3-dev \
-        git \
-        cmake \
-        build-essential \
-        ninja-build \
-        swig \
-        libxxf86vm-dev \
-        freeglut3-dev \
-        python3-numpy \
-        libglu1-mesa-dev \
-        libglew-dev \
-        libglfw3-dev \
-        libblas-dev \
-        liblapack-dev \
-        wget \
-        xorg-dev && \
-        sudo apt clean && sudo apt autoremove -y && sudo rm -rf /var/lib/apt/lists/*
+    sudo apt install --no-install-recommends -y \
+    libirrlicht-dev \
+    libeigen3-dev \
+    git \
+    cmake \
+    build-essential \
+    ninja-build \
+    swig \
+    libxxf86vm-dev \
+    freeglut3-dev \
+    python3-numpy \
+    libglu1-mesa-dev \
+    libglew-dev \
+    libglfw3-dev \
+    libblas-dev \
+    liblapack-dev \
+    wget \
+    xorg-dev && \
+    sudo apt clean && sudo apt autoremove -y && sudo rm -rf /var/lib/apt/lists/*
 
 # Clone Chrono before running the snippets
 RUN git clone --recursive -b ${CHRONO_BRANCH} ${CHRONO_REPO} ${CHRONO_DIR}
@@ -55,6 +55,24 @@ INCLUDE ./ch_parser.dockerfile
 INCLUDE ./ch_python.dockerfile
 INCLUDE ./ch_synchrono.dockerfile
 
+# ---------------------------------------------------------------------------
+# Optional additional modules enabled for this image.
+#
+# Keep ch_pardisomkl before ch_mumps: MUMPS is built against Intel MKL.
+# CUDA-dependent modules rely on cuda.dockerfile, included above.
+# Enabling all modules produces a large image and a long build.
+# ---------------------------------------------------------------------------
+INCLUDE ./ch_cascade.dockerfile
+INCLUDE ./ch_csharp.dockerfile
+INCLUDE ./ch_dem.dockerfile
+INCLUDE ./ch_fmi.dockerfile
+INCLUDE ./ch_fsi.dockerfile
+INCLUDE ./ch_pardisomkl.dockerfile
+INCLUDE ./ch_modal.dockerfile
+INCLUDE ./ch_multicore.dockerfile
+INCLUDE ./ch_mumps.dockerfile
+INCLUDE ./ch_peridynamics.dockerfile
+INCLUDE ./ch_postprocess.dockerfile
 
 # Install Chrono
 RUN ${PRE_BUILD_SCRIPTS} && \
