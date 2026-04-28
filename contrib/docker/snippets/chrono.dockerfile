@@ -9,6 +9,10 @@ ARG CHRONO_INSTALL_DIR="${USERHOME}/packages/chrono"
 # Use explicit numeric architectures so CUDA modules can configure with CMake
 # versions before 3.23, where the "all-major" shortcut is not available.
 ARG CHRONO_CUDA_ARCHITECTURES="60;61;62;70;72;75;80;86;89;90"
+# Full optional-module builds can run many C++ and CUDA compilations at once,
+# which can trigger compiler ICEs on memory-constrained Docker builders.
+# This standard CMake variable lets users reduce parallelism when needed.
+ARG CMAKE_BUILD_PARALLEL_LEVEL
 ARG PACKAGE_DIR="${USERHOME}/packages"
 RUN mkdir -p ${PACKAGE_DIR}
 
