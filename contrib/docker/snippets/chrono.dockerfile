@@ -6,6 +6,9 @@ ARG CHRONO_BRANCH="main"
 ARG CHRONO_REPO="https://github.com/projectchrono/chrono.git"
 ARG CHRONO_DIR="${USERHOME}/chrono"
 ARG CHRONO_INSTALL_DIR="${USERHOME}/packages/chrono"
+# Use explicit numeric architectures so CUDA modules can configure with CMake
+# versions before 3.23, where the "all-major" shortcut is not available.
+ARG CHRONO_CUDA_ARCHITECTURES="60;61;62;70;72;75;80;86;89;90"
 ARG PACKAGE_DIR="${USERHOME}/packages"
 RUN mkdir -p ${PACKAGE_DIR}
 
@@ -75,23 +78,23 @@ INCLUDE ./ch_peridynamics.dockerfile
 INCLUDE ./ch_postprocess.dockerfile
 
 # Install Chrono
-RUN ${PRE_BUILD_SCRIPTS} && \
+RUN eval "${PRE_BUILD_SCRIPTS} true" && \
     # Evaluate the cmake options to expand any $(...) commands or variables
     eval "_CMAKE_OPTIONS=\"${CMAKE_OPTIONS}\"" && \
-    mkdir ${CHRONO_DIR}/build && \
-    cd ${CHRONO_DIR}/build && \
-    cmake ../ -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_DEMOS=OFF \
-        -DBUILD_BENCHMARKING=OFF \
-        -DBUILD_TESTING=OFF \
-        -DCMAKE_LIBRARY_PATH=$(find /usr/local/cuda/ -type d -name stubs) \
-        -DEigen3_DIR=/usr/lib/cmake/eigen3 \
-        -DCMAKE_INSTALL_PREFIX=${CHRONO_INSTALL_DIR} \
-        -DNUMPY_INCLUDE_DIR=$(python3 -c 'import numpy; print(numpy.get_include())') \
-        ${_CMAKE_OPTIONS} \
-        && \
-    ninja && ninja install
+    cd ${CHRONO_DIR} && \
+    cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_DEMOS=OFF \
+    -DBUILD_BENCHMARKING=OFF \
+    -DBUILD_TESTING=OFF \
+    -DCMAKE_LIBRARY_PATH=$(find /usr/local/cuda/ -type d -name stubs) \
+    -DCHRONO_CUDA_ARCHITECTURES="${CHRONO_CUDA_ARCHITECTURES}" \
+    -DEigen3_DIR=/usr/lib/cmake/eigen3 \
+    -DCMAKE_INSTALL_PREFIX=${CHRONO_INSTALL_DIR} \
+    -DNUMPY_INCLUDE_DIR=$(python3 -c 'import numpy; print(numpy.get_include())') \
+    ${_CMAKE_OPTIONS} && \
+    cmake --build build && \
+    cmake --install build
 
 
 # Update shell config
