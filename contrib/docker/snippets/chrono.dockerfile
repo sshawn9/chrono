@@ -16,7 +16,7 @@ RUN mkdir -p ${PACKAGE_DIR}
 ENV CMAKE_OPTIONS=""
 # This variable is used before building (but in the same RUN command)
 # This is useful for setting environment variables that are used in the build process
-ENV PRE_BUILD_COMMANDS=""
+ENV PRE_BUILD_SCRIPTS=""
 
 # Install Chrono dependencies that are required for all modules (or some but are fairly small)
 RUN sudo apt update && \
